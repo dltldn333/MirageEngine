@@ -15,10 +15,6 @@ npm install mirage-engine
 ```ts
 import { Mirage } from 'mirage-engine';
 
-// 1. Initialize
-const engine = new Mirage();
-
-// 2. Mirror a DOM element
-const target = document.getElementById('my-element');
-engine.mirror(target);
+const engine = new Mirage("#target");
+engine.start();
 ```
