@@ -1,5 +1,12 @@
 import { Renderer } from "../renderer/Renderer";
 import { extractSceneGraph } from "../dom/Extractor";
+import {
+  DIRTY_NONE,
+  DIRTY_RECT,
+  DIRTY_STRUCTURE,
+  DIRTY_STYLE,
+  DIRTY_ZINDEX,
+} from "@/types";
 
 export class Syncer {
   private target: HTMLElement;
@@ -9,6 +16,8 @@ export class Syncer {
   private isDomDirty: boolean = false;
   private isRunning: boolean = false;
 
+  private pendingMask: number = DIRTY_NONE;
+
   private mutationTimer: number | null = null;
   private cssTimer: number | null = null;
 
@@ -17,29 +26,34 @@ export class Syncer {
     this.renderer = renderer;
 
     this.observer = new MutationObserver((mutations) => {
-      let isStructuralChange = false;
-      let isStyleChange = false;
+      let currentMask = DIRTY_NONE;
 
       for (const mutation of mutations) {
         if (mutation.type === "childList") {
-          isStructuralChange = true;
+          currentMask |= DIRTY_STRUCTURE;
         } else if (mutation.type === "attributes") {
-          isStyleChange = true;
+          if (
+            mutation.attributeName === "style" ||
+            mutation.attributeName === "class"
+          ) {
+            currentMask |= DIRTY_RECT | DIRTY_STYLE;
+          }
         }
       }
 
-      if (isStructuralChange) {
-        this.clearTimers();
-        console.log("Structural Changed");
-        this.isDomDirty = true;
-        return;
-      }
+      if (currentMask !== DIRTY_NONE) {
+        this.pendingMask |= currentMask;
 
-      if (isStyleChange) {
+        // Structural Change detected
+        if (currentMask & DIRTY_STRUCTURE) {
+          this.clearTimers();
+          console.log("Structural Change detected");
+          this.isDomDirty = true;
+          return;
+        }
         if (this.mutationTimer) {
           clearTimeout(this.mutationTimer);
         }
-
         this.mutationTimer = window.setTimeout(() => {
           this.mutationTimer = null;
           this.isDomDirty = true;
@@ -94,13 +108,11 @@ export class Syncer {
   private onTransitionFinished = (e: Event) => {
     if (!this.target.contains(e.target as Node)) return;
 
-    if (this.mutationTimer !== null) {
-      return;
-    }
+    if (this.mutationTimer !== null) return;
 
-    if (this.cssTimer) {
-      clearTimeout(this.cssTimer);
-    }
+    if (this.cssTimer) clearTimeout(this.cssTimer);
+
+    this.pendingMask |= DIRTY_RECT | DIRTY_STYLE;
 
     this.cssTimer = window.setTimeout(() => {
       this.isDomDirty = true;
@@ -115,10 +127,13 @@ export class Syncer {
 
   private forceUpdateScene() {
     this.isDomDirty = false;
-    const sceneGraph = extractSceneGraph(this.target);
+    const sceneGraph = extractSceneGraph(this.target, this.pendingMask);
+
     if (sceneGraph) {
       this.renderer.syncScene(sceneGraph);
     }
+
+    this.pendingMask = DIRTY_NONE;
   }
 
   private renderLoop = () => {

@@ -1,6 +1,10 @@
 import { NodeRect, SceneNode, BoxStyles } from "../types";
+import { DIRTY_RECT, DIRTY_STYLE } from "../types";
 
-export function extractSceneGraph(element: HTMLElement): SceneNode | null {
+export function extractSceneGraph(
+  element: HTMLElement,
+  initialMask = DIRTY_RECT | DIRTY_STYLE
+): SceneNode | null {
   if (element.tagName === "SCRIPT" || element.tagName === "STYLE") {
     return null;
   }
@@ -31,8 +35,10 @@ export function extractSceneGraph(element: HTMLElement): SceneNode | null {
   }
   return {
     type: "BOX",
+    element: element,
     rect: rect,
     styles: nodeStyle,
+    dirtyMask: initialMask,
     children: children,
   };
 }
