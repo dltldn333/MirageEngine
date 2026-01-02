@@ -5,7 +5,6 @@ import {
   DIRTY_RECT,
   DIRTY_STRUCTURE,
   DIRTY_STYLE,
-  DIRTY_ZINDEX,
 } from "@/types";
 
 export class Syncer {
