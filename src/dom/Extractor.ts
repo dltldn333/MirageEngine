@@ -1,6 +1,29 @@
 import { NodeRect, SceneNode, BoxStyles } from "../types";
 import { DIRTY_RECT, DIRTY_STYLE } from "../types";
 
+// Check Whitespace
+function isValidTextNode(node: Node): boolean {
+  return (
+    node.nodeType === Node.TEXT_NODE &&
+    (node.textContent?.trim().length || 0) > 0
+  );
+}
+
+function isLeafTextElement(element: HTMLElement): boolean {
+  const childNodes = Array.from(element.childNodes);
+
+  if (childNodes.length === 0) return false;
+
+  const hasElementChlid = childNodes.some(
+    (node) => node.nodeType === Node.ELEMENT_NODE
+  );
+  if (hasElementChlid) return false;
+
+  const hasText = childNodes.some(isValidTextNode);
+
+  return hasText;
+}
+
 export function extractSceneGraph(
   element: HTMLElement,
   initialMask = DIRTY_RECT | DIRTY_STYLE
