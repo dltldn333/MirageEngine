@@ -1,6 +1,6 @@
 {
   "name": "mirage-engine",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "An engine that mirrors HTML DOM elements to a WebGL scene in real-time.",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -22,7 +22,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build", 
+    "build": "tsc && vite build",
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
@@ -35,7 +35,13 @@
     "vite": "^4.0.0",
     "vite-plugin-dts": "^4.5.4"
   },
-  "keywords": ["webgl", "dom", "mirroring", "threejs", "typescript"],
+  "keywords": [
+    "webgl",
+    "dom",
+    "mirroring",
+    "threejs",
+    "typescript"
+  ],
   "author": "dltldn333@gmail.com",
   "license": "MIT"
 }

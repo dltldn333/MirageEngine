@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SceneNode, DIRTY_RECT, DIRTY_STYLE, DIRTY_CONTENT } from "../types";
+import { SceneNode, DIRTY_CONTENT } from "../types";
 import { createTextTexture } from "./TextTextureGenerator";
 
 export class Renderer {
