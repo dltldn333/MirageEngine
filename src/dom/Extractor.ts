@@ -1,5 +1,13 @@
-import { NodeRect, SceneNode, BoxStyles } from "../types";
-import { DIRTY_RECT, DIRTY_STYLE } from "../types";
+import {
+  DIRTY_RECT,
+  DIRTY_STYLE,
+  DIRTY_CONTENT,
+  DIRTY_ZINDEX,
+  DIRTY_STRUCTURE,
+  SceneNode,
+  BoxStyles,
+  TextStyles,
+} from "../types";
 
 // Check Whitespace
 function isValidTextNode(node: Node): boolean {
@@ -24,44 +32,90 @@ function isLeafTextElement(element: HTMLElement): boolean {
   return hasText;
 }
 
+function extractTextStyles(computed: CSSStyleDeclaration): TextStyles {
+  const fontSize = parseFloat(computed.fontSize);
+  let lineHeight = parseFloat(computed.lineHeight);
+  if (isNaN(lineHeight)) {
+    lineHeight = fontSize * 1.2;
+  }
+  let letterSpacing = parseFloat(computed.letterSpacing);
+  if (isNaN(letterSpacing)) {
+    letterSpacing = 0;
+  }
+  return {
+    font: `${computed.fontStyle} ${computed.fontWeight} ${computed.fontSize} ${computed.fontFamily}`,
+    color: computed.color,
+    textAlign: (computed.textAlign as CanvasTextAlign) || "start",
+    textBaseline: "alphabetic",
+    direction: (computed.direction as CanvasDirection) || "inherit",
+    lineHeight,
+    letterSpacing,
+  };
+}
+
 export function extractSceneGraph(
   element: HTMLElement,
-  initialMask = DIRTY_RECT | DIRTY_STYLE
+  initialMask = DIRTY_RECT |
+    DIRTY_STYLE |
+    DIRTY_ZINDEX |
+    DIRTY_CONTENT |
+    DIRTY_STRUCTURE
 ): SceneNode | null {
-  if (element.tagName === "SCRIPT" || element.tagName === "STYLE") {
+  const rect = element.getBoundingClientRect();
+  const computed = window.getComputedStyle(element);
+
+  // Base Case
+  if (rect.width === 0 || rect.height === 0 || computed.display === "none") {
     return null;
   }
 
-  const rectData = element.getBoundingClientRect();
+  let id = element.getAttribute("data-mid");
+  if (!id) {
+    id = Math.random().toString(36).substring(2, 11);
+    element.setAttribute("data-mid", id);
+  }
 
-  const rect: NodeRect = {
-    x: rectData.x + window.scrollX,
-    y: rectData.y + window.scrollY,
-    width: rectData.width,
-    height: rectData.height,
+  const zIndex = parseInt(computed.zIndex);
+  const styles: BoxStyles = {
+    backgroundColor: computed.backgroundColor,
+    opacity: parseFloat(computed.opacity),
+    zIndex: isNaN(zIndex) ? 0 : zIndex,
+    borderRadius: computed.borderRadius,
+    borderColor: computed.borderColor,
+    borderWidth: computed.borderWidth,
   };
 
-  const styles = window.getComputedStyle(element);
-
-  const nodeStyle: BoxStyles = {
-    backgroundColor: styles.backgroundColor,
-    opacity: parseFloat(styles.opacity),
-    zIndex: parseInt(styles.zIndex, 10) || 0,
-  };
-
+  let nodeType: "BOX" | "TEXT" = "BOX";
+  let textContent: string | undefined;
+  let textStyles: TextStyles | undefined;
   const children: SceneNode[] = [];
-  for (const child of element.children) {
-    const childNode = extractSceneGraph(child as HTMLElement);
-    if (childNode) {
-      children.push(childNode);
-    }
+
+  if (isLeafTextElement(element)) {
+    nodeType = "TEXT";
+    textContent = element.textContent || "";
+    textStyles = extractTextStyles(computed);
+  } else {
+    Array.from(element.children).forEach((child) => {
+      const childNode = extractSceneGraph(child as HTMLElement, initialMask);
+      if (childNode) {
+        children.push(childNode);
+      }
+    });
   }
   return {
-    type: "BOX",
-    element: element,
-    rect: rect,
-    styles: nodeStyle,
+    id,
+    type: nodeType,
+    element,
+    rect: {
+      x: rect.left,
+      y: rect.top,
+      width: rect.width,
+      height: rect.height,
+    },
+    styles,
+    textContent,
+    textStyles,
     dirtyMask: initialMask,
-    children: children,
+    children,
   };
 }
