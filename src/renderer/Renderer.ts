@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { SceneNode } from "../types";
-import { DIRTY_RECT, DIRTY_STYLE } from "../types";
+import { SceneNode, DIRTY_RECT, DIRTY_STYLE, DIRTY_CONTENT } from "../types";
+import { createTextTexture } from "./TextTextureGenerator";
 
 export class Renderer {
   public readonly canvas: HTMLCanvasElement;
@@ -87,14 +87,11 @@ export class Renderer {
       let mesh = this.meshMap.get(node.element);
 
       if (!mesh) {
-        console.log(`[V2] 매쉬 신규 생성:`, node.element);
         const geometry = new THREE.PlaneGeometry(1, 1);
         const material = new THREE.MeshBasicMaterial({ transparent: true });
         mesh = new THREE.Mesh(geometry, material);
         this.scene.add(mesh);
         this.meshMap.set(node.element, mesh);
-      } else {
-        console.log(`[V2] 기존 매쉬 재사용:`, node.element);
       }
 
       this.updateMeshProperties(mesh, node);
@@ -103,12 +100,67 @@ export class Renderer {
         this.reconcileNode(child, activeElements);
       }
     }
+
+    if (node.type === "TEXT") {
+      activeElements.add(node.element);
+
+      let mesh = this.meshMap.get(node.element);
+      if (!mesh) {
+        const geometry = new THREE.PlaneGeometry(1, 1);
+        const material = new THREE.MeshBasicMaterial({ transparent: true });
+        mesh = new THREE.Mesh(geometry, material);
+        mesh.name = "BG_MESH";
+        this.scene.add(mesh);
+        this.meshMap.set(node.element, mesh);
+      }
+
+      this.updateMeshProperties(mesh, node);
+
+      let textMesh = mesh.children.find(
+        (c) => c.name === "TEXT_CHILD"
+      ) as THREE.Mesh;
+
+      const currentStyleHash = JSON.stringify(node.textStyles);
+      const cachedStyleHash = textMesh?.userData?.styleHash;
+
+      const isContentDirty = node.dirtyMask & DIRTY_CONTENT;
+      const isStyleDirty = currentStyleHash !== cachedStyleHash;
+
+      if (!textMesh || isContentDirty || isStyleDirty) {
+        if (textMesh) {
+          (textMesh.material as THREE.MeshBasicMaterial).map?.dispose();
+          textMesh.geometry.dispose();
+          mesh.remove(textMesh);
+        }
+
+        const texture = createTextTexture(
+          node.textContent || "",
+          node.textStyles!,
+          node.rect.width,
+          node.rect.height
+        );
+
+        const textGeo = new THREE.PlaneGeometry(1, 1);
+        const textMat = new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          side: THREE.FrontSide,
+          color: 0xffffff,
+          opacity: 1.0,
+        });
+
+        textMesh = new THREE.Mesh(textGeo, textMat);
+        textMesh.name = "TEXT_CHILD";
+
+        textMesh.userData = { styleHash: currentStyleHash };
+        textMesh.position.z = 0.005;
+
+        mesh.add(textMesh);
+      }
+    }
   }
 
   private updateMeshProperties(mesh: THREE.Mesh, node: SceneNode) {
-    console.log(
-      `[V2] 업데이트 중인 매쉬 ID: ${mesh.uuid}, 마스크: ${node.dirtyMask}`
-    );
     const { rect, styles } = node;
     const canvasWidth = this.renderer.domElement.width;
     const canvasHeight = this.renderer.domElement.height;
@@ -148,15 +200,6 @@ export class Renderer {
     material.color.set(safeColor);
     material.opacity = finalOpacity;
     material.transparent = finalOpacity < 1;
-
-    if (node.dirtyMask & DIRTY_RECT) {
-      console.log(" -> 위치/크기만 업데이트됨");
-      // ...
-    }
-    if (node.dirtyMask & DIRTY_STYLE) {
-      console.log(" -> 스타일만 업데이트됨");
-      // ...
-    }
   }
 
   public render() {
