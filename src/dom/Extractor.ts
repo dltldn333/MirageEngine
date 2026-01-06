@@ -107,8 +107,8 @@ export function extractSceneGraph(
     type: nodeType,
     element,
     rect: {
-      x: rect.left,
-      y: rect.top,
+      x: rect.left + window.scrollX,
+      y: rect.top + window.scrollY,
       width: rect.width,
       height: rect.height,
     },
