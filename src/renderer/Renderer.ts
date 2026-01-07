@@ -32,6 +32,9 @@ export class Renderer {
       canvas: this.canvas,
       alpha: true,
     });
+
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+
     this.renderer.setSize(width, height);
   }
 
@@ -79,91 +82,95 @@ export class Renderer {
       }
     }
   }
-
   private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
+    activeElements.add(node.element);
+
+    let mesh = this.meshMap.get(node.element);
+    if (!mesh) {
+      const geometry = new THREE.PlaneGeometry(1, 1);
+      const material = new THREE.MeshBasicMaterial({ transparent: true });
+      mesh = new THREE.Mesh(geometry, material);
+      if (node.type === "TEXT") mesh.name = "BG_MESH";
+
+      this.scene.add(mesh);
+      this.meshMap.set(node.element, mesh);
+    }
+
+    mesh.userData.domRect = node.rect;
+
+    this.updateMeshProperties(mesh, node);
+
     if (node.type === "BOX") {
-      activeElements.add(node.element);
-
-      let mesh = this.meshMap.get(node.element);
-
-      if (!mesh) {
-        const geometry = new THREE.PlaneGeometry(1, 1);
-        const material = new THREE.MeshBasicMaterial({ transparent: true });
-        mesh = new THREE.Mesh(geometry, material);
-        this.scene.add(mesh);
-        this.meshMap.set(node.element, mesh);
-      }
-
-      this.updateMeshProperties(mesh, node);
-
       for (const child of node.children) {
         this.reconcileNode(child, activeElements);
       }
+    } else if (node.type === "TEXT") {
+      this.reconcileTextChild(mesh, node);
+    }
+  }
+
+  private reconcileTextChild(parentMesh: THREE.Mesh, node: SceneNode) {
+    let textMesh = parentMesh.children.find(
+      (c) => c.name === "TEXT_CHILD"
+    ) as THREE.Mesh;
+
+    const currentStyleHash = JSON.stringify(node.textStyles);
+    const cachedStyleHash = textMesh?.userData?.styleHash;
+    const isDirty =
+      !textMesh ||
+      node.dirtyMask & DIRTY_CONTENT ||
+      currentStyleHash !== cachedStyleHash;
+
+    if (isDirty) {
+      if (textMesh) {
+        (textMesh.material as THREE.MeshBasicMaterial).map?.dispose();
+        textMesh.geometry.dispose();
+        parentMesh.remove(textMesh);
+      }
+
+      const texture = createTextTexture(
+        node.textContent || "",
+        node.textStyles!,
+        node.rect.width,
+        node.rect.height
+      );
+
+      const textGeo = new THREE.PlaneGeometry(1, 1);
+      const textMat = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        side: THREE.FrontSide,
+        color: 0xffffff,
+      });
+
+      textMesh = new THREE.Mesh(textGeo, textMat);
+      textMesh.name = "TEXT_CHILD";
+      textMesh.userData = { styleHash: currentStyleHash };
+
+      parentMesh.add(textMesh);
     }
 
-    if (node.type === "TEXT") {
-      activeElements.add(node.element);
+    if (textMesh) {
+      const parentRect = parentMesh.userData.domRect;
+      const parentCenterX = parentRect.x + parentRect.width / 2;
+      const parentCenterY = parentRect.y + parentRect.height / 2;
 
-      let mesh = this.meshMap.get(node.element);
-      if (!mesh) {
-        const geometry = new THREE.PlaneGeometry(1, 1);
-        const material = new THREE.MeshBasicMaterial({ transparent: true });
-        mesh = new THREE.Mesh(geometry, material);
-        mesh.name = "BG_MESH";
-        this.scene.add(mesh);
-        this.meshMap.set(node.element, mesh);
-      }
+      const textCenterX = node.rect.x + node.rect.width / 2;
+      const textCenterY = node.rect.y + node.rect.height / 2;
 
-      this.updateMeshProperties(mesh, node);
+      const offsetX = textCenterX - parentCenterX;
+      const offsetY = -(textCenterY - parentCenterY);
 
-      let textMesh = mesh.children.find(
-        (c) => c.name === "TEXT_CHILD"
-      ) as THREE.Mesh;
-
-      const currentStyleHash = JSON.stringify(node.textStyles);
-      const cachedStyleHash = textMesh?.userData?.styleHash;
-
-      const isContentDirty = node.dirtyMask & DIRTY_CONTENT;
-      const isStyleDirty = currentStyleHash !== cachedStyleHash;
-
-      if (!textMesh || isContentDirty || isStyleDirty) {
-        if (textMesh) {
-          (textMesh.material as THREE.MeshBasicMaterial).map?.dispose();
-          textMesh.geometry.dispose();
-          mesh.remove(textMesh);
-        }
-
-        const texture = createTextTexture(
-          node.textContent || "",
-          node.textStyles!,
-          node.rect.width,
-          node.rect.height
-        );
-
-        const textGeo = new THREE.PlaneGeometry(1, 1);
-        const textMat = new THREE.MeshBasicMaterial({
-          map: texture,
-          transparent: true,
-          side: THREE.FrontSide,
-          color: 0xffffff,
-          opacity: 1.0,
-        });
-
-        textMesh = new THREE.Mesh(textGeo, textMat);
-        textMesh.name = "TEXT_CHILD";
-
-        textMesh.userData = { styleHash: currentStyleHash };
-        textMesh.position.z = 0.005;
-
-        mesh.add(textMesh);
-      }
+      textMesh.position.set(offsetX, offsetY, 0.005);
     }
   }
 
   private updateMeshProperties(mesh: THREE.Mesh, node: SceneNode) {
     const { rect, styles } = node;
-    const canvasWidth = this.renderer.domElement.width;
-    const canvasHeight = this.renderer.domElement.height;
+
+    const pixelRatio = this.renderer.getPixelRatio();
+    const canvasWidth = this.renderer.domElement.width / pixelRatio;
+    const canvasHeight = this.renderer.domElement.height / pixelRatio;
 
     mesh.scale.set(rect.width, rect.height, 1);
 
