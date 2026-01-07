@@ -1,6 +1,35 @@
 import * as THREE from "three";
 import { TextStyles } from "../types";
 
+function wrapText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+): string[] {
+  const forcedLines = text.split("\n");
+  const resultLines: string[] = [];
+
+  forcedLines.forEach((line) => {
+    const words = line.split(" ");
+    let currentLine = words[0];
+
+    for (let i = 1; i < words.length; i++) {
+      const word = words[i];
+      const width = ctx.measureText(currentLine + " " + word).width;
+
+      if (width < maxWidth) {
+        currentLine += " " + word;
+      } else {
+        resultLines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    resultLines.push(currentLine);
+  });
+
+  return resultLines;
+}
+
 export function createTextTexture(
   text: string,
   styles: TextStyles,
@@ -23,24 +52,31 @@ export function createTextTexture(
 
   ctx.font = styles.font;
   ctx.fillStyle = styles.color;
+  ctx.textBaseline = "top";
 
-  ctx.textAlign = styles.textAlign;
-  ctx.direction = styles.direction;
+  ctx.globalAlpha = 1;
 
-  ctx.textBaseline = "middle";
+  const lines = wrapText(ctx, text, rectWidth);
+  const lineHeight = styles.lineHeight;
 
-  let x = 0;
-  if (styles.textAlign === "center") x = rectWidth / 2;
-  if (styles.textAlign === "right") x = rectWidth;
+  lines.forEach((line, index) => {
+    const y = index * lineHeight + 2;
 
-  const y = rectHeight / 2;
+    let x = 0;
+    if (styles.textAlign === "center") {
+      x = rectWidth / 2;
+    } else if (styles.textAlign === "right") {
+      x = rectWidth;
+    }
+    ctx.textAlign = styles.textAlign as CanvasTextAlign;
 
-  ctx.fillText(text, x, y);
+    ctx.fillText(line, x, y);
+  });
 
   const texture = new THREE.CanvasTexture(canvas);
-
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
   texture.needsUpdate = true;
 
   return texture;

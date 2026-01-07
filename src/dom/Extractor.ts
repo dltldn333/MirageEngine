@@ -23,29 +23,6 @@ function getTextNodeRect(textNode: Text) {
   };
 }
 
-// Check Whitespace
-function isValidTextNode(node: Node): boolean {
-  return (
-    node.nodeType === Node.TEXT_NODE &&
-    (node.textContent?.trim().length || 0) > 0
-  );
-}
-
-function isLeafTextElement(element: HTMLElement): boolean {
-  const childNodes = Array.from(element.childNodes);
-
-  if (childNodes.length === 0) return false;
-
-  const hasElementChlid = childNodes.some(
-    (node) => node.nodeType === Node.ELEMENT_NODE
-  );
-  if (hasElementChlid) return false;
-
-  const hasText = childNodes.some(isValidTextNode);
-
-  return hasText;
-}
-
 function extractTextStyles(computed: CSSStyleDeclaration): TextStyles {
   const fontSize = parseFloat(computed.fontSize);
   let lineHeight = parseFloat(computed.lineHeight);
@@ -145,7 +122,6 @@ export function extractSceneGraph(
     borderWidth: computed.borderWidth,
   };
 
-  let nodeType: "BOX" | "TEXT" = "BOX";
   let textContent: string | undefined;
   let textStyles: TextStyles | undefined;
   const children: SceneNode[] = [];
