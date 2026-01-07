@@ -13,8 +13,10 @@ export function createTextTexture(
   if (!ctx) {
     throw new Error("[Mirage] Failed to create canvas context");
   }
+  // text Quality
+  const superSampleFactor = 2;
+  const scale = (window.devicePixelRatio || 2) * superSampleFactor;
 
-  const scale = window.devicePixelRatio || 2;
   canvas.width = rectWidth * scale;
   canvas.height = rectHeight * scale;
   ctx.scale(scale, scale);
