@@ -32,6 +32,9 @@ export class Renderer {
       canvas: this.canvas,
       alpha: true,
     });
+
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+
     this.renderer.setSize(width, height);
   }
 
@@ -162,8 +165,10 @@ export class Renderer {
 
   private updateMeshProperties(mesh: THREE.Mesh, node: SceneNode) {
     const { rect, styles } = node;
-    const canvasWidth = this.renderer.domElement.width;
-    const canvasHeight = this.renderer.domElement.height;
+
+    const pixelRatio = this.renderer.getPixelRatio();
+    const canvasWidth = this.renderer.domElement.width / pixelRatio;
+    const canvasHeight = this.renderer.domElement.height / pixelRatio;
 
     mesh.scale.set(rect.width, rect.height, 1);
 
