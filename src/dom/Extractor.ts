@@ -9,27 +9,18 @@ import {
   TextStyles,
 } from "../types";
 
-// Check Whitespace
-function isValidTextNode(node: Node): boolean {
-  return (
-    node.nodeType === Node.TEXT_NODE &&
-    (node.textContent?.trim().length || 0) > 0
-  );
-}
+// Helper function: getTextNodeRect, isValidTextNode, isLeafTextElement, extractTextStyles
 
-function isLeafTextElement(element: HTMLElement): boolean {
-  const childNodes = Array.from(element.childNodes);
-
-  if (childNodes.length === 0) return false;
-
-  const hasElementChlid = childNodes.some(
-    (node) => node.nodeType === Node.ELEMENT_NODE
-  );
-  if (hasElementChlid) return false;
-
-  const hasText = childNodes.some(isValidTextNode);
-
-  return hasText;
+function getTextNodeRect(textNode: Text) {
+  const range = document.createRange();
+  range.selectNodeContents(textNode);
+  const rect = range.getBoundingClientRect();
+  return {
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+  };
 }
 
 function extractTextStyles(computed: CSSStyleDeclaration): TextStyles {
@@ -54,13 +45,59 @@ function extractTextStyles(computed: CSSStyleDeclaration): TextStyles {
 }
 
 export function extractSceneGraph(
-  element: HTMLElement,
+  sourceNode: HTMLElement | Node,
   initialMask = DIRTY_RECT |
     DIRTY_STYLE |
     DIRTY_ZINDEX |
     DIRTY_CONTENT |
     DIRTY_STRUCTURE
 ): SceneNode | null {
+  // Check text node
+  if (sourceNode.nodeType === Node.TEXT_NODE) {
+    const textNode = sourceNode as Text;
+
+    // empthy text check
+    if (!textNode.textContent || !textNode.textContent.trim()) return null;
+    const normalizedText = textNode.textContent.replace(/\s+/g, " ").trim();
+    if (normalizedText.length === 0) return null;
+
+    const rect = getTextNodeRect(textNode);
+
+    // size check
+    if (rect.width === 0 || rect.height === 0) return null;
+
+    // Cascading Styles
+    const parent = textNode.parentElement;
+    const computed = parent ? window.getComputedStyle(parent) : null;
+    if (!computed) return null;
+
+    // Create SceneNode for text node
+    return {
+      id: Math.random().toString(36).substring(2, 9),
+      type: "TEXT",
+      element: textNode as unknown as HTMLElement,
+      rect: {
+        x: rect.left + window.scrollX,
+        y: rect.top + window.scrollY,
+        width: rect.width,
+        height: rect.height,
+      },
+      styles: {
+        backgroundColor: "transparent",
+        opacity: parseFloat(computed.opacity),
+        zIndex: 0,
+        borderRadius: "0px",
+        borderColor: "transparent",
+        borderWidth: "0px",
+      },
+      textContent: normalizedText,
+      textStyles: extractTextStyles(computed),
+      dirtyMask: initialMask,
+      children: [],
+    };
+  }
+
+  const element = sourceNode as HTMLElement;
   const rect = element.getBoundingClientRect();
   const computed = window.getComputedStyle(element);
 
@@ -85,26 +122,21 @@ export function extractSceneGraph(
     borderWidth: computed.borderWidth,
   };
 
-  let nodeType: "BOX" | "TEXT" = "BOX";
   let textContent: string | undefined;
   let textStyles: TextStyles | undefined;
   const children: SceneNode[] = [];
 
-  if (isLeafTextElement(element)) {
-    nodeType = "TEXT";
-    textContent = element.textContent || "";
-    textStyles = extractTextStyles(computed);
-  } else {
-    Array.from(element.children).forEach((child) => {
-      const childNode = extractSceneGraph(child as HTMLElement, initialMask);
-      if (childNode) {
-        children.push(childNode);
-      }
-    });
-  }
+  Array.from(element.childNodes).forEach((child) => {
+    // Recurring
+    const childNode = extractSceneGraph(child, initialMask);
+    if (childNode) {
+      children.push(childNode);
+    }
+  });
+
   return {
     id,
-    type: nodeType,
+    type: "BOX",
     element,
     rect: {
       x: rect.left + window.scrollX,

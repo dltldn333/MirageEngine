@@ -1,6 +1,9 @@
 import { Mirage } from "@/index";
 
+const engine = new Mirage("#root");
 
-const engine = new Mirage("#root")
+engine.start();
 
-engine.start()
+// setTimeout(() => {
+//   engine.stop();
+// }, 5000);
