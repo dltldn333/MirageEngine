@@ -6,15 +6,20 @@ export class Mirage {
   private syncer: Syncer;
   private target: HTMLElement;
 
-  constructor(selector: string) {
-    const el = document.querySelector<HTMLElement>(selector);
-    if (!el) {
-      throw new Error(`[Mirage] Element not found: ${selector}`);
+  constructor(target: HTMLElement, container?: HTMLElement) {
+    if (!target) {
+      throw new Error(`[Mirage] Target element is null or undefined.`);
     }
-    this.target = el;
+    this.target = target;
 
-    this.renderer = new Renderer();
-    this.renderer.mount(document.body);
+    this.renderer = new Renderer(this.target);
+
+    // when target duplicate mode
+    // this.renderer.mount(container ? container : this.target.parentElement!);
+
+    // when screen overlay mode
+    this.renderer.mount(container ? container : this.target.parentElement!);
+    
     this.syncer = new Syncer(this.target, this.renderer);
   }
 

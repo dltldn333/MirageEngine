@@ -19,8 +19,12 @@ npm install mirage-engine
 ```ts
 import { Mirage } from 'mirage-engine';
 
-const engine = new Mirage("#target");
-engine.start();
+const target = document.querySelector("#target") as HTMLElement;
+
+// Second argument 'container' is optional
+const mirage = new Mirage(target);
+
+mirage.start();
 ```
 
 **License | MIT © dltldn333**

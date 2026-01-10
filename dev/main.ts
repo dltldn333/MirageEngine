@@ -1,9 +1,17 @@
 import { Mirage } from "@/index";
 
-const engine = new Mirage("#root");
+const target = document.querySelector("#root") as HTMLElement;
+// const container = document.querySelector("document.body") as HTMLElement;
 
-engine.start();
+// const mirage = new Mirage(target, container);
+const mirage = new Mirage(target);
+
+mirage.start();
 
 // setTimeout(() => {
-//   engine.stop();
+//   mirage.stop();
 // }, 5000);
+
+function stopMirage() {
+  mirage.stop();
+}

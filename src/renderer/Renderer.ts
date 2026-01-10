@@ -11,12 +11,15 @@ export class Renderer {
 
   private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
 
-  constructor() {
+  constructor(target: HTMLElement) {
     this.canvas = document.createElement("canvas");
     this.scene = new THREE.Scene();
 
     const width = window.innerWidth;
     const height = window.innerHeight;
+    // target duplicate mode
+    // const width = target.parentElement!.clientWidth;
+    // const height = target.parentElement!.clientHeight;
 
     this.camera = new THREE.OrthographicCamera(
       width / -2,
