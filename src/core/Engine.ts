@@ -10,7 +10,7 @@ export class Engine {
   constructor(target: HTMLElement, config: MirageConfig) {
     this.target = target;
 
-    this.renderer = new Renderer(this.target);
+    this.renderer = new Renderer(this.target, config);
 
     // when target duplicate mode
     // const container = config.container || this.target.parentElement!;

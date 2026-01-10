@@ -34,7 +34,8 @@ export function createTextTexture(
   text: string,
   styles: TextStyles,
   rectWidth: number,
-  rectHeight: number
+  rectHeight: number,
+  qualityFactor: number = 2
 ): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
@@ -43,8 +44,9 @@ export function createTextTexture(
     throw new Error("[Mirage] Failed to create canvas context");
   }
   // text Quality
-  const superSampleFactor = 2;
-  const scale = (window.devicePixelRatio || 2) * superSampleFactor;
+
+  const pixelRatio = window.devicePixelRatio || 1;
+  const scale = pixelRatio * qualityFactor;
 
   canvas.width = rectWidth * scale;
   canvas.height = rectHeight * scale;

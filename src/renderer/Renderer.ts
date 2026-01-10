@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SceneNode, DIRTY_CONTENT } from "../types";
+import { SceneNode, DIRTY_CONTENT, TextQuality, MirageConfig } from "../types";
 import { createTextTexture } from "./utils/TextGenerator";
 
 export class Renderer {
@@ -9,9 +9,11 @@ export class Renderer {
   private readonly renderer: THREE.WebGLRenderer;
   private renderOrder: number = 0;
 
+  private textQualityFactor: number = 2;
+
   private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
 
-  constructor(target: HTMLElement) {
+  constructor(target: HTMLElement, config: MirageConfig) {
     this.canvas = document.createElement("canvas");
     this.scene = new THREE.Scene();
 
@@ -40,6 +42,27 @@ export class Renderer {
 
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(width, height);
+
+    this.applyTextQuality(config.textQuality ?? "medium");
+  }
+
+  private applyTextQuality(quality: TextQuality) {
+    if (typeof quality === "number") {
+      this.textQualityFactor = Math.max(0.1, quality);
+      return;
+    }
+    switch (quality) {
+      case "low":
+        this.textQualityFactor = 1;
+        break;
+      case "high":
+        this.textQualityFactor = 4;
+        break;
+      case "medium":
+      default:
+        this.textQualityFactor = 2;
+        break;
+    }
   }
 
   public mount(parent: HTMLElement) {
@@ -49,7 +72,7 @@ export class Renderer {
     this.canvas.style.top = "0";
     this.canvas.style.left = "0";
     this.canvas.style.pointerEvents = "none";
-    this.canvas.style.zIndex = "9999"; 
+    this.canvas.style.zIndex = "9999";
   }
 
   public dispose() {
@@ -87,7 +110,7 @@ export class Renderer {
       }
     }
   }
-  
+
   private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
     activeElements.add(node.element);
 
@@ -138,7 +161,8 @@ export class Renderer {
         node.textContent || "",
         node.textStyles!,
         node.rect.width,
-        node.rect.height
+        node.rect.height,
+        this.textQualityFactor
       );
 
       const textGeo = new THREE.PlaneGeometry(1, 1);

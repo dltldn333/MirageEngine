@@ -4,7 +4,9 @@ const target = document.querySelector("#root") as HTMLElement;
 // const container = document.querySelector("document.body") as HTMLElement;
 
 // const mirage = new Mirage(target, container);
-const mirage = new Mirage(target);
+const mirage = new Mirage(target, {
+  textQuality: "low",
+});
 
 mirage.start();
 
