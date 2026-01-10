@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { SceneNode, DIRTY_CONTENT } from "../types";
-import { createTextTexture } from "./TextTextureGenerator";
+import { createTextTexture } from "./utils/TextGenerator";
 
 export class Renderer {
   public readonly canvas: HTMLCanvasElement;
@@ -17,6 +17,7 @@ export class Renderer {
 
     const width = window.innerWidth;
     const height = window.innerHeight;
+
     // target duplicate mode
     // const width = target.parentElement!.clientWidth;
     // const height = target.parentElement!.clientHeight;
@@ -34,26 +35,27 @@ export class Renderer {
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
       alpha: true,
+      antialias: true,
     });
 
     this.renderer.setPixelRatio(window.devicePixelRatio);
-
     this.renderer.setSize(width, height);
   }
 
   public mount(parent: HTMLElement) {
     parent.appendChild(this.canvas);
+
+    this.canvas.style.position = "absolute";
+    this.canvas.style.top = "0";
+    this.canvas.style.left = "0";
+    this.canvas.style.pointerEvents = "none";
+    this.canvas.style.zIndex = "9999"; 
   }
 
   public dispose() {
-    try {
-      this.renderer.dispose();
-    } catch (e) {
-      // ignore
-    }
-    if (this.canvas.parentElement) {
-      this.canvas.parentElement.removeChild(this.canvas);
-    }
+    this.renderer.dispose();
+    this.canvas.remove();
+    // TODO: Scene 내부 Mesh들도 순회하며 dispose
   }
 
   public setSize(width: number, height: number) {
@@ -85,6 +87,7 @@ export class Renderer {
       }
     }
   }
+  
   private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
     activeElements.add(node.element);
 

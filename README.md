@@ -23,7 +23,6 @@ import { Mirage } from 'mirage-engine';
 
 const target = document.querySelector("#target") as HTMLElement;
 
-// Second argument 'container' is optional
 const mirage = new Mirage(target);
 
 mirage.start();

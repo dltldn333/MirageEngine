@@ -39,13 +39,19 @@
         display: block;
         border: 2px solid blue;
         background-color: #222;
-        height: 600px;
+      }
+
+      #test-btn {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
       }
     </style>
   </head>
   <body>
     <div id="root">
       <h1>mirage-engine 동기화 테스트 (+GSAP)</h1>
+      <button id="test-btn" onclick="alert('test')">테스트 버튼</button>
       <p>
         2초: 파란박스 색 변경 (CSS Transition) <br />
         4초: 노란박스 추가 (DOM 추가) <br />

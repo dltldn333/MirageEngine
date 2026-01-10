@@ -1,34 +1,29 @@
-import { Renderer } from "../renderer/Renderer";
-import { Syncer } from "./Syncer";
+import { MirageConfig } from "../types";
+import { Engine } from "./Engine";
 
 export class Mirage {
-  private renderer: Renderer;
-  private syncer: Syncer;
-  private target: HTMLElement;
+  private _engine: Engine;
 
-  constructor(target: HTMLElement, container?: HTMLElement) {
-    if (!target) {
-      throw new Error(`[Mirage] Target element is null or undefined.`);
+  constructor(element: HTMLElement, config: MirageConfig = {}) {
+    if (!element) {
+      throw new Error("[Mirage] Target element is required.");
     }
-    this.target = target;
-
-    this.renderer = new Renderer(this.target);
-
-    // when target duplicate mode
-    // this.renderer.mount(container ? container : this.target.parentElement!);
-
-    // when screen overlay mode
-    this.renderer.mount(container ? container : this.target.parentElement!);
-    
-    this.syncer = new Syncer(this.target, this.renderer);
+    this._engine = new Engine(element, config);
   }
 
-  public start() {
-    this.syncer.start();
+  public start(): void {
+    this._engine.start();
   }
 
-  public stop() {
-    this.syncer.stop();
-    this.renderer.dispose();
+
+  public stop(): void {
+    this._engine.stop();
+  }
+
+  /**
+   * 엔진 종료 및 메모리 해제
+   */
+  public destroy(): void {
+    this._engine.dispose();
   }
 }
