@@ -1,29 +1,29 @@
-import { Renderer } from "../renderer/Renderer";
-import { Syncer } from "./Syncer";
+import { MirageConfig } from "../types";
+import { Engine } from "./Engine";
 
 export class Mirage {
-  private renderer: Renderer;
-  private syncer: Syncer;
-  private target: HTMLElement;
+  private _engine: Engine;
 
-  constructor(selector: string) {
-    const el = document.querySelector<HTMLElement>(selector);
-    if (!el) {
-      throw new Error(`[Mirage] Element not found: ${selector}`);
+  constructor(element: HTMLElement, config: MirageConfig = {}) {
+    if (!element) {
+      throw new Error("[Mirage] Target element is required.");
     }
-    this.target = el;
-
-    this.renderer = new Renderer();
-    this.renderer.mount(document.body);
-    this.syncer = new Syncer(this.target, this.renderer);
+    this._engine = new Engine(element, config);
   }
 
-  public start() {
-    this.syncer.start();
+  public start(): void {
+    this._engine.start();
   }
 
-  public stop() {
-    this.syncer.stop();
-    this.renderer.dispose();
+
+  public stop(): void {
+    this._engine.stop();
+  }
+
+  /**
+   * 엔진 종료 및 메모리 해제
+   */
+  public destroy(): void {
+    this._engine.dispose();
   }
 }

@@ -11,7 +11,7 @@
       body {
         margin: 0;
         padding: 0;
-        font-family: sans-serif;
+        font-family: "Ariel", sans-serif;
         background-color: #f0f0f0;
         color: #333;
       }
@@ -21,17 +21,16 @@
         padding: 20px;
         border: 2px dashed #aaa;
         background-color: white;
-        /* GSAP 요소가 밖으로 나가는 것 방지 */
         overflow: hidden;
       }
 
       .box {
+        color: blue;
+        font-family: "Times New Roman", Times, serif;
         width: 100%;
         height: 60px;
         margin-top: 15px;
         box-sizing: border-box;
-        /* CSS 트랜지션이 켜져 있어도 GSAP가 우선권을 가지지만, 
-           명확한 테스트를 위해 유지합니다. */
         transition: all 0.5s ease;
       }
 
@@ -39,13 +38,19 @@
         display: block;
         border: 2px solid blue;
         background-color: #222;
-        height: 600px;
+      }
+
+      #test-btn {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
       }
     </style>
   </head>
   <body>
     <div id="root">
       <h1>mirage-engine 동기화 테스트 (+GSAP)</h1>
+      <button id="test-btn" onclick="alert('test')">테스트 버튼</button>
       <p>
         2초: 파란박스 색 변경 (CSS Transition) <br />
         4초: 노란박스 추가 (DOM 추가) <br />
@@ -84,14 +89,12 @@
     <script id="dom-manipulator-script">
       console.log("DOM 조작기: 테스트 시나리오 시작...");
 
-      // TEST 1: CSS 스타일 변경 (2초)
       setTimeout(() => {
         console.log("TEST 1: #box1 색상 변경 (CSS Transition)");
         const box1 = document.getElementById("box1");
         if (box1) box1.style.backgroundColor = "crimson";
       }, 2000);
 
-      // TEST 2: DOM 노드 추가 (4초)
       setTimeout(() => {
         console.log("TEST 2: #root에 새 박스 추가");
         const root = document.getElementById("root");
@@ -102,19 +105,17 @@
         if (root) root.appendChild(newBox);
       }, 4000);
 
-      // [신규] TEST 3: GSAP 외부 라이브러리 애니메이션 (6초)
       setTimeout(() => {
         console.log("TEST 3: GSAP 애니메이션 시작! (2초간 지속)");
         console.log(
           "-> 캔버스는 움직이지 않다가, 2초 뒤 끝난 위치로 순간이동 해야 성공!"
         );
 
-        // GSAP는 style 속성(transform 등)을 매 프레임 변경합니다.
         gsap.to("#box-gsap", {
-          x: 400, // 오른쪽으로 400px 이동
-          backgroundColor: "#FF5733", // 주황색으로 변경
-          rotation: 360, // 한 바퀴 회전 (V1은 회전 미지원이라 무시됨)
-          duration: 2, // 2초 동안 애니메이션
+          x: 400, 
+          backgroundColor: "#FF5733", 
+          rotation: 360, 
+          duration: 2, 
           ease: "power2.inOut",
         });
       }, 6000);
