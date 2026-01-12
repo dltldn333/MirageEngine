@@ -16,15 +16,21 @@ export class Renderer {
   private renderOrder: number = 0;
   private textQualityFactor: number = 2;
   private mode: MirageMode = "overlay";
+  private targetRect: DOMRect;
+  private target: HTMLElement;
 
   private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
 
   constructor(target: HTMLElement, config: MirageConfig) {
+    this.target = target;
+    this.mode = config.mode ?? "overlay";
+
     this.canvas = document.createElement("canvas");
     this.scene = new THREE.Scene();
 
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    this.targetRect = this.target.getBoundingClientRect();
+    const width = this.targetRect.width;
+    const height = this.targetRect.height;
 
     // target duplicate mode
     // const width = target.parentElement!.clientWidth;
@@ -77,14 +83,27 @@ export class Renderer {
     parent.appendChild(this.canvas);
 
     this.canvas.style.position = "absolute";
-    this.canvas.style.top = "0";
-    this.canvas.style.left = "0";
+
+    this.canvas.style.top = `${this.target.offsetTop}px`;
+    this.canvas.style.left = `${this.target.offsetLeft}px`;
+
     this.canvas.style.zIndex = "9999";
 
-    if (this.mode === "overlay") {
-      this.canvas.style.pointerEvents = "none";
+    this.canvas.style.pointerEvents = this.mode === "overlay" ? "none" : "auto";
+
+    this.updateCanvasLayout();
+  }
+
+  private updateCanvasLayout() {
+    this.canvas.style.width = `${this.targetRect.width}px`;
+    this.canvas.style.height = `${this.targetRect.height}px`;
+    if (this.mode === "duplicate") {
+      this.canvas.style.top = "0px";
+      this.canvas.style.left = "0px";
     } else {
-      this.canvas.style.pointerEvents = "auto";
+      // overlay mode
+      this.canvas.style.top = `${this.target.offsetTop}px`;
+      this.canvas.style.left = `${this.target.offsetLeft}px`;
     }
   }
 
@@ -106,6 +125,38 @@ export class Renderer {
   }
 
   public syncScene(graphNode: SceneNode) {
+    const newRect = this.target.getBoundingClientRect();
+
+  
+    const isResized =
+      Math.abs(newRect.width - this.targetRect.width) > 0.1 ||
+      Math.abs(newRect.height - this.targetRect.height) > 0.1;
+
+    const isMoved =
+      this.mode === "overlay" &&
+      (Math.abs(newRect.top - this.targetRect.top) > 0.1 ||
+        Math.abs(newRect.left - this.targetRect.left) > 0.1);
+
+    if (isResized) {
+      this.targetRect = newRect;
+      this.renderer.setSize(this.targetRect.width, this.targetRect.height);
+
+      this.camera.left = this.targetRect.width / -2;
+      this.camera.right = this.targetRect.width / 2;
+      this.camera.top = this.targetRect.height / 2;
+      this.camera.bottom = this.targetRect.height / -2;
+      this.camera.updateProjectionMatrix();
+
+      this.updateCanvasLayout();
+    }
+    else if (isMoved) {
+      this.targetRect = newRect;
+      this.updateCanvasLayout();
+    }
+    else {
+      this.targetRect = newRect;
+    }
+
     this.renderOrder = 0;
 
     const activeElements = new Set<HTMLElement>();
@@ -220,9 +271,12 @@ export class Renderer {
     const Z_MICRO_OFFSET = 0.001;
     this.renderOrder++;
 
+    const localX = rect.x - this.targetRect.left;
+    const localY = rect.y - this.targetRect.top;
+
     mesh.position.set(
-      rect.x - canvasWidth / 2 + rect.width / 2,
-      -rect.y + canvasHeight / 2 - rect.height / 2,
+      localX - canvasWidth / 2 + rect.width / 2,
+      -localY + canvasHeight / 2 - rect.height / 2,
       styles.zIndex + this.renderOrder * Z_MICRO_OFFSET
     );
 

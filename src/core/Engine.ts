@@ -9,17 +9,13 @@ export class Engine {
 
   constructor(target: HTMLElement, config: MirageConfig) {
     this.target = target;
+    const container = config.container || this.target.parentElement;
+    if (!container) {
+      throw new Error("[Mirage] Container element not found.");
+    }
 
     this.renderer = new Renderer(this.target, config);
-
-    // when target duplicate mode
-    // const container = config.container || this.target.parentElement!;
-
-    // when screen overlay mode
-    const container = config.container || document.body;
-    if (container) {
-      this.renderer.mount(container);
-    }
+    this.renderer.mount(container);
 
     this.syncer = new Syncer(this.target, this.renderer);
   }

@@ -1,5 +1,5 @@
 export type TextQuality = "low" | "medium" | "high" | number;
-export type MirageMode = "overlay" | "piece";
+export type MirageMode = "overlay" | "duplicate";
 
 export interface MirageConfig {
   container?: HTMLElement;
