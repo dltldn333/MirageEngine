@@ -6,6 +6,7 @@ const target = document.querySelector("#root") as HTMLElement;
 // const mirage = new Mirage(target, container);
 const mirage = new Mirage(target, {
   textQuality: "low",
+  mode: "overlay",
 });
 
 mirage.start();

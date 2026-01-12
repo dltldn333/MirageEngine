@@ -1,5 +1,11 @@
 import * as THREE from "three";
-import { SceneNode, DIRTY_CONTENT, TextQuality, MirageConfig } from "../types";
+import {
+  SceneNode,
+  DIRTY_CONTENT,
+  TextQuality,
+  MirageConfig,
+  MirageMode,
+} from "../types";
 import { createTextTexture } from "./utils/TextGenerator";
 
 export class Renderer {
@@ -8,8 +14,8 @@ export class Renderer {
   private readonly camera: THREE.OrthographicCamera;
   private readonly renderer: THREE.WebGLRenderer;
   private renderOrder: number = 0;
-
   private textQualityFactor: number = 2;
+  private mode: MirageMode = "overlay";
 
   private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
 
@@ -43,6 +49,8 @@ export class Renderer {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(width, height);
 
+    this.mode = config.mode ?? "overlay";
+
     this.applyTextQuality(config.textQuality ?? "medium");
   }
 
@@ -71,8 +79,13 @@ export class Renderer {
     this.canvas.style.position = "absolute";
     this.canvas.style.top = "0";
     this.canvas.style.left = "0";
-    this.canvas.style.pointerEvents = "none";
     this.canvas.style.zIndex = "9999";
+
+    if (this.mode === "overlay") {
+      this.canvas.style.pointerEvents = "none";
+    } else {
+      this.canvas.style.pointerEvents = "auto";
+    }
   }
 
   public dispose() {
