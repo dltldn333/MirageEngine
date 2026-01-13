@@ -16,14 +16,27 @@ export class Renderer {
   private renderOrder: number = 0;
   private textQualityFactor: number = 2;
   private mode: MirageMode = "overlay";
-  private targetRect: DOMRect;
+  private customZIndex: string = "9999";
+
   private target: HTMLElement;
+  private mountContainer: HTMLElement;
+  private targetRect: DOMRect;
 
   private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
 
-  constructor(target: HTMLElement, config: MirageConfig) {
+  constructor(
+    target: HTMLElement,
+    config: MirageConfig,
+    mountContainer: HTMLElement
+  ) {
     this.target = target;
+    this.mountContainer = mountContainer;
+
     this.mode = config.mode ?? "overlay";
+
+    if (config.style?.zIndex) {
+      this.customZIndex = config.style.zIndex;
+    }
 
     this.canvas = document.createElement("canvas");
     this.scene = new THREE.Scene();
@@ -55,8 +68,6 @@ export class Renderer {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(width, height);
 
-    this.mode = config.mode ?? "overlay";
-
     this.applyTextQuality(config.textQuality ?? "medium");
   }
 
@@ -79,16 +90,10 @@ export class Renderer {
     }
   }
 
-  public mount(parent: HTMLElement) {
-    parent.appendChild(this.canvas);
+  public mount() {
+    this.mountContainer.appendChild(this.canvas);
 
-    this.canvas.style.position = "absolute";
-
-    this.canvas.style.top = `${this.target.offsetTop}px`;
-    this.canvas.style.left = `${this.target.offsetLeft}px`;
-
-    this.canvas.style.zIndex = "9999";
-
+    this.canvas.style.zIndex = this.customZIndex;
     this.canvas.style.pointerEvents = this.mode === "overlay" ? "none" : "auto";
 
     this.updateCanvasLayout();
@@ -97,13 +102,18 @@ export class Renderer {
   private updateCanvasLayout() {
     this.canvas.style.width = `${this.targetRect.width}px`;
     this.canvas.style.height = `${this.targetRect.height}px`;
+
     if (this.mode === "duplicate") {
-      this.canvas.style.top = "0px";
-      this.canvas.style.left = "0px";
+      this.canvas.style.position = "";
+      this.canvas.style.top = "";
+      this.canvas.style.left = "";
+
+      this.canvas.style.display = "block";
     } else {
-      // overlay mode
+      this.canvas.style.position = "absolute";
       this.canvas.style.top = `${this.target.offsetTop}px`;
       this.canvas.style.left = `${this.target.offsetLeft}px`;
+      this.canvas.style.display = "block";
     }
   }
 
@@ -127,7 +137,6 @@ export class Renderer {
   public syncScene(graphNode: SceneNode) {
     const newRect = this.target.getBoundingClientRect();
 
-  
     const isResized =
       Math.abs(newRect.width - this.targetRect.width) > 0.1 ||
       Math.abs(newRect.height - this.targetRect.height) > 0.1;
@@ -148,12 +157,10 @@ export class Renderer {
       this.camera.updateProjectionMatrix();
 
       this.updateCanvasLayout();
-    }
-    else if (isMoved) {
+    } else if (isMoved) {
       this.targetRect = newRect;
       this.updateCanvasLayout();
-    }
-    else {
+    } else {
       this.targetRect = newRect;
     }
 
@@ -271,8 +278,11 @@ export class Renderer {
     const Z_MICRO_OFFSET = 0.001;
     this.renderOrder++;
 
-    const localX = rect.x - this.targetRect.left;
-    const localY = rect.y - this.targetRect.top;
+    const targetPageX = this.targetRect.left + window.scrollX;
+    const targetPageY = this.targetRect.top + window.scrollY;
+
+    const localX = rect.x - targetPageX;
+    const localY = rect.y - targetPageY;
 
     mesh.position.set(
       localX - canvasWidth / 2 + rect.width / 2,

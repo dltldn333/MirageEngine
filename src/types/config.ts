@@ -1,13 +1,21 @@
 export type TextQuality = "low" | "medium" | "high" | number;
 export type MirageMode = "overlay" | "duplicate";
 
-export interface MirageConfig {
-  container?: HTMLElement;
+interface BaseConfig {
   debug?: boolean;
   textQuality?: TextQuality;
-  /**
-   * Rendering mode
-   * @default 'overlay'
-   */
-  mode?: MirageMode;
+  style?: {
+    zIndex?: string;
+  };
 }
+
+export interface OverlayConfig extends BaseConfig {
+  mode?: "overlay"; 
+}
+
+export interface DuplicateConfig extends BaseConfig {
+  mode: "duplicate"; 
+  container?: HTMLElement; 
+}
+
+export type MirageConfig = OverlayConfig | DuplicateConfig;
