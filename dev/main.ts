@@ -15,6 +15,6 @@ mirage.start();
 //   mirage.stop();
 // }, 5000);
 
-function stopMirage() {
-  mirage.stop();
-}
+// function stopMirage() {
+//   mirage.stop();
+// }
