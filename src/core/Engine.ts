@@ -9,13 +9,23 @@ export class Engine {
 
   constructor(target: HTMLElement, config: MirageConfig) {
     this.target = target;
-    const container = config.container || this.target.parentElement;
-    if (!container) {
-      throw new Error("[Mirage] Container element not found.");
+
+    let mountContainer: HTMLElement | undefined;
+
+    if (config.mode === "duplicate") {
+      mountContainer =
+        config.container ?? this.target.parentElement ?? undefined;
+    } else {
+      mountContainer = this.target.parentElement ?? undefined;
     }
 
-    this.renderer = new Renderer(this.target, config);
-    this.renderer.mount(container);
+    if (!mountContainer) {
+      throw new Error("[Mirage] Cannot find a container (parent or option).");
+    }
+
+    this.renderer = new Renderer(this.target, config, mountContainer);
+
+    this.renderer.mount();
 
     this.syncer = new Syncer(this.target, this.renderer);
   }
