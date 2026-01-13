@@ -13,7 +13,7 @@ MirageEngine directly mirrors HTML DOM elements to WebGL objects. It observes DO
 ## Installation
 
 ```bash
-npm install mirage-engine
+npm install mirage-engine three
 ```
 
 ## Usage
