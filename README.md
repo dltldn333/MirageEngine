@@ -39,7 +39,7 @@ const container = document.querySelector("#container") as HTMLElement;
 
 const mirage = new Mirage(target, {
   textQuality: "low", //default is "medium" (== 2) ("low" | "medium" | "high" | number;)
-  mode: "overlay", //default is "overaly" ("overlay" | "duplicate")
+  mode: "duplicate", //default is "overaly" ("overlay" | "duplicate")
   container: container, //The container option is only available in "duplicate" mode.
 });
 
