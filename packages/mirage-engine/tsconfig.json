@@ -21,5 +21,9 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src", "packages/mirage-engine/dev"]
+  "include": [
+    "src",
+    "packages/mirage-engine/dev",
+    "../painter/src/TextGenerator.ts"
+  ]
 }

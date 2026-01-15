@@ -6,7 +6,7 @@ import {
   MirageConfig,
   MirageMode,
 } from "../types";
-import { createTextTexture } from "./utils/TextGenerator";
+import { createTextTexture } from "@mirage-engine/painter";
 
 export class Renderer {
   public readonly canvas: HTMLCanvasElement;

@@ -16,6 +16,10 @@ importers:
         version: 5.4.21
 
   packages/mirage-engine:
+    dependencies:
+      '@mirage-engine/painter':
+        specifier: workspace:*
+        version: link:../painter
     devDependencies:
       '@types/three':
         specifier: ^0.181.0
@@ -32,6 +36,12 @@ importers:
       vite-plugin-dts:
         specifier: ^4.5.4
         version: 4.5.4(rollup@4.55.1)(typescript@5.9.3)(vite@4.5.14)
+
+  packages/painter:
+    dependencies:
+      three:
+        specifier: ^0.160.0
+        version: 0.160.1
 
 packages:
 
@@ -826,6 +836,9 @@ packages:
   three@0.150.1:
     resolution: {integrity: sha512-5C1MqKUWaHYo13BX0Q64qcdwImgnnjSOFgBscOzAo8MYCzEtqfQqorEKMcajnA3FHy1yVlIe9AmaMQ0OQracNA==}
 
+  three@0.160.1:
+    resolution: {integrity: sha512-Bgl2wPJypDOZ1stAxwfWAcJ0WQf7QzlptsxkjYiURPz+n5k4RBDLsq+6f9Y75TYxn6aHLcWz+JNmwTOXWrQTBQ==}
+
   typescript@5.8.2:
     resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}
     engines: {node: '>=14.17'}
@@ -1584,6 +1597,8 @@ snapshots:
   supports-preserve-symlinks-flag@1.0.0: {}
 
   three@0.150.1: {}
+
+  three@0.160.1: {}
 
   typescript@5.8.2: {}
 
