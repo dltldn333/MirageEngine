@@ -1,5 +1,3 @@
-# MirageEngine
-
 <p align="center">
  <img  src="./.github/assets/mirage-engine.png" width="300px">
 </p>
@@ -11,6 +9,20 @@
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-Ready-blue.svg?color=black"></a>
 </p>
 
+# MirageEngine - Ecosystem
+
+MirageEngine is managed as a monorepo. Here are the packages currently available:
+
+| Package                                          | Version                                                                                                                             | Description                                               |
+| :----------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------- |
+| **[mirage-engine](./packages/mirage-engine)**    | [![npm](https://img.shields.io/npm/v/mirage-engine.svg?color=black)](https://www.npmjs.com/package/mirage-engine)                   | The core engine that mirrors HTML DOM to WebGL scene.     |
+| **[@mirage-engine/painter](./packages/painter)** | [![npm](https://img.shields.io/npm/v/@mirage-engine/painter.svg?color=black)](https://www.npmjs.com/package/@mirage-engine/painter) | A standalone text & style texture generator for Three.js. |
+
+---
+
+</br>
+
+# MirageEngine
 
 > **An engine that mirrors HTML DOM elements to a WebGL scene in real-time.**
 
