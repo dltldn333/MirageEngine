@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { TextStyles } from "../../mirage-engine/src/types";
+import { TextStyles } from "./types";
 
 function wrapText(
   ctx: CanvasRenderingContext2D,

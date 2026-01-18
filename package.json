@@ -1,0 +1,15 @@
+{
+  "name": "mirage-monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter mirage-engine dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "clean": "rm -rf node_modules packages/*/node_modules packages/*/dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vite": "^4.0.0",
+    "vite-plugin-dts": "^3.0.0"
+  }
+}

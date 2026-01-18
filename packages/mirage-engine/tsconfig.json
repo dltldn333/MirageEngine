@@ -3,9 +3,10 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@mirage-engine/painter": ["packages/painter/src/index.ts"],
+      "@mirage-engine/traveler": ["packages/traveler/src/index.ts"]
     },
     "jsx": "preserve"
   },
-  "include": ["src", "dev"]
+  "include": ["src", "dev", "vite.config.ts"]
 }

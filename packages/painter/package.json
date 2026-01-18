@@ -8,5 +8,8 @@
   },
   "peerDependencies": {
     "three": "^0.160.0"
+  },
+  "dependencies": {
+    "@types/three": "^0.181.0"
   }
 }
