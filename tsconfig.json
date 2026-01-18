@@ -1,0 +1,7 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/mirage-engine" },
+    { "path": "./packages/painter" }
+  ]
+}
