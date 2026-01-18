@@ -1,11 +1,18 @@
 # MirageEngine
 
-> **An engine that mirrors HTML DOM elements to a WebGL scene in real-time.**
+<p align="center">
+ <img  src="./.github/assets/mirage-engine.png" width="300px">
+</p>
 
-[![npm version](https://img.shields.io/npm/v/mirage-engine.svg?style=flat-square)](https://www.npmjs.com/package/mirage-engine)
-[![NPM Downloads](https://img.shields.io/npm/dm/mirage-engine.svg)](https://www.npmjs.org/package/mirage-engine)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
+<p align="center">
+  <a href="https://www.npmjs.com/package/mirage-engine"><img src="https://img.shields.io/npm/v/mirage-engine.svg?color=black"></a>
+  <a href="https://www.npmjs.org/package/mirage-engine"><img src="https://img.shields.io/npm/dm/mirage-engine.svg?color=black"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?color=black"></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-Ready-blue.svg?color=black"></a>
+</p>
+
+
+> **An engine that mirrors HTML DOM elements to a WebGL scene in real-time.**
 
 MirageEngine directly mirrors HTML DOM elements to WebGL objects. It observes DOM mutations and synchronizes position, style, and content in real-time, allowing standard HTML elements to exist within a WebGL context.
 
