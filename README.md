@@ -11,7 +11,8 @@
 
 # MirageEngine - Ecosystem
 
-MirageEngine is managed as a monorepo. Here are the packages currently available:
+MirageEngine is managed as a monorepo.
+ </br>Here are the core packages currently available:
 
 | Package                                          | Version                                                                                                                             | Description                                               |
 | :----------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------- |
