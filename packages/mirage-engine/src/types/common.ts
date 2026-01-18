@@ -1,3 +1,5 @@
+import { TextStyles } from "@mirage-engine/painter";
+
 export type NodeType = "BOX" | "TEXT"
 
 export interface NodeRect {
@@ -17,16 +19,6 @@ export interface BoxStyles {
   borderWidth: string;
 }
 
-// For CanvasRenderingContext2D
-export interface TextStyles {
-  font: string;
-  color: string;
-  textAlign: CanvasTextAlign;
-  textBaseline: CanvasTextBaseline;
-  direction: CanvasDirection;
-  lineHeight: number;    // px
-  letterSpacing: number; // px
-}
 
 export interface SceneNode {
   id: string;
