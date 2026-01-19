@@ -5,6 +5,16 @@ export interface TextStyles {
   textAlign: CanvasTextAlign;
   textBaseline: CanvasTextBaseline;
   direction: CanvasDirection;
-  lineHeight: number;    // px
+  lineHeight: number; // px
   letterSpacing: number; // px
+}
+
+export interface BoxStyles {
+  backgroundColor: string;
+  opacity: number;
+  zIndex: number;
+
+  borderRadius: string;
+  borderColor: string;
+  borderWidth: string;
 }
