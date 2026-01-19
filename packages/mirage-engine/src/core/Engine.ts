@@ -1,5 +1,5 @@
-import { MirageConfig } from "../types";
-import { Renderer } from "../renderer/Renderer";
+import { MirageConfig } from "@/types";
+import { Renderer } from "@/renderer/Renderer";
 import { Syncer } from "./Syncer";
 
 export class Engine {

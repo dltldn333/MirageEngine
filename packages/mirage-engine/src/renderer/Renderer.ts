@@ -5,7 +5,7 @@ import {
   TextQuality,
   MirageConfig,
   MirageMode,
-} from "../types";
+} from "@/types";
 import { createTextTexture } from "@mirage-engine/painter";
 
 export class Renderer {
