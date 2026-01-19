@@ -1,4 +1,4 @@
-import { TextStyle, BoxStyles } from "@mirage-engine/painter";
+import { TextStyles, BoxStyles } from "@mirage-engine/painter";
 
 export type NodeType = "BOX" | "TEXT"
 
