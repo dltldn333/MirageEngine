@@ -6,7 +6,7 @@ import {
   MirageConfig,
   MirageMode,
 } from "../types";
-import { Painter, createTextTexture } from "@mirage-engine/painter";
+import { Painter } from "@mirage-engine/painter";
 
 export class Renderer {
   public readonly canvas: HTMLCanvasElement;
@@ -235,13 +235,6 @@ export class Renderer {
         parentMesh.remove(textMesh);
       }
 
-      const texture = createTextTexture(
-        node.textContent || "",
-        node.textStyles!,
-        node.rect.width,
-        node.rect.height,
-        this.textQualityFactor,
-      );
 
    const material = Painter.create(
         "TEXT",

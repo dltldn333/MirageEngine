@@ -32,43 +32,31 @@ const fragmentShader = `
   }
 
   void main() {
-    // 중심점 기준 좌표 변환
     vec2 p = (vUv - 0.5) * uSize;
     vec2 halfSize = uSize * 0.5;
     
-    // SDF 거리 계산
     float d = sdRoundedBox(p, halfSize, uRadius);
     
-    // 안티앨리어싱 부드러운 경계 (1px)
     float smoothEdge = 1.0; 
 
-    // 1. 배경(Fill) 알파값 계산
-    // 테두리 안쪽(-uBorderWidth)에서부터 흐려짐
     float fillAlpha = 1.0 - smoothstep(-uBorderWidth - smoothEdge, -uBorderWidth, d);
     
-    // 2. 테두리(Border) 알파값 계산
     float borderAlpha = 0.0;
     
-    // ✨ [핵심 수정] 테두리 두께가 0보다 클 때만 테두리 값을 계산합니다.
     if (uBorderWidth > 0.01) {
       borderAlpha = (1.0 - smoothstep(0.0, smoothEdge, d)) - fillAlpha;
     }
 
-    // 3. 색상 믹싱 (0으로 나누기 방지 포함)
     vec3 color = uColor;
     float totalAlpha = borderAlpha + fillAlpha;
     
     if (totalAlpha > 0.001) {
-       // 테두리 비중에 따라 색상 섞기
        color = mix(uColor, uBorderColor, borderAlpha / totalAlpha);
     }
     
-    // 4. 최종 알파값 (배경 투명도 적용)
-    // 배경은 uBgOpacity를 곱하고, 테두리는 불투명(1.0)하게 유지
     float shapeAlpha = borderAlpha + (fillAlpha * uBgOpacity);
     float finalOpacity = shapeAlpha * uOpacity;
     
-    // 투명도 컷오프 (성능 최적화)
     if (finalOpacity < 0.001) discard;
 
     gl_FragColor = vec4(color, finalOpacity);
