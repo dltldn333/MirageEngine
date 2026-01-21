@@ -4,7 +4,7 @@ const target = document.querySelector("#root") as HTMLElement;
 const container = document.querySelector("#space") as HTMLElement;
 
 const mirage = new Mirage(target, {
-  textQuality: "low",
+  textQuality: 0.5,
   mode: "duplicate",
   container: container,
 });

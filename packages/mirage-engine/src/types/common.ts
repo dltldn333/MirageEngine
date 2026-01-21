@@ -1,4 +1,4 @@
-import { TextStyles } from "@mirage-engine/painter";
+import { TextStyles, BoxStyles } from "@mirage-engine/painter";
 
 export type NodeType = "BOX" | "TEXT"
 
@@ -9,15 +9,6 @@ export interface NodeRect {
   height: number;
 }
 
-export interface BoxStyles {
-  backgroundColor: string;
-  opacity: number;
-  zIndex: number;
-
-  borderRadius: string;
-  borderColor: string;
-  borderWidth: string;
-}
 
 
 export interface SceneNode {

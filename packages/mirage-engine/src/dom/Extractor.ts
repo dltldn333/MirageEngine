@@ -5,9 +5,9 @@ import {
   DIRTY_ZINDEX,
   DIRTY_STRUCTURE,
   SceneNode,
-  BoxStyles,
-  TextStyles,
-} from "../types";
+} from "@/types";
+
+import { BoxStyles, TextStyles } from "@mirage-engine/painter";
 
 // Helper function: getTextNodeRect, isValidTextNode, isLeafTextElement, extractTextStyles
 

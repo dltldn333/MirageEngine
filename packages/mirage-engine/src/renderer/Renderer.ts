@@ -6,7 +6,7 @@ import {
   MirageConfig,
   MirageMode,
 } from "../types";
-import { createTextTexture } from "@mirage-engine/painter";
+import { Painter } from "@mirage-engine/painter";
 
 export class Renderer {
   public readonly canvas: HTMLCanvasElement;
@@ -27,7 +27,7 @@ export class Renderer {
   constructor(
     target: HTMLElement,
     config: MirageConfig,
-    mountContainer: HTMLElement
+    mountContainer: HTMLElement,
   ) {
     this.target = target;
     this.mountContainer = mountContainer;
@@ -55,7 +55,7 @@ export class Renderer {
       height / 2,
       height / -2,
       1,
-      1000
+      1000,
     );
     this.camera.position.z = 100;
 
@@ -188,7 +188,14 @@ export class Renderer {
     let mesh = this.meshMap.get(node.element);
     if (!mesh) {
       const geometry = new THREE.PlaneGeometry(1, 1);
-      const material = new THREE.MeshBasicMaterial({ transparent: true });
+      const material = Painter.create(
+        "BOX",
+        node.styles,
+        "",
+        node.rect.width,
+        node.rect.height,
+      );
+
       mesh = new THREE.Mesh(geometry, material);
       if (node.type === "TEXT") mesh.name = "BG_MESH";
 
@@ -211,7 +218,7 @@ export class Renderer {
 
   private reconcileTextChild(parentMesh: THREE.Mesh, node: SceneNode) {
     let textMesh = parentMesh.children.find(
-      (c) => c.name === "TEXT_CHILD"
+      (c) => c.name === "TEXT_CHILD",
     ) as THREE.Mesh;
 
     const currentStyleHash = JSON.stringify(node.textStyles);
@@ -228,26 +235,22 @@ export class Renderer {
         parentMesh.remove(textMesh);
       }
 
-      const texture = createTextTexture(
+
+   const material = Painter.create(
+        "TEXT",
+        node.textStyles!, 
         node.textContent || "",
-        node.textStyles!,
         node.rect.width,
-        node.rect.height,
-        this.textQualityFactor
+        node.rect.height
       );
 
-      const textGeo = new THREE.PlaneGeometry(1, 1);
-      const textMat = new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        side: THREE.FrontSide,
-        color: 0xffffff,
-      });
+      const geometry = new THREE.PlaneGeometry(1, 1);
+      textMesh = new THREE.Mesh(geometry, material);
 
-      textMesh = new THREE.Mesh(textGeo, textMat);
       textMesh.name = "TEXT_CHILD";
       textMesh.userData = { styleHash: currentStyleHash };
-
+      
+      textMesh.position.z = 0.005; 
       parentMesh.add(textMesh);
     }
 
@@ -287,33 +290,16 @@ export class Renderer {
     mesh.position.set(
       localX - canvasWidth / 2 + rect.width / 2,
       -localY + canvasHeight / 2 - rect.height / 2,
-      styles.zIndex + this.renderOrder * Z_MICRO_OFFSET
+      styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     );
-
-    const material = mesh.material as THREE.MeshBasicMaterial;
-    const rawColor = styles.backgroundColor;
-    let safeColor = rawColor;
-    let alphaFromColor = 1.0;
-
-    if (rawColor === "transparent" || rawColor === "rgba(0, 0, 0, 0)") {
-      safeColor = "#ffffff";
-      alphaFromColor = 0.0;
-    } else if (rawColor.startsWith("rgba")) {
-      const rgba = rawColor.match(/[\d.]+/g);
-      if (rgba && rgba.length >= 4) {
-        const r = rgba[0];
-        const g = rgba[1];
-        const b = rgba[2];
-        alphaFromColor = parseFloat(rgba[3]);
-        safeColor = `rgb(${r}, ${g}, ${b})`;
-      }
-    }
-
-    const finalOpacity = styles.opacity * alphaFromColor;
-
-    material.color.set(safeColor);
-    material.opacity = finalOpacity;
-    material.transparent = finalOpacity < 1;
+    Painter.update(
+      mesh.material as THREE.Material,
+      "BOX",
+      node.styles,
+      "",
+      node.rect.width,
+      node.rect.height,
+    );
   }
 
   public render() {

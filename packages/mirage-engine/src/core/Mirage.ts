@@ -1,4 +1,4 @@
-import { MirageConfig } from "../types";
+import { MirageConfig } from "@/types";
 import { Engine } from "./Engine";
 
 export class Mirage {
