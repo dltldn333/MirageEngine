@@ -6,41 +6,45 @@ on:
       - main
   workflow_dispatch:
 
+
 permissions:
   contents: write
-  pull-requests: write
-  id-token: write
+  id-token: write 
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   release:
+    name: Release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: "https://registry.npmjs.org"
 
-      - name: Setup pnpm
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 9
+          version: 8
 
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Build All Packages
-        run: pnpm -r build
 
       - name: Create Release Pull Request or Publish
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: pnpm -r publish --access public --no-git-checks --provenance
-          commit: "chore: update versions"
-          title: "chore: version packages"
+          title: "Version Packages"
+          commit: "chore: version packages"
+
+          publish: pnpm run build && pnpm changeset publish --no-git-checks
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
