@@ -9,6 +9,11 @@
   "peerDependencies": {
     "three": "^0.160.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dltldn333/MirageEngine",
+    "directory": "packages/painter"
+  },
   "dependencies": {
     "@types/three": "^0.181.0"
   },

@@ -28,7 +28,7 @@ jobs:
       - name: Setup Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: 24
           registry-url: "https://registry.npmjs.org"
 
       - name: Install Dependencies
@@ -44,4 +44,5 @@ jobs:
           title: "Version Packages"
           commit: "chore: version packages"
           publish: pnpm changeset publish --no-git-checks
-
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
