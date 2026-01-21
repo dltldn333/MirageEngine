@@ -241,7 +241,8 @@ export class Renderer {
         node.textStyles!, 
         node.textContent || "",
         node.rect.width,
-        node.rect.height
+        node.rect.height,
+        this.textQualityFactor,
       );
 
       const geometry = new THREE.PlaneGeometry(1, 1);

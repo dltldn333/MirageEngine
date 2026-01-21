@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { TextStyles } from "@/types";
+import { TextStyles } from "./types";
 
 function wrapText(
   ctx: CanvasRenderingContext2D,
