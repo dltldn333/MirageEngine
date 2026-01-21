@@ -45,10 +45,6 @@ export class Renderer {
     const width = this.targetRect.width;
     const height = this.targetRect.height;
 
-    // target duplicate mode
-    // const width = target.parentElement!.clientWidth;
-    // const height = target.parentElement!.clientHeight;
-
     this.camera = new THREE.OrthographicCamera(
       width / -2,
       width / 2,
