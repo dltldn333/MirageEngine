@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
@@ -36,11 +36,12 @@
         margin-top: 15px;
         box-sizing: border-box;
         transition: all 0.5s ease;
+        border-radius: 8px;
       }
 
       canvas {
         display: block;
-        border: 2px solid blue;
+        /* border: 2px solid blue; */
         background-color: #222;
       }
 
@@ -48,6 +49,7 @@
         padding: 10px 20px;
         font-size: 16px;
         cursor: pointer;
+        border: 1px solid #333;
       }
     </style>
   </head>
@@ -113,7 +115,7 @@
       setTimeout(() => {
         console.log("TEST 3: GSAP 애니메이션 시작! (2초간 지속)");
         console.log(
-          "-> 캔버스는 움직이지 않다가, 2초 뒤 끝난 위치로 순간이동 해야 성공!"
+          "-> 캔버스는 움직이지 않다가, 2초 뒤 끝난 위치로 순간이동 해야 성공!",
         );
 
         gsap.to("#box-gsap", {

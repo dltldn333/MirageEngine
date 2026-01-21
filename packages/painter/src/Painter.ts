@@ -13,7 +13,6 @@ export const Painter = {
   ): THREE.Material {
     
     if (type === "BOX") {
-
       return createBoxMaterial(styles as BoxStyles, width, height);
     } 
     
@@ -28,8 +27,10 @@ export const Painter = {
       return new THREE.MeshBasicMaterial({ 
         map: texture, 
         transparent: true,
-        side: THREE.FrontSide
+        side: THREE.FrontSide,
+        color: 0xffffff,
       });
+
     }
     
     return new THREE.MeshBasicMaterial({ visible: false });
