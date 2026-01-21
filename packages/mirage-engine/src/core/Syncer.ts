@@ -5,7 +5,7 @@ import {
   DIRTY_RECT,
   DIRTY_STRUCTURE,
   DIRTY_STYLE,
-} from "@/types";
+} from "../types";
 
 export class Syncer {
   private target: HTMLElement;
