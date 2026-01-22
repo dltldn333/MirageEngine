@@ -1,5 +1,7 @@
 <p align="center">
- <img src="https://raw.githubusercontent.com/dltldn333/MirageEngine/main/.github/assets/mirage-engine.png" width="300px">
+<a href="https://www.npmjs.com/package/mirage-engine">
+ <img  src="https://raw.githubusercontent.com/dltldn333/MirageEngine/main/.github/assets/mirage-engine.png" width="300px">
+</a>
 </p>
 
 <p align="center">

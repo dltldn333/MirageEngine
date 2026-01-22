@@ -1,5 +1,7 @@
 <p align="center">
+<a href="https://www.npmjs.com/package/mirage-engine">
  <img  src="https://raw.githubusercontent.com/dltldn333/MirageEngine/main/.github/assets/mirage-engine.png" width="300px">
+</a>
 </p>
 
 <p align="center">
@@ -20,11 +22,11 @@ import { Painter } from "@mirage-engine/painter";
 const geometry = new THREE.PlaneGeometry(1, 1);
 
 const styles = {
-    backgroundColor: "#ff0000",
-    borderColor: "#000000",
-    borderWidth: 2,
-    borderRadius: 5,
-}
+  backgroundColor: "#ff0000",
+  borderColor: "#000000",
+  borderWidth: 2,
+  borderRadius: 5,
+};
 
 const material = Painter.create(
   "BOX",
