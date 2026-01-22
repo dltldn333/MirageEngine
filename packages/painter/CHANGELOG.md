@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 0.2.2
+
+### Patch Changes
+
+- 59d63ed: liking npm url for awesome
+
 ## 0.2.1
 
 ### Patch Changes

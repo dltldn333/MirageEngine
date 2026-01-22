@@ -1,5 +1,13 @@
 # mirage-engine
 
+## 0.2.10
+
+### Patch Changes
+
+- 59d63ed: liking npm url for awesome
+- Updated dependencies [59d63ed]
+  - @mirage-engine/painter@0.2.2
+
 ## 0.2.9
 
 ### Patch Changes
