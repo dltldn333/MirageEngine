@@ -1,5 +1,5 @@
 <p align="center">
- <img  src="./.github/assets/mirage-engine.png" width="300px">
+ <img src="https://raw.githubusercontent.com/dltldn333/MirageEngine/main/.github/assets/mirage-engine.png" width="300px">
 </p>
 
 <p align="center">
@@ -12,7 +12,7 @@
 # MirageEngine - Ecosystem
 
 MirageEngine is managed as a monorepo.
- </br>Here are the packages currently available:
+</br>Here are the packages currently available:
 
 | Package                                          | Version                                                                                                                             | Description                                               |
 | :----------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------- |

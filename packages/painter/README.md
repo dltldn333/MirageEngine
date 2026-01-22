@@ -1,6 +1,15 @@
-# @mirage-engine/painter
+<p align="center">
+ <img  src="https://raw.githubusercontent.com/dltldn333/MirageEngine/main/.github/assets/mirage-engine.png" width="300px">
+</p>
 
-[![npm](https://img.shields.io/npm/v/@mirage-engine/painter.svg?color=black)](https://www.npmjs.com/package/@mirage-engine/painter)
+<p align="center">
+  <a href="https://www.npmjs.com/package/@mirage-engine/painter"><img src="https://img.shields.io/npm/v/@mirage-engine/painter.svg?color=black"></a>
+  <a href="https://www.npmjs.org/package/@mirage-engine/painter"><img src="https://img.shields.io/npm/dm/@mirage-engine/painter.svg?color=black"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?color=black"></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-Ready-blue.svg?color=black"></a>
+</p>
+
+# @mirage-engine/painter
 
 A standalone text & style texture generator for Three.js.
 
