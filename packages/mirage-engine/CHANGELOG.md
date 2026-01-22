@@ -1,5 +1,13 @@
 # mirage-engine
 
+## 0.2.9
+
+### Patch Changes
+
+- 6d51113: update README image
+- Updated dependencies [6d51113]
+  - @mirage-engine/painter@0.2.1
+
 ## 0.2.8
 
 ### Patch Changes
