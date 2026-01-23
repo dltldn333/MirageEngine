@@ -2,5 +2,8 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
+  "/get-started/introduction": "pages/get-started/introduction.js",
+  "/get-started/quick-start": "pages/get-started/quick-start.js",
+  "/get-started/installation": "pages/get-started/installation.js",
   "/": "pages/index.js"
 }
