@@ -1,0 +1,31 @@
+
+# Usage
+
+## Use simple
+
+```ts
+import { Mirage } from "mirage-engine";
+
+const target = document.querySelector("#target") as HTMLElement;
+
+const mirage = new Mirage(target);
+
+mirage.start();
+```
+
+## Use option
+
+```ts
+import { Mirage } from "mirage-engine";
+
+const target = document.querySelector("#target") as HTMLElement;
+const container = document.querySelector("#container") as HTMLElement;
+
+const mirage = new Mirage(target, {
+  textQuality: "low", //default is "medium" (== 2) ("low" | "medium" | "high" | number;)
+  mode: "duplicate", //default is "overaly" ("overlay" | "duplicate")
+  container: container, //The container option is only available in "duplicate" mode.
+});
+
+mirage.start();
+```

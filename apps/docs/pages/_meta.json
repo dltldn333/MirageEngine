@@ -1,0 +1,13 @@
+{
+  "index": "Introduction",
+  "get-started": {
+    "title": "Get Started",
+    "type": "page"
+  },
+  "contact": {
+    "title": "Contact ↗",
+    "type": "page",
+    "href": "https://github.com/dltldn333/MirageEngine",
+    "newWindow": true
+  }
+}
