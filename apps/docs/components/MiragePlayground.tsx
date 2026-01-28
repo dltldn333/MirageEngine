@@ -266,7 +266,7 @@ mirage.start();
         theme="dark"
         customSetup={{
           dependencies: {
-            "mirage-engine": "0.2.8",
+            "mirage-engine": "0.2.11",
             three: "^0.150.0",
           },
         }}

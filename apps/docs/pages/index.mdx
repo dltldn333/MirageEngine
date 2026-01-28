@@ -1,29 +1,43 @@
-
-
-
-# MirageEngine - Ecosystem
-
-MirageEngine is managed as a monorepo.
-
-Here are the packages currently available:
-
-| Package                                          | Version                                                                                                                             | Description                                               |
-| :----------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------- |
-| **[mirage-engine](./packages/mirage-engine)**    | [![npm](https://img.shields.io/npm/v/mirage-engine.svg?color=black)](https://www.npmjs.com/package/mirage-engine)                   | The core engine that mirrors HTML DOM to WebGL scene.     |
-| **[@mirage-engine/painter](./packages/painter)** | [![npm](https://img.shields.io/npm/v/@mirage-engine/painter.svg?color=black)](https://www.npmjs.com/package/@mirage-engine/painter) | A standalone text & style texture generator for Three.js. |
-
+---
+title: Mirage Engine
 ---
 
+import { Cards, Card } from "nextra/components";
+import { MiragePlayground } from "../components/MiragePlayground";
+import Link from "next/link";
+import { Hero } from "../components/Hero";
 
-
-# MirageEngine
-
-> **An engine that mirrors HTML DOM elements to a WebGL scene in real-time.**
-
-MirageEngine directly mirrors HTML DOM elements to WebGL objects. It observes DOM mutations and synchronizes position, style, and content in real-time, allowing standard HTML elements to exist within a WebGL context.
-
-## Installation
-
-```bash
-npm install mirage-engine three
-```
+<Hero />
+<MiragePlayground />
+<Cards num={3}>
+  <Card
+    title="⚡️ Smart Syncer"
+    href="/core-concepts/syncer"
+    children={
+      <span style={{ display: "block", padding: "10px 0", color: "#888" }}>
+        MutationObserver with Bitmask tracking. 60fps responsiveness using dirty
+        rect optimization.
+      </span>
+    }
+  />
+  <Card
+    title="🎨 SDF Rendering"
+    href="/core-concepts/renderer"
+    children={
+      <span style={{ display: "block", padding: "10px 0", color: "#888" }}>
+        Crystal clear curves and borders using Signed Distance Functions. No
+        pixelation.
+      </span>
+    }
+  />
+  <Card
+    title="🧩 Zero Config"
+    href="/get-started/installation"
+    children={
+      <span style={{ display: "block", padding: "10px 0", color: "#888" }}>
+        Just <code>new Mirage(target)</code>. It automatically calculates layout
+        and style.
+      </span>
+    }
+  />
+</Cards>
