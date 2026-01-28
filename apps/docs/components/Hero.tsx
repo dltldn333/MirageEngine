@@ -2,343 +2,304 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 export function Hero() {
-  // 드로잉 애니메이션 설정 (건축 도면처럼 정교하게)
-  const draw = {
+  const GRID_SIZE = 60;
+
+  // 움직이는 선(Tracer) 설정
+  const tracerVariant = {
     hidden: { pathLength: 0, opacity: 0 },
-    visible: (i: number) => ({
-      pathLength: 1,
-      opacity: 1,
+    visible: (delay: number) => ({
+      pathLength: [0, 1, 1],
+      opacity: [0, 0.2, 0], // 아주 은은하게 (눈에 띄지 않도록)
       transition: {
-        pathLength: {
-          delay: i * 0.2,
-          type: "spring",
-          duration: 1.5,
-          bounce: 0,
-        },
-        opacity: { delay: i * 0.2, duration: 0.01 },
+        duration: 4,
+        ease: "easeInOut",
+        repeat: Infinity,
+        delay: delay,
+        repeatDelay: Math.random() * 5 + 3,
       },
     }),
   };
 
-  // 면(Plane)이 채워지는 애니메이션
-  const fillPlane = {
-    hidden: { opacity: 0 },
-    visible: (i: number) => ({
-      opacity: 0.1, // 은은하게 채워짐
-      transition: { delay: i * 0.5 + 1, duration: 1 },
-    }),
-  };
+  // 배경에 깔릴 선 위치
+  const horizontalLines = [120, 360, 540];
+  const verticalLines = [180, 480];
 
   return (
-    <div
-      style={{
-        backgroundColor: "#000",
-        color: "#fff",
-        minHeight: "80vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "4rem 2rem",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {/* 배경: 모눈종이 같은 그리드 (아주 옅게) */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          zIndex: 0,
-          backgroundImage:
-            "linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-          opacity: 0.2,
-          maskImage:
-            "radial-gradient(circle at center, black 40%, transparent 100%)", // 중앙만 보이게 마스킹
-        }}
-      />
-
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "5rem",
-          maxWidth: "1200px",
-          width: "100%",
-          zIndex: 10,
-          flexWrap: "wrap-reverse", // 모바일에서 텍스트가 위로 오게
-        }}
-      >
-        {/* --- [좌측] 추상적 설계도 그래픽 (Abstract Blueprint) --- */}
-        <div style={{ width: "400px", height: "400px", position: "relative" }}>
-          <motion.svg
-            viewBox="0 0 400 400"
-            style={{ width: "100%", height: "100%" }}
+    <div className="hero-container">
+      {/* === Layer 0: 정적 점선 격자 === */}
+      <svg className="grid-background">
+        <defs>
+          <pattern
+            id="grid-pattern"
+            width={GRID_SIZE}
+            height={GRID_SIZE}
+            patternUnits="userSpaceOnUse"
           >
-            {/* 1. 외곽 가이드라인 (점선) - 전체 영역 스캔 */}
-            <motion.rect
-              x="10"
-              y="10"
-              width="380"
-              height="380"
-              rx="2"
-              stroke="#444"
-              strokeWidth="1"
-              fill="transparent"
-              strokeDasharray="10 10"
-              variants={draw}
-              initial="hidden"
-              animate="visible"
-              custom={0}
-            />
-
-            {/* 2. 중심 구조선 (Crosshair) */}
-            <motion.line
-              x1="200"
-              y1="0"
-              x2="200"
-              y2="400"
-              stroke="#666"
-              strokeWidth="1"
-              variants={draw}
-              initial="hidden"
-              animate="visible"
-              custom={1}
-            />
-            <motion.line
-              x1="0"
-              y1="200"
-              x2="400"
-              y2="200"
-              stroke="#666"
-              strokeWidth="1"
-              variants={draw}
-              initial="hidden"
-              animate="visible"
-              custom={1}
-            />
-
-            {/* 3. 주요 레이아웃 박스 (실선) - DOM 요소 형상화 */}
-            <motion.rect
-              x="50"
-              y="50"
-              width="120"
-              height="120"
-              stroke="white"
-              strokeWidth="2"
-              fill="transparent"
-              variants={draw}
-              initial="hidden"
-              animate="visible"
-              custom={2}
-            />
-
-            <motion.rect
-              x="50"
-              y="230"
-              width="300"
-              height="120"
-              stroke="white"
-              strokeWidth="2"
-              fill="transparent"
-              variants={draw}
-              initial="hidden"
-              animate="visible"
-              custom={3}
-            />
-
-            <motion.rect
-              x="230"
-              y="50"
-              width="120"
-              height="120"
-              stroke="white"
-              strokeWidth="2"
-              fill="transparent"
-              variants={draw}
-              initial="hidden"
-              animate="visible"
-              custom={2.5}
-            />
-
-            {/* 4. 사각형 면 채우기 (Planes) - Reassemble 과정 */}
-            <motion.rect
-              x="50"
-              y="50"
-              width="120"
-              height="120"
-              fill="white"
-              variants={fillPlane}
-              initial="hidden"
-              animate="visible"
-              custom={2}
-            />
-            <motion.rect
-              x="230"
-              y="50"
-              width="120"
-              height="120"
-              fill="white"
-              variants={fillPlane}
-              initial="hidden"
-              animate="visible"
-              custom={2.5}
-            />
-            <motion.rect
-              x="50"
-              y="230"
-              width="300"
-              height="120"
-              fill="white"
-              variants={fillPlane}
-              initial="hidden"
-              animate="visible"
-              custom={3}
-            />
-
-            {/* 5. 디테일: 코너 포인트 (Anchor Points) - 노드 점 */}
-            {[
-              [50, 50],
-              [170, 50],
-              [50, 170],
-              [170, 170], // 첫 박스
-              [230, 50],
-              [350, 50],
-              [230, 170],
-              [350, 170], // 두번째 박스
-              [50, 230],
-              [350, 230],
-              [50, 350],
-              [350, 350], // 하단 박스
-            ].map((pos, i) => (
-              <motion.rect
-                key={i}
-                x={pos[0] - 3}
-                y={pos[1] - 3}
-                width="6"
-                height="6"
-                fill="#fff"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 2 + i * 0.05 }}
-              />
-            ))}
-
-            {/* 6. 치수선 (Measurement Lines) - 분석(Analyze) 느낌 */}
-            <motion.path
-              d="M 40 50 L 30 50 L 30 170 L 40 170"
-              stroke="#888"
+            <path
+              d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`}
               fill="none"
-              variants={draw}
-              initial="hidden"
-              animate="visible"
-              custom={4}
+              stroke="#222"
+              strokeWidth="1"
+              strokeDasharray="4 4"
             />
-            <motion.text
-              x="10"
-              y="115"
-              fill="#888"
-              fontSize="10"
-              fontFamily="monospace"
-              style={{ opacity: 0.7 }}
-            >
-              120px
-            </motion.text>
-          </motion.svg>
-        </div>
+          </pattern>
+        </defs>
+        <rect
+          width="100%"
+          height="100%"
+          fill="url(#grid-pattern)"
+          opacity="0.5"
+        />
+      </svg>
 
-        {/* --- [우측] 텍스트 정보 --- */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            textAlign: "left",
-            flex: 1,
-          }}
+      {/* === Layer 1: 은은하게 움직이는 추적선 === */}
+      <svg className="tracer-layer">
+        {horizontalLines.map((y, i) => (
+          <motion.line
+            key={`h-${i}`}
+            x1="0"
+            y1={y}
+            x2="100%"
+            y2={y}
+            stroke="#fff"
+            strokeWidth="1"
+            variants={tracerVariant}
+            initial="hidden"
+            animate="visible"
+            custom={i * 2}
+          />
+        ))}
+        {verticalLines.map((x, i) => (
+          <motion.line
+            key={`v-${i}`}
+            x1={x}
+            y1="0"
+            x2={x}
+            y2="100%"
+            stroke="#fff"
+            strokeWidth="1"
+            variants={tracerVariant}
+            initial="hidden"
+            animate="visible"
+            custom={i * 3 + 1}
+          />
+        ))}
+      </svg>
+
+      {/* === Layer 2: 컨텐츠 (로고 + 텍스트) === */}
+      <div className="content-wrapper">
+        {/* [좌측] 로고 영역 */}
+        <motion.div
+          className="logo-wrapper"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8 }}
         >
-          <div
+          {/* ✅ 파일명 수정 완료: mirage-logo.svg */}
+          {/* 반드시 apps/docs/public/mirage-logo.svg 위치에 파일이 있어야 합니다. */}
+          <Image
+            src="/mirage-logo.svg"
+            alt="Mirage Logo"
+            fill
             style={{
-              fontFamily: "monospace",
-              color: "#888",
-              marginBottom: "1.5rem",
-              borderLeft: "2px solid #333",
-              paddingLeft: "1rem",
+              objectFit: "contain",
+              filter: "drop-shadow(0 0 30px rgba(255,255,255,0.1))",
             }}
-          >
-            <div>Target: HTMLDivElement</div>
-            <div>
-              Status: <span style={{ color: "#4ade80" }}>Synchronized</span>
-            </div>
-            <div>FPS: 60.0</div>
+            priority
+          />
+        </motion.div>
+
+        {/* [우측] 텍스트 영역 */}
+        <div className="text-wrapper">
+          <div className="badge">
+            <span className="dot"></span>
+            <span>Structural Analysis Engine</span>
           </div>
 
-          <h1
-            style={{
-              fontSize: "clamp(3rem, 6vw, 5rem)",
-              fontWeight: "800",
-              lineHeight: 1,
-              letterSpacing: "-0.03em",
-              marginBottom: "2rem",
-              fontFamily: "sans-serif",
-            }}
-          >
-            Mirage Engine
-          </h1>
+          <h1 className="title">Mirage Engine</h1>
 
-          <p
-            style={{
-              fontSize: "1.1rem",
-              color: "#aaa",
-              maxWidth: "500px",
-              marginBottom: "3rem",
-              lineHeight: 1.7,
-            }}
-          >
-            DOM 요소를 3D 공간의 면(Plane)으로 재구축합니다. <br />
-            복잡한 레이어 계산은 엔진에게 맡기고, 당신은 설계에만 집중하세요.
+          <p className="description">
+            DOM의 구조를 점선 그리드 위에서 재해석합니다.
+            <br className="hidden-mobile" />
+            보이지 않는 설계를 시각적인 현실로 구현하세요.
           </p>
 
-          <div style={{ display: "flex", gap: "1rem" }}>
-            <Link
-              href="/get-started/quick-start"
-              style={{
-                padding: "14px 32px",
-                background: "#fff",
-                color: "#000",
-                borderRadius: "0px",
-                fontWeight: "bold",
-                textDecoration: "none",
-                fontSize: "1rem",
-                border: "1px solid #fff",
-              }}
-            >
-              Initialize System
+          <div className="button-group">
+            <Link href="/get-started/quick-start" className="btn btn-primary">
+              Documentation
             </Link>
             <a
               href="https://github.com/dltldn333/MirageEngine"
               target="_blank"
-              style={{
-                padding: "14px 32px",
-                background: "transparent",
-                color: "#fff",
-                borderRadius: "0px",
-                border: "1px solid #444",
-                fontWeight: "bold",
-                textDecoration: "none",
-                fontSize: "1rem",
-              }}
+              className="btn btn-secondary"
             >
-              View Blueprint
+              GitHub
             </a>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .hero-container {
+          background-color: #050505;
+          color: #fff;
+          min-height: 80vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 4rem 2rem;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .grid-background,
+        .tracer-layer {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+        }
+        .grid-background {
+          z-index: 0;
+          mask-image: radial-gradient(
+            circle at center,
+            black 40%,
+            transparent 100%
+          );
+        }
+        .tracer-layer {
+          z-index: 1;
+        }
+
+        /* === [PC 레이아웃: 가로 배치] === */
+        .content-wrapper {
+          display: flex;
+          flex-direction: row; /* 가로 정렬 (중요) */
+          align-items: center;
+          justify-content: center;
+          gap: 5rem;
+          max-width: 1200px;
+          width: 100%;
+          z-index: 10;
+          position: relative;
+        }
+
+        .logo-wrapper {
+          width: 280px;
+          height: 280px;
+          position: relative;
+          flex-shrink: 0; /* 공간이 좁아져도 찌그러지지 않음 */
+        }
+
+        .text-wrapper {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start; /* 왼쪽 정렬 */
+          text-align: left;
+          min-width: 300px;
+        }
+
+        .badge {
+          font-family: monospace;
+          color: #888;
+          margin-bottom: 1rem;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 0.9rem;
+        }
+        .dot {
+          width: 6px;
+          height: 6px;
+          background: #4ade80;
+          border-radius: 50%;
+        }
+
+        .title {
+          font-size: clamp(3rem, 5vw, 5rem);
+          font-weight: 800;
+          line-height: 1.1;
+          letter-spacing: -0.03em;
+          margin-bottom: 1.5rem;
+          font-family: sans-serif;
+        }
+
+        .description {
+          font-size: 1.1rem;
+          color: #aaa;
+          max-width: 500px;
+          margin-bottom: 2.5rem;
+          line-height: 1.6;
+        }
+
+        .button-group {
+          display: flex;
+          gap: 1rem;
+        }
+        .hidden-mobile {
+          display: block;
+        }
+
+        .btn {
+          padding: 14px 32px;
+          font-weight: bold;
+          text-decoration: none;
+          font-size: 1rem;
+          border-radius: 2px;
+          transition: all 0.2s;
+        }
+        .btn-primary {
+          background: #fff;
+          color: #000;
+          border: 1px solid #fff;
+        }
+        .btn-primary:hover {
+          background: #e5e5e5;
+        }
+        .btn-secondary {
+          background: transparent;
+          color: #fff;
+          border: 1px solid #444;
+        }
+        .btn-secondary:hover {
+          border-color: #fff;
+        }
+
+        /* === [모바일 레이아웃: 세로 배치 & 중앙 정렬] === */
+        @media (max-width: 900px) {
+          .content-wrapper {
+            flex-direction: column; /* 세로 정렬로 변경 */
+            text-align: center;
+            gap: 2rem;
+          }
+
+          .logo-wrapper {
+            width: 180px; /* 로고 크기 줄임 */
+            height: 180px;
+          }
+
+          .text-wrapper {
+            align-items: center; /* 가운데 정렬 */
+            text-align: center;
+          }
+
+          .button-group {
+            justify-content: center;
+            width: 100%;
+          }
+          .hidden-mobile {
+            display: none;
+          }
+          .title {
+            font-size: 2.5rem;
+          }
+        }
+      `}</style>
     </div>
   );
 }
