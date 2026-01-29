@@ -36,7 +36,7 @@ export const MiragePlayground = () => {
 
 .mini-site {
   width: 100%;
-  background-color: #ffffff;
+  // background-color: #ffffff;
   border-radius: 24px;
   border: 4px solid #000000;
   z-index: 10;
@@ -45,8 +45,7 @@ export const MiragePlayground = () => {
 
 .header {
   padding: 12px;
-  background-color: #eeeeee;
-  border-bottom: 2px solid #000000;
+  background-color: #dbdbdb;
   display: flex;
   gap: 6px;
 }
@@ -55,7 +54,7 @@ export const MiragePlayground = () => {
   width: 8px;
   height: 8px;
   background-color: #ff605c;
-  border-radius: 50%;
+  border-radius: 4px;
 }
 
 .body-content {
@@ -266,7 +265,7 @@ mirage.start();
         theme="dark"
         customSetup={{
           dependencies: {
-            "mirage-engine": "0.2.8",
+            "mirage-engine": "0.2.11",
             three: "^0.150.0",
           },
         }}

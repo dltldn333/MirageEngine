@@ -1,5 +1,13 @@
 {
-  "index": "Introduction",
+  "index": {
+    "title": "Home",
+    "type": "page",
+    "display": "hidden",
+    "theme": {
+      "layout": "full",
+      "timestamp": false
+    }
+  },
   "get-started": {
     "title": "Get Started",
     "type": "page"

@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@codesandbox/sandpack-react": "^2.20.0",
+    "framer-motion": "^12.29.2",
     "mirage-engine": "workspace:*",
     "next": "14.2.3",
     "nextra": "2.13.4",
