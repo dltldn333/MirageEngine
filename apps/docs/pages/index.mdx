@@ -8,36 +8,16 @@ import Link from "next/link";
 import { Hero } from "../components/Hero";
 
 <Hero />
+
+<h2
+  style={{
+    marginTop: "4rem",
+    marginBottom: "4rem",
+    textAlign: "center",
+    fontSize: "2.5rem",
+  }}
+>
+  Mirage Engine can do this and more!
+</h2>
+
 <MiragePlayground />
-<Cards num={3}>
-  <Card
-    title="⚡️ Smart Syncer"
-    href="/core-concepts/syncer"
-    children={
-      <span style={{ display: "block", padding: "10px 0", color: "#888" }}>
-        MutationObserver with Bitmask tracking. 60fps responsiveness using dirty
-        rect optimization.
-      </span>
-    }
-  />
-  <Card
-    title="🎨 SDF Rendering"
-    href="/core-concepts/renderer"
-    children={
-      <span style={{ display: "block", padding: "10px 0", color: "#888" }}>
-        Crystal clear curves and borders using Signed Distance Functions. No
-        pixelation.
-      </span>
-    }
-  />
-  <Card
-    title="🧩 Zero Config"
-    href="/get-started/installation"
-    children={
-      <span style={{ display: "block", padding: "10px 0", color: "#888" }}>
-        Just <code>new Mirage(target)</code>. It automatically calculates layout
-        and style.
-      </span>
-    }
-  />
-</Cards>
