@@ -1,29 +1,23 @@
-
-
-
-# MirageEngine - Ecosystem
-
-MirageEngine is managed as a monorepo.
-
-Here are the packages currently available:
-
-| Package                                          | Version                                                                                                                             | Description                                               |
-| :----------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------- |
-| **[mirage-engine](./packages/mirage-engine)**    | [![npm](https://img.shields.io/npm/v/mirage-engine.svg?color=black)](https://www.npmjs.com/package/mirage-engine)                   | The core engine that mirrors HTML DOM to WebGL scene.     |
-| **[@mirage-engine/painter](./packages/painter)** | [![npm](https://img.shields.io/npm/v/@mirage-engine/painter.svg?color=black)](https://www.npmjs.com/package/@mirage-engine/painter) | A standalone text & style texture generator for Three.js. |
-
+---
+title: Mirage Engine
 ---
 
+import { Cards, Card } from "nextra/components";
+import { MiragePlayground } from "../components/MiragePlayground";
+import Link from "next/link";
+import { Hero } from "../components/Hero";
 
+<Hero />
 
-# MirageEngine
+<h2
+  style={{
+    marginTop: "4rem",
+    marginBottom: "4rem",
+    textAlign: "center",
+    fontSize: "2.5rem",
+  }}
+>
+  Mirage Engine can do this and more!
+</h2>
 
-> **An engine that mirrors HTML DOM elements to a WebGL scene in real-time.**
-
-MirageEngine directly mirrors HTML DOM elements to WebGL objects. It observes DOM mutations and synchronizes position, style, and content in real-time, allowing standard HTML elements to exist within a WebGL context.
-
-## Installation
-
-```bash
-npm install mirage-engine three
-```
+<MiragePlayground />
