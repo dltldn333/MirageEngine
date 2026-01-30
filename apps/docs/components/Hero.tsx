@@ -212,27 +212,44 @@ export function Hero() {
           </p>
 
           <div style={{ display: "flex", gap: "1rem" }}>
-            <Link
-              href="/get-started/quick-start"
-              className="btn"
-              style={{
-                padding: "14px 32px",
-                fontWeight: "bold",
-                textDecoration: "none",
-                fontSize: "1rem",
-                borderRadius: "2px",
-                background: "rgba(255, 255, 255, 0.1)",
-                color: "#fff",
-                border: "1px solid #444",
+            <motion.div
+              whileHover={{
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+              }}
+              whileTap={{
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
               }}
             >
-              Documentation
-            </Link>
-            <a
+              <Link
+                href="/get-started/quick-start"
+                className="btn"
+                style={{
+                  display: "inline-block",
+                  padding: "14px 32px",
+                  fontWeight: "bold",
+                  textDecoration: "none",
+                  fontSize: "1rem",
+                  borderRadius: "2px",
+                  background: "rgba(255, 255, 255, 0.1)",
+                  color: "#fff",
+                  border: "1px solid #444",
+                }}
+              >
+                Documentation
+              </Link>
+            </motion.div>
+            <motion.a
               href="https://github.com/dltldn333/MirageEngine"
               target="_blank"
               className="btn"
+              whileHover={{
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+              }}
+              whileTap={{
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+              }}
               style={{
+                display: "inline-block",
                 padding: "14px 32px",
                 fontWeight: "bold",
                 textDecoration: "none",
@@ -244,7 +261,7 @@ export function Hero() {
               }}
             >
               GitHub
-            </a>
+            </motion.a>
           </div>
         </div>
       </div>
