@@ -1,5 +1,13 @@
 # docs
 
+## 1.0.3
+
+### Patch Changes
+
+- 69c2099: update docs
+- Updated dependencies [69c2099]
+  - mirage-engine@0.2.13
+
 ## 1.0.2
 
 ### Patch Changes

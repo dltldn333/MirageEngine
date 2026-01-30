@@ -1,5 +1,11 @@
 # mirage-engine
 
+## 0.2.13
+
+### Patch Changes
+
+- 69c2099: update docs
+
 ## 0.2.12
 
 ### Patch Changes
