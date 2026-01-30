@@ -66,7 +66,7 @@ export function Hero() {
             <path
               d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`}
               fill="none"
-              stroke="#222"
+              stroke="#777"
               strokeWidth="1"
               strokeDasharray="4 4"
             />
@@ -295,9 +295,9 @@ export function Hero() {
             gap: 2rem;
           }
 
-          .logo-wrapper {
-            width: 180px !important;
-            height: 180px !important;
+          :global(.logo-wrapper) {
+            width: 140px !important;
+            height: 140px !important;
           }
 
           .text-wrapper {

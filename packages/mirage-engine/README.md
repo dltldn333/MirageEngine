@@ -11,8 +11,7 @@
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-Ready-blue.svg?color=black"></a>
 </p>
 
-
-[Mirage Engine](https://mirage-engine.vercel.app/ko/get-started/introduction#live-demo)
+[Mirage Engine](https://mirage-engine.vercel.app/ko/)
 
 # MirageEngine
 
@@ -28,9 +27,7 @@ npm install mirage-engine three
 
 ## Usage
 
-
 [Live Demo](https://mirage-engine.vercel.app/ko/get-started/introduction#live-demo)
-
 
 ### Use simple
 
