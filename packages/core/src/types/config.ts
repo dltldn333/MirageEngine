@@ -18,4 +18,4 @@ export interface DuplicateConfig extends BaseConfig {
   container?: HTMLElement; 
 }
 
-export type MirageConfig = OverlayConfig | DuplicateConfig;
+export type CoreConfig = OverlayConfig | DuplicateConfig;

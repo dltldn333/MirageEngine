@@ -1,2 +1,2 @@
-export { Mirage } from "./core/Mirage";
-export { Engine} from "./core/Engine";
+export { Engine} from "./main/Engine";
+export * from "./types";

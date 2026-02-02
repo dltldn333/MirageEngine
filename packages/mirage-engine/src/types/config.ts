@@ -1,21 +1,6 @@
-export type TextQuality = "low" | "medium" | "high" | number;
-export type MirageMode = "overlay" | "duplicate";
+import type { CoreConfig } from '@mirage-engine/core';
+// import type { TravelerConfig } from '@mirage-engine/traveler';
 
-interface BaseConfig {
-  debug?: boolean;
-  textQuality?: TextQuality;
-  style?: {
-    zIndex?: string;
-  };
-}
 
-export interface OverlayConfig extends BaseConfig {
-  mode?: "overlay"; 
-}
-
-export interface DuplicateConfig extends BaseConfig {
-  mode: "duplicate"; 
-  container?: HTMLElement; 
-}
-
-export type MirageConfig = OverlayConfig | DuplicateConfig;
+export type MirageConfig = CoreConfig;
+// export type MirageConfig = CoreConfig | TravelerConfig;
