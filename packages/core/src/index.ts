@@ -1,2 +1,2 @@
-export { Engine} from "./main/Engine";
+export { Engine} from "./core/Engine";
 export * from "./types";

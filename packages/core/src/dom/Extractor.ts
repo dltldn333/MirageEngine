@@ -5,7 +5,7 @@ import {
   DIRTY_ZINDEX,
   DIRTY_STRUCTURE,
   SceneNode,
-} from "@/types";
+} from "../types";
 
 import { BoxStyles, TextStyles } from "@mirage-engine/painter";
 
