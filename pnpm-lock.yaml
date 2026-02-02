@@ -64,6 +64,15 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.9)
 
+  packages/core:
+    dependencies:
+      '@types/three':
+        specifier: ^0.181.0
+        version: 0.181.0
+      three:
+        specifier: ^0.160.0
+        version: 0.160.1
+
   packages/mirage-engine:
     dependencies:
       '@mirage-engine/painter':
