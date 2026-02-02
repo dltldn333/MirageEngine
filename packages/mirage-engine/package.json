@@ -26,7 +26,8 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@mirage-engine/painter": "workspace:*"
+    "@mirage-engine/painter": "workspace:*",
+    "@mirage-engine/core": "workspace:*"
   },
   "peerDependencies": {
     "three": "^0.150.0"

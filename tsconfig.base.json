@@ -19,7 +19,8 @@
 
     "baseUrl": ".",
     "paths": {
-      "@mirage-engine/painter": ["packages/painter/src/index.ts"]
+      "@mirage-engine/painter": ["packages/painter/src/index.ts"],
+      "@mirage-engine/core": ["packages/core/src/index.ts"]
     }
   }
 }

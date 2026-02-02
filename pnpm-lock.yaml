@@ -75,6 +75,9 @@ importers:
 
   packages/mirage-engine:
     dependencies:
+      '@mirage-engine/core':
+        specifier: workspace:*
+        version: link:../core
       '@mirage-engine/painter':
         specifier: workspace:*
         version: link:../painter

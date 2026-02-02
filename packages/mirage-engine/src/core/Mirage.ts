@@ -1,5 +1,5 @@
 import { MirageConfig } from "@/types";
-import { Engine } from "./Engine";
+import { Engine } from "@mirage-engine/core";
 
 export class Mirage {
   private _engine: Engine;
@@ -15,14 +15,10 @@ export class Mirage {
     this._engine.start();
   }
 
-
   public stop(): void {
     this._engine.stop();
   }
 
-  /**
-   * 엔진 종료 및 메모리 해제
-   */
   public destroy(): void {
     this._engine.dispose();
   }
