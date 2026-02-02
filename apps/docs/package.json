@@ -10,6 +10,7 @@
   "dependencies": {
     "@codesandbox/sandpack-react": "^2.20.0",
     "@vercel/analytics": "^1.6.1",
+    "@vercel/speed-insights": "^1.3.1",
     "framer-motion": "^12.29.2",
     "mirage-engine": "workspace:*",
     "next": "14.2.3",
