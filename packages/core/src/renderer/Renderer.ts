@@ -3,7 +3,7 @@ import {
   SceneNode,
   DIRTY_CONTENT,
   TextQuality,
-  MirageConfig,
+  CoreConfig,
   MirageMode,
 } from "../types";
 import { Painter } from "@mirage-engine/painter";
@@ -26,7 +26,7 @@ export class Renderer {
 
   constructor(
     target: HTMLElement,
-    config: MirageConfig,
+    config: CoreConfig,
     mountContainer: HTMLElement,
   ) {
     this.target = target;
@@ -235,10 +235,9 @@ export class Renderer {
         parentMesh.remove(textMesh);
       }
 
-
-   const material = Painter.create(
+      const material = Painter.create(
         "TEXT",
-        node.textStyles!, 
+        node.textStyles!,
         node.textContent || "",
         node.rect.width,
         node.rect.height,
@@ -250,8 +249,8 @@ export class Renderer {
 
       textMesh.name = "TEXT_CHILD";
       textMesh.userData = { styleHash: currentStyleHash };
-      
-      textMesh.position.z = 0.005; 
+
+      textMesh.position.z = 0.005;
       parentMesh.add(textMesh);
     }
 

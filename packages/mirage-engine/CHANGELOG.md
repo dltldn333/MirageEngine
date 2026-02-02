@@ -1,5 +1,23 @@
 # mirage-engine
 
+## 0.2.13
+
+### Patch Changes
+
+- 69c2099: update docs
+
+## 0.2.12
+
+### Patch Changes
+
+- 1d1c33c: docs update
+
+## 0.2.11
+
+### Patch Changes
+
+- 1eb7887: add Docs
+
 ## 0.2.10
 
 ### Patch Changes
