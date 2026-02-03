@@ -1,5 +1,14 @@
 # mirage-engine
 
+## 0.2.14
+
+### Patch Changes
+
+- a05073c: core package separation
+- Updated dependencies [a05073c]
+  - @mirage-engine/painter@0.2.3
+  - @mirage-engine/core@0.0.2
+
 ## 0.2.13
 
 ### Patch Changes
