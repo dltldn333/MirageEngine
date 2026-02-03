@@ -1,5 +1,5 @@
-import { MirageConfig } from "@/types";
-import { Renderer } from "@/renderer/Renderer";
+import { CoreConfig } from "../types";
+import { Renderer } from "../renderer/Renderer";
 import { Syncer } from "./Syncer";
 
 export class Engine {
@@ -7,7 +7,7 @@ export class Engine {
   private syncer: Syncer;
   private target: HTMLElement;
 
-  constructor(target: HTMLElement, config: MirageConfig) {
+  constructor(target: HTMLElement, config: CoreConfig) {
     this.target = target;
 
     let mountContainer: HTMLElement | undefined;
