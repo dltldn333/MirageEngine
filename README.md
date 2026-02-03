@@ -40,8 +40,6 @@ npm install mirage-engine three
 
 ## Usage
 
-[Live Demo](https://mirage-engine.vercel.app/ko/get-started/introduction#live-demo)
-
 ### Use simple
 
 ```ts
