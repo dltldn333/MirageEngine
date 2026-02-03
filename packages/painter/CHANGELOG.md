@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 0.2.3
+
+### Patch Changes
+
+- a05073c: core package separation
+
 ## 0.2.2
 
 ### Patch Changes
