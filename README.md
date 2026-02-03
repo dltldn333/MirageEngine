@@ -20,6 +20,7 @@ MirageEngine is managed as a monorepo.
 | :----------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------- |
 | **[mirage-engine](./packages/mirage-engine)**    | [![npm](https://img.shields.io/npm/v/mirage-engine.svg?color=black)](https://www.npmjs.com/package/mirage-engine)                   | The core engine that mirrors HTML DOM to WebGL scene.     |
 | **[@mirage-engine/painter](./packages/painter)** | [![npm](https://img.shields.io/npm/v/@mirage-engine/painter.svg?color=black)](https://www.npmjs.com/package/@mirage-engine/painter) | A standalone text & style texture generator for Three.js. |
+| **[@mirage-engine/core](./packages/core)** | [![npm](https://img.shields.io/npm/v/@mirage-engine/core.svg?color=black)](https://www.npmjs.com/package/@mirage-engine/core) | The core of mirage-engine. |
 
 ---
 
