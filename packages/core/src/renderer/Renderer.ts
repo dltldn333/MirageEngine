@@ -16,7 +16,6 @@ export class Renderer {
   private renderOrder: number = 0;
   private textQualityFactor: number = 2;
   private mode: MirageMode = "overlay";
-  private customZIndex: string = "9999";
 
   private target: HTMLElement;
   private mountContainer: HTMLElement;
@@ -33,10 +32,6 @@ export class Renderer {
     this.mountContainer = mountContainer;
 
     this.mode = config.mode ?? "overlay";
-
-    if (config.style?.zIndex) {
-      this.customZIndex = config.style.zIndex;
-    }
 
     this.canvas = document.createElement("canvas");
     this.scene = new THREE.Scene();
@@ -91,9 +86,8 @@ export class Renderer {
   }
 
   public mount() {
-    this.mountContainer.appendChild(this.canvas);
+    this.mountContainer.prepend(this.canvas);
 
-    this.canvas.style.zIndex = this.customZIndex;
     this.canvas.style.pointerEvents = this.mode === "overlay" ? "none" : "auto";
 
     this.updateCanvasLayout();
