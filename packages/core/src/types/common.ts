@@ -9,8 +9,6 @@ export interface NodeRect {
   height: number;
 }
 
-
-
 export interface SceneNode {
   id: string;
   type: NodeType;
@@ -23,6 +21,7 @@ export interface SceneNode {
   textStyles?: TextStyles;
 
   dirtyMask: number;
+  // TODO: SceneNode의 sort 로직 추가(아마도
   children: SceneNode[];
 }
 

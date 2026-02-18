@@ -101,7 +101,6 @@ export class Renderer {
       this.canvas.style.position = "";
       this.canvas.style.top = "";
       this.canvas.style.left = "";
-
       this.canvas.style.display = "block";
     } else {
       this.canvas.style.position = "absolute";
@@ -168,7 +167,6 @@ export class Renderer {
       if (!activeElements.has(el)) {
         this.scene.remove(mesh);
 
-        // Garbage Collection
         mesh.geometry.dispose();
         if (mesh.material instanceof THREE.Material) mesh.material.dispose();
         this.meshMap.delete(el);
