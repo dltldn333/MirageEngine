@@ -10,6 +10,11 @@ const mirage = new Mirage(target, {
 });
 
 mirage.start();
+// while (true) {
+//   setTimeout(() => {
+//     mirage.destroy();
+//   }, 5000);
+// }
 
 // setTimeout(() => {
 //   mirage.stop();
