@@ -6,7 +6,7 @@ function parsePixelValue(value: string | number): number {
   return parseFloat(value) || 0;
 }
 
-const vertexShader = `
+const vertexShader = /* glsl */`
   varying vec2 vUv;
   void main() {
     vUv = uv;
@@ -14,7 +14,8 @@ const vertexShader = `
   }
 `;
 
-const fragmentShader = `
+const fragmentShader = /* glsl */ `
+
   varying vec2 vUv;
   
   uniform vec2 uSize;
