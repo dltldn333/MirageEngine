@@ -26,13 +26,14 @@ const fragmentShader = /* glsl */ `
   uniform float uOpacity;
   uniform float uBgOpacity;
 
-  // SDF 박스 함수
+  // SDF box
   float sdRoundedBox(vec2 p, vec2 b, float r) {
     vec2 q = abs(p) - b + r;
     return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
   }
 
   void main() {
+    // uVu: (0.0, 0.0) ~ (1.0, 1.0)
     vec2 p = (vUv - 0.5) * uSize;
     vec2 halfSize = uSize * 0.5;
     
