@@ -42,7 +42,7 @@ const fragmentShader = /* glsl */ `
     // d == distance (returned border radius distance)
     float d = sdRoundedBox(p, halfSize, uRadius);
     
-
+    // 1px blur for anti-aliasing
     float smoothEdge = 1.0; 
 
     float fillAlpha = 1.0 - smoothstep(-uBorderWidth - smoothEdge, -uBorderWidth, d);
