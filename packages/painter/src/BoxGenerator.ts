@@ -38,8 +38,11 @@ const fragmentShader = /* glsl */ `
     vec2 p = (vUv - 0.5) * uSize;
     vec2 halfSize = uSize * 0.5;
     
+    // # border-radius
+    // d == distance (returned border radius distance)
     float d = sdRoundedBox(p, halfSize, uRadius);
     
+
     float smoothEdge = 1.0; 
 
     float fillAlpha = 1.0 - smoothstep(-uBorderWidth - smoothEdge, -uBorderWidth, d);
