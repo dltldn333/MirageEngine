@@ -33,8 +33,8 @@ const fragmentShader = /* glsl */ `
   }
 
   void main() {
-    // uVu: (0.0, 0.0) ~ (1.0, 1.0) center:(0.5, 0.5)
-    // p: 
+    // uVu: (0.0, 0.0) ~ (1.0, 1.0) / center:(0.5, 0.5)
+    // p: (-1.0, -1.0) ~ (1.0, 1.0) / 
     vec2 p = (vUv - 0.5) * uSize;
     vec2 halfSize = uSize * 0.5;
     
