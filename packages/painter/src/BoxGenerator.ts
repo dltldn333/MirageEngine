@@ -43,14 +43,16 @@ const fragmentShader = /* glsl */ `
     float d = sdRoundedBox(p, halfSize, uRadius);
     
     // 1px blur for anti-aliasing
-    float smoothEdge = 1.0; 
+    float aa = 1.0; 
 
-    float fillAlpha = 1.0 - smoothstep(-uBorderWidth - smoothEdge, -uBorderWidth, d);
+    // fill area
+    float fillAlpha = 1.0 - smoothstep(-uBorderWidth - aa, -uBorderWidth, d);
     
+    // border area
     float borderAlpha = 0.0;
     
     if (uBorderWidth > 0.01) {
-      borderAlpha = (1.0 - smoothstep(0.0, smoothEdge, d)) - fillAlpha;
+      borderAlpha = (1.0 - smoothstep(0.0, aa, d)) - fillAlpha;
     }
 
     vec3 color = uColor;
