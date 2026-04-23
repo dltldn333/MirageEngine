@@ -53,6 +53,7 @@ const fragmentShader = /* glsl */ `
     
     // if has border
     if (uBorderWidth > 0.01) {
+      // entire - fill
       borderAlpha = (1.0 - smoothstep(0.0, aa, d)) - fillAlpha;
     }
 
