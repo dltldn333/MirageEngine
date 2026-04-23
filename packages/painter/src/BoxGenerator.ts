@@ -45,6 +45,7 @@ const fragmentShader = /* glsl */ `
     // 1px blur for anti-aliasing
     float aa = 1.0; 
 
+    // A of rgba
     // Alpha == visible (0 or 1(without smoothstep))
 
     // fill area
@@ -59,7 +60,7 @@ const fragmentShader = /* glsl */ `
       borderAlpha = (1.0 - smoothstep(0.0, aa, d)) - fillAlpha;
     }
 
-
+  // R,G,B of rgba
     vec3 color = uColor;
     float totalAlpha = borderAlpha + fillAlpha;
     
