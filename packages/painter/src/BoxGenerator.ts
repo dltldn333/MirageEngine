@@ -45,7 +45,7 @@ const fragmentShader = /* glsl */ `
     // 1px blur for anti-aliasing
     float aa = 1.0; 
 
-    // Alpha == visible (0 or 1)
+    // Alpha == visible (0 or 1(without smootstep))
 
     // fill area
     float fillAlpha = 1.0 - smoothstep(-uBorderWidth - aa, -uBorderWidth, d);
