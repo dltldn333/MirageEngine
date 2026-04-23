@@ -60,8 +60,9 @@ const fragmentShader = /* glsl */ `
       borderAlpha = (1.0 - smoothstep(0.0, aa, d)) - fillAlpha;
     }
 
-  // R,G,B of rgba
+    // R,G,B of rgba
     vec3 color = uColor;
+    
     float totalAlpha = borderAlpha + fillAlpha;
     
     if (totalAlpha > 0.001) {
