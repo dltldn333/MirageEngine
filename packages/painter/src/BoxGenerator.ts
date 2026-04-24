@@ -87,6 +87,8 @@ function parseColor(colorStr: string) {
     /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/,
   );
 
+  console.log(rgbaMatch)
+
   if (rgbaMatch) {
     const r = parseInt(rgbaMatch[1], 10);
     const g = parseInt(rgbaMatch[2], 10);
@@ -106,6 +108,9 @@ export function createBoxMaterial(
 ): THREE.ShaderMaterial {
   const parsedBg = parseColor(styles.backgroundColor);
   const parsedBorder = parseColor(styles.borderColor);
+
+
+  console.log(parsedBorder.color )
 
   const uniforms = {
     uSize: { value: new THREE.Vector2(width, height) },
@@ -138,6 +143,9 @@ export function updateBoxMaterial(
   const parsedBorder = parseColor(styles.borderColor);
 
   material.uniforms.uSize.value.set(width, height);
+
+  // for 4side radius
+  console.log(parsePixelValue(styles.borderRadius), "test")
 
   material.uniforms.uRadius.value = parsePixelValue(styles.borderRadius);
   material.uniforms.uBorderWidth.value = parsePixelValue(styles.borderWidth);
