@@ -98,8 +98,7 @@ const fragmentShader = /* glsl */ `
 
     gl_FragColor = vec4(color, finalOpacity);
 
-    
-    gl_FragColor = vec4(color, finalOpacity);
+    #include <colorspace_fragment>
 
     // float debugValue = uRadius.x / 20.0;
     // gl_FragColor = vec4(debugValue, 0.0, 0.0, 1.0);
