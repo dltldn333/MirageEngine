@@ -147,41 +147,23 @@ export function updateBoxMaterial(
   // for 4side radius
   const rawRadius = styles.borderRadius;
 
-  
-  const radiusArr = rawRadius.split('/')[0].trim().split(/\s+/).map(parsePixelValue);
-  console.log(radiusArr.length)
 
-  let tl, tr, br, bl;
-
+function setBorderRadius(target, radius:string) {
+  const radiusArr = Radius.split('/')[0].trim().split(/\s+/).map(parsePixelValue);
   switch (radiusArr.length) {
-  case 1: 
-    tl = tr = br = bl = radiusArr[0]; 
-    break;
-  case 2: 
-    tl = br = radiusArr[0]; 
-    tr = bl = radiusArr[1]; 
-    break;
-  case 3: 
-    tl = radiusArr[0]; 
-    tr = bl = radiusArr[1]; 
-    br = radiusArr[2]; 
-    break;
-  case 4: 
-    tl = radiusArr[0]; 
-    tr = radiusArr[1]; 
-    br = radiusArr[2]; 
-    bl = radiusArr[3]; 
-    break;
-  default:
-    tl = tr = br = bl = 0;
+    case 1: target.set(arr[0], arr[0], arr[0], arr[0]); break;
+    case 2: target.set(arr[0], arr[1], arr[0], arr[1]); break;
+    case 3: target.set(arr[0], arr[1], arr[2], arr[1]); break;
+    case 4: target.set(arr[0], arr[1], arr[2], arr[3]); break;
+    default: target.set(0, 0, 0, 0);
+  }
 }
-
-console.log(tl, tr, br,bl)
 
   ////////
 
 
-  material.uniforms.uRadius.value = parsePixelValue(styles.borderRadius);
+  // material.uniforms.uRadius.value = parsePixelValue(styles.borderRadius);
+  setBorderRadius(material.uniforms.uRadius.value, styles.borderRadius)
   material.uniforms.uBorderWidth.value = parsePixelValue(styles.borderWidth);
 
   material.uniforms.uColor.value.copy(parsedBg.color);
