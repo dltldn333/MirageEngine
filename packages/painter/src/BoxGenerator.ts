@@ -49,53 +49,60 @@ const fragmentShader = /* glsl */ `
 
   void main() {
     // uVu: (0.0, 0.0) ~ (1.0, 1.0) / center: (0.5, 0.5)
-    // // p: (-1.0, -1.0) ~ (1.0, 1.0) / center: (0.0, 0.0)
-    // vec2 p = (vUv - 0.5) * uSize;
-    // vec2 halfSize = uSize * 0.5;
+    // p: (-1.0, -1.0) ~ (1.0, 1.0) / center: (0.0, 0.0)
+    vec2 p = (vUv - 0.5) * uSize;
+    vec2 halfSize = uSize * 0.5;
     
-    // // # border-radius
-    // // d == distance (returned border radius distance)
-    // float d = sdRoundedBox(p, halfSize, uRadius);
-    
-    // // 1px blur for anti-aliasing
-    // float aa = 1.0; 
+    // # border-radius
+    // d == distance (returned border radius distance)
+    //======================
+    // uRadius -> tl, tr, br, bl
 
-    // // A of rgba
-    // // Alpha == visible (0 or 1(without smoothstep))
+    vec2 xRadii = mix(uRadius.xw, uRadius.yz, step(0.0, p.x));
+    float r = mix(xRadii.y, xRadii.x, step(0.0, p.y));
 
-    // // fill area
-    // float fillAlpha = 1.0 - smoothstep(-uBorderWidth - aa, -uBorderWidth, d);
-    
-    // // border area
-    // float borderAlpha = 0.0;
-    
-    // // if has border
-    // if (uBorderWidth > 0.01) {
-    //   // entire - fill
-    //   borderAlpha = (1.0 - smoothstep(0.0, aa, d)) - fillAlpha;
-    // }
+    float d = sdRoundedBox(p, halfSize, r);
 
-    // // R,G,B of rgba
-    // vec3 color = uColor;
-    
-    // float totalAlpha = borderAlpha + fillAlpha;
-    
-    // if (totalAlpha > 0.001) {
-    //    color = mix(uColor, uBorderColor, borderAlpha / totalAlpha);
-    // }
-    
-    // float shapeAlpha = borderAlpha + (fillAlpha * uBgOpacity);
-    // float finalOpacity = shapeAlpha * uOpacity;
-    
-    // if (finalOpacity < 0.001) discard;
+    //======================
+    // 1px blur for anti-aliasing
+    float aa = 1.0; 
 
-    // gl_FragColor = vec4(color, finalOpacity);
+    // A of rgba
+    // Alpha == visible (0 or 1(without smoothstep))
+
+    // fill area
+    float fillAlpha = 1.0 - smoothstep(-uBorderWidth - aa, -uBorderWidth, d);
+    
+    // border area
+    float borderAlpha = 0.0;
+    
+    // if has border
+    if (uBorderWidth > 0.01) {
+      // entire - fill
+      borderAlpha = (1.0 - smoothstep(0.0, aa, d)) - fillAlpha;
+    }
+
+    // R,G,B of rgba
+    vec3 color = uColor;
+    
+    float totalAlpha = borderAlpha + fillAlpha;
+    
+    if (totalAlpha > 0.001) {
+       color = mix(uColor, uBorderColor, borderAlpha / totalAlpha);
+    }
+    
+    float shapeAlpha = borderAlpha + (fillAlpha * uBgOpacity);
+    float finalOpacity = shapeAlpha * uOpacity;
+    
+    if (finalOpacity < 0.001) discard;
+
+    gl_FragColor = vec4(color, finalOpacity);
 
     
-    // gl_FragColor = vec4(color, finalOpacity);
+    gl_FragColor = vec4(color, finalOpacity);
 
-    float debugValue = uRadius.x / 20.0;
-    gl_FragColor = vec4(debugValue, 0.0, 0.0, 1.0);
+    // float debugValue = uRadius.x / 20.0;
+    // gl_FragColor = vec4(debugValue, 0.0, 0.0, 1.0);
   }
 `;
 
