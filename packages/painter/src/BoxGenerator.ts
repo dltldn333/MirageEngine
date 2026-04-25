@@ -87,7 +87,7 @@ function parseColor(colorStr: string) {
     /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/,
   );
 
-  console.log(rgbaMatch)
+  // console.log(rgbaMatch)
 
   if (rgbaMatch) {
     const r = parseInt(rgbaMatch[1], 10);
@@ -110,7 +110,7 @@ export function createBoxMaterial(
   const parsedBorder = parseColor(styles.borderColor);
 
 
-  console.log(parsedBorder.color )
+  // console.log(parsedBorder.color )
 
   const uniforms = {
     uSize: { value: new THREE.Vector2(width, height) },
@@ -145,7 +145,41 @@ export function updateBoxMaterial(
   material.uniforms.uSize.value.set(width, height);
 
   // for 4side radius
-  console.log(parsePixelValue(styles.borderRadius), "test")
+  const rawRadius = styles.borderRadius;
+
+  
+  const radiusArr = rawRadius.split('/')[0].trim().split(/\s+/).map(parsePixelValue);
+  console.log(radiusArr.length)
+
+  let tl, tr, br, bl;
+
+  switch (radiusArr.length) {
+  case 1: 
+    tl = tr = br = bl = radiusArr[0]; 
+    break;
+  case 2: 
+    tl = br = radiusArr[0]; 
+    tr = bl = radiusArr[1]; 
+    break;
+  case 3: 
+    tl = radiusArr[0]; 
+    tr = bl = radiusArr[1]; 
+    br = radiusArr[2]; 
+    break;
+  case 4: 
+    tl = radiusArr[0]; 
+    tr = radiusArr[1]; 
+    br = radiusArr[2]; 
+    bl = radiusArr[3]; 
+    break;
+  default:
+    tl = tr = br = bl = 0;
+}
+
+console.log(tl, tr, br,bl)
+
+  ////////
+
 
   material.uniforms.uRadius.value = parsePixelValue(styles.borderRadius);
   material.uniforms.uBorderWidth.value = parsePixelValue(styles.borderWidth);
