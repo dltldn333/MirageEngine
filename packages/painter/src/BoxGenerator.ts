@@ -7,15 +7,17 @@ function parsePixelValue(value: string | number): number {
 }
 
 function setBorderRadius(target, radius:string) {
-  const arr = radius.split('/')[0].trim().split(/\s+/).map(parsePixelValue);
-  console.log(arr)
-  switch (arr.length) {
-    case 1: target.set(arr[0], arr[0], arr[0], arr[0]); break;
-    case 2: target.set(arr[0], arr[1], arr[0], arr[1]); break;
-    case 3: target.set(arr[0], arr[1], arr[2], arr[1]); break;
-    case 4: target.set(arr[0], arr[1], arr[2], arr[3]); break;
-    default: target.set(0, 0, 0, 0);
+  if (!radius) {
+    target.set(0, 0, 0, 0);
+    return;
   }
+  const arr = radius.split('/')[0].trim().split(/\s+/);
+  const tl = parsePixelValue(arr[0]);
+  const tr = parsePixelValue(arr[1] ?? arr[0]);
+  const br = parsePixelValue(arr[2] ?? arr[0]);
+  const bl = parsePixelValue(arr[3] ?? arr[1] ?? arr[0]);
+
+  target.set(tl, tr, br, bl);
 }
 
 
