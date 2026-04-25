@@ -6,6 +6,19 @@ function parsePixelValue(value: string | number): number {
   return parseFloat(value) || 0;
 }
 
+function setBorderRadius(target, radius:string) {
+  const arr = radius.split('/')[0].trim().split(/\s+/).map(parsePixelValue);
+  console.log(arr)
+  switch (arr.length) {
+    case 1: target.set(arr[0], arr[0], arr[0], arr[0]); break;
+    case 2: target.set(arr[0], arr[1], arr[0], arr[1]); break;
+    case 3: target.set(arr[0], arr[1], arr[2], arr[1]); break;
+    case 4: target.set(arr[0], arr[1], arr[2], arr[3]); break;
+    default: target.set(0, 0, 0, 0);
+  }
+}
+
+
 const vertexShader = /* glsl */`
   varying vec2 vUv;
   void main() {
@@ -19,7 +32,7 @@ const fragmentShader = /* glsl */ `
   varying vec2 vUv;
   
   uniform vec2 uSize;
-  uniform float uRadius;
+  uniform vec4 uRadius;
   uniform float uBorderWidth;
   uniform vec3 uColor;
   uniform vec3 uBorderColor;
@@ -34,47 +47,53 @@ const fragmentShader = /* glsl */ `
 
   void main() {
     // uVu: (0.0, 0.0) ~ (1.0, 1.0) / center: (0.5, 0.5)
-    // p: (-1.0, -1.0) ~ (1.0, 1.0) / center: (0.0, 0.0)
-    vec2 p = (vUv - 0.5) * uSize;
-    vec2 halfSize = uSize * 0.5;
+    // // p: (-1.0, -1.0) ~ (1.0, 1.0) / center: (0.0, 0.0)
+    // vec2 p = (vUv - 0.5) * uSize;
+    // vec2 halfSize = uSize * 0.5;
     
-    // # border-radius
-    // d == distance (returned border radius distance)
-    float d = sdRoundedBox(p, halfSize, uRadius);
+    // // # border-radius
+    // // d == distance (returned border radius distance)
+    // float d = sdRoundedBox(p, halfSize, uRadius);
     
-    // 1px blur for anti-aliasing
-    float aa = 1.0; 
+    // // 1px blur for anti-aliasing
+    // float aa = 1.0; 
 
-    // A of rgba
-    // Alpha == visible (0 or 1(without smoothstep))
+    // // A of rgba
+    // // Alpha == visible (0 or 1(without smoothstep))
 
-    // fill area
-    float fillAlpha = 1.0 - smoothstep(-uBorderWidth - aa, -uBorderWidth, d);
+    // // fill area
+    // float fillAlpha = 1.0 - smoothstep(-uBorderWidth - aa, -uBorderWidth, d);
     
-    // border area
-    float borderAlpha = 0.0;
+    // // border area
+    // float borderAlpha = 0.0;
     
-    // if has border
-    if (uBorderWidth > 0.01) {
-      // entire - fill
-      borderAlpha = (1.0 - smoothstep(0.0, aa, d)) - fillAlpha;
-    }
+    // // if has border
+    // if (uBorderWidth > 0.01) {
+    //   // entire - fill
+    //   borderAlpha = (1.0 - smoothstep(0.0, aa, d)) - fillAlpha;
+    // }
 
-    // R,G,B of rgba
-    vec3 color = uColor;
+    // // R,G,B of rgba
+    // vec3 color = uColor;
     
-    float totalAlpha = borderAlpha + fillAlpha;
+    // float totalAlpha = borderAlpha + fillAlpha;
     
-    if (totalAlpha > 0.001) {
-       color = mix(uColor, uBorderColor, borderAlpha / totalAlpha);
-    }
+    // if (totalAlpha > 0.001) {
+    //    color = mix(uColor, uBorderColor, borderAlpha / totalAlpha);
+    // }
     
-    float shapeAlpha = borderAlpha + (fillAlpha * uBgOpacity);
-    float finalOpacity = shapeAlpha * uOpacity;
+    // float shapeAlpha = borderAlpha + (fillAlpha * uBgOpacity);
+    // float finalOpacity = shapeAlpha * uOpacity;
     
-    if (finalOpacity < 0.001) discard;
+    // if (finalOpacity < 0.001) discard;
 
-    gl_FragColor = vec4(color, finalOpacity);
+    // gl_FragColor = vec4(color, finalOpacity);
+
+    
+    // gl_FragColor = vec4(color, finalOpacity);
+
+    float debugValue = uRadius.x / 20.0;
+    gl_FragColor = vec4(debugValue, 0.0, 0.0, 1.0);
   }
 `;
 
@@ -114,13 +133,16 @@ export function createBoxMaterial(
 
   const uniforms = {
     uSize: { value: new THREE.Vector2(width, height) },
-    uRadius: { value: parsePixelValue(styles.borderRadius) },
+    uRadius: { value: new THREE.Vector4(0, 0, 0, 0) },
     uBorderWidth: { value: parsePixelValue(styles.borderWidth) },
     uColor: { value: parsedBg.color },
     uBorderColor: { value: parsedBorder.color },
     uOpacity: { value: styles.opacity ?? 1.0 },
     uBgOpacity: { value: parsedBg.alpha },
   };
+
+  // border radius value initialize
+  setBorderRadius(uniforms.uRadius.value, styles.borderRadius);
 
   const material = new THREE.ShaderMaterial({
     uniforms: uniforms,
@@ -144,26 +166,8 @@ export function updateBoxMaterial(
 
   material.uniforms.uSize.value.set(width, height);
 
-  // for 4side radius
-  const rawRadius = styles.borderRadius;
-
-
-function setBorderRadius(target, radius:string) {
-  const radiusArr = Radius.split('/')[0].trim().split(/\s+/).map(parsePixelValue);
-  switch (radiusArr.length) {
-    case 1: target.set(arr[0], arr[0], arr[0], arr[0]); break;
-    case 2: target.set(arr[0], arr[1], arr[0], arr[1]); break;
-    case 3: target.set(arr[0], arr[1], arr[2], arr[1]); break;
-    case 4: target.set(arr[0], arr[1], arr[2], arr[3]); break;
-    default: target.set(0, 0, 0, 0);
-  }
-}
-
-  ////////
-
-
   // material.uniforms.uRadius.value = parsePixelValue(styles.borderRadius);
-  setBorderRadius(material.uniforms.uRadius.value, styles.borderRadius)
+  setBorderRadius(material.uniforms.uRadius.value, styles.borderRadius);
   material.uniforms.uBorderWidth.value = parsePixelValue(styles.borderWidth);
 
   material.uniforms.uColor.value.copy(parsedBg.color);
