@@ -44,6 +44,7 @@ const fragmentShader = /* glsl */ `
   // SDF box
   float sdRoundedBox(vec2 p, vec2 b, float r) {
     vec2 q = abs(p) - b + r;
+    // return length(max(q, 0.0)) - r;
     return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
   }
 
@@ -55,15 +56,11 @@ const fragmentShader = /* glsl */ `
     
     // # border-radius
     // d == distance (returned border radius distance)
-    //======================
-    // uRadius -> tl, tr, br, bl
-
     vec2 xRadii = mix(uRadius.xw, uRadius.yz, step(0.0, p.x));
     float r = mix(xRadii.y, xRadii.x, step(0.0, p.y));
 
     float d = sdRoundedBox(p, halfSize, r);
 
-    //======================
     // 1px blur for anti-aliasing
     float aa = 1.0; 
 
