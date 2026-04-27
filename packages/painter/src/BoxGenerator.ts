@@ -64,6 +64,10 @@ const fragmentShader = /* glsl */ `
     //================ complete ===============//
 
     // ---develop---
+
+    // x == 0~1 -> 1
+    // x < 0 -> 0 
+    // x > 1 -> 1
     float bgMask = 1.0 - smoothstep(0.0, aa, d);
 
 
@@ -71,11 +75,8 @@ const fragmentShader = /* glsl */ `
 
 
     //================ A of rgba ===============//
-
-    // fill area
     float fillAlpha = 1.0 - smoothstep(-uBorderWidth - aa, -uBorderWidth, d);
     
-    // border area
     float borderAlpha = 0.0;
     
     // if has border
