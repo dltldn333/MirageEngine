@@ -55,14 +55,24 @@ const fragmentShader = /* glsl */ `
     vec2 halfSize = uSize * 0.5;
     
     // # border-radius
-    // d == distance (returned border radius distance)
     vec2 xRadii = mix(uRadius.xw, uRadius.yz, step(0.0, p.x));
     float r = mix(xRadii.y, xRadii.x, step(0.0, p.y));
-
+    
+    // d == distance (returned border radius distance)
     float d = sdRoundedBox(p, halfSize, r);
 
     // 1px blur for anti-aliasing
     float aa = 1.0; 
+
+    //================ complete===============//
+
+
+    // ---develop---
+    float bgMask = 1.0 - smoothstep(0.0, aa, d);
+
+
+    // ---develop---
+
 
     // A of rgba
     // Alpha == visible (0 or 1(without smoothstep))
@@ -93,7 +103,8 @@ const fragmentShader = /* glsl */ `
     
     if (finalOpacity < 0.001) discard;
 
-    gl_FragColor = vec4(color, finalOpacity);
+    // gl_FragColor = vec4(color, finalOpacity);
+    // gl_FragColor = vec4(color, bgMask);
 
     #include <colorspace_fragment>
 
