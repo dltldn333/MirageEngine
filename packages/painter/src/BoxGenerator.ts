@@ -40,6 +40,7 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uBorderColor;
   uniform float uOpacity;
   uniform float uBgOpacity;
+  uniform float uBorderOpacity;
 
   // SDF box
   float sdRoundedBox(vec2 p, vec2 b, float r) {
@@ -85,7 +86,7 @@ const fragmentShader = /* glsl */ `
     // 1에서 빼든 그대로든 상관없이 경계선 밖 1px
 
     // 최종 alpha를 위해 border 부분에 해당하는 픽셀 만 1로 반환.
-    float borderAlpha = 1.0 - smoothstep(0.0, aa, borderD); 
+    float borderAlpha = (1.0 - smoothstep(0.0, aa, borderD)) * uBorderOpacity; 
 
     if (uBorderWidth <= 0.01) {
       borderAlpha = 0.0;
@@ -134,9 +135,6 @@ const fragmentShader = /* glsl */ `
     // gl_FragColor = vec4(color, bgMask);
 
     #include <colorspace_fragment>
-
-    // float debugValue = uRadius.x / 20.0;
-    // gl_FragColor = vec4(debugValue, 0.0, 0.0, 1.0);
   }
 `;
 
@@ -182,7 +180,9 @@ export function createBoxMaterial(
     uBorderColor: { value: parsedBorder.color },
     uOpacity: { value: styles.opacity ?? 1.0 },
     uBgOpacity: { value: parsedBg.alpha },
+    uBorderOpacity: { value: parsedBorder.alpha }
   };
+  console.log(parsedBorder.alpha)
 
   // border radius value initialize
   setBorderRadius(uniforms.uRadius.value, styles.borderRadius);
@@ -218,4 +218,5 @@ export function updateBoxMaterial(
 
   material.uniforms.uOpacity.value = styles.opacity ?? 1.0;
   material.uniforms.uBgOpacity.value = parsedBg.alpha;
+  material.uniforms.uBorderOpacity.value = parsedBorder.alpha;
 }
