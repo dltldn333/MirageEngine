@@ -54,11 +54,17 @@ export class Renderer {
     );
     this.camera.position.z = 100;
 
+    // [new]
+    // THREE.ColorManagement.enabled = false;
+
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
       alpha: true,
       antialias: true,
+      // [new]
+      // premultipliedAlpha: false
     });
+    
 
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(width, height);

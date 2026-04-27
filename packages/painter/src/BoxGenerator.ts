@@ -92,6 +92,8 @@ const fragmentShader = /* glsl */ `
       borderAlpha = 0.0;
     }
 
+    
+
 
     // [!] uColor 네이밍 고민 해봐야 할 듯
     vec4 bgColor = vec4(uColor, uBgOpacity);
@@ -104,6 +106,9 @@ const fragmentShader = /* glsl */ `
     if (finalOpacity < 0.001) discard;
 
     gl_FragColor = vec4(finalColor.rgb, finalOpacity);
+
+
+    
 
     // ---develop---
     //================ A of rgba ===============//
