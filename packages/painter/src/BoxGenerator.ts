@@ -81,46 +81,56 @@ const fragmentShader = /* glsl */ `
     float borderD = abs(d + halfBorder) - halfBorder;
     // ^ border 내부는 음수/외부는 양수
 
-    // !!! 내부가 음수인 곳에서 시작점이 0이면 내부는 안티 얼리어싱 되지 않음.
+    // [!] 내부가 음수인 곳에서 시작점이 0이면 내부는 안티 얼리어싱 되지 않음.
     // 1에서 빼든 그대로든 상관없이 경계선 밖 1px
 
     // 최종 alpha를 위해 border 부분에 해당하는 픽셀 만 1로 반환.
     float borderAlpha = 1.0 - smoothstep(0.0, aa, borderD); 
 
+    if (uBorderWidth <= 0.01) {
+      borderAlpha = 0.0;
+    }
 
-    //
+
+    // [!] uColor 네이밍 고민 해봐야 할 듯
     vec4 bgColor = vec4(uColor, uBgOpacity);
     vec4 borderColor = vec4(uBorderColor, 1.0);
 
+    vec4 finalColor = mix(bgColor, borderColor, borderAlpha);
     
+    float finalOpacity = finalColor.a * bgMask * uOpacity;
+
+    if (finalOpacity < 0.001) discard;
+
+    gl_FragColor = vec4(finalColor.rgb, finalOpacity);
 
     // ---develop---
     //================ A of rgba ===============//
-    float fillAlpha = 1.0 - smoothstep(-uBorderWidth - aa, -uBorderWidth, d);
+    // float fillAlpha = 1.0 - smoothstep(-uBorderWidth - aa, -uBorderWidth, d);
     
-    float borderAlpha = 0.0;
+    // float borderAlpha = 0.0;
     
-    // if has border
-    if (uBorderWidth > 0.01) {
-      // entire - fill
-      borderAlpha = (1.0 - smoothstep(0.0, aa, d)) - fillAlpha;
-    }
+    // // if has border
+    // if (uBorderWidth > 0.01) {
+    //   // entire - fill
+    //   borderAlpha = (1.0 - smoothstep(0.0, aa, d)) - fillAlpha;
+    // }
 
-    //================ R,G,B of rgba ===============//
-    vec3 color = uColor;
+    // //================ R,G,B of rgba ===============//
+    // vec3 color = uColor;
     
-    float totalAlpha = borderAlpha + fillAlpha;
+    // float totalAlpha = borderAlpha + fillAlpha;
     
-    if (totalAlpha > 0.001) {
-       color = mix(uColor, uBorderColor, borderAlpha / totalAlpha);
-    }
+    // if (totalAlpha > 0.001) {
+    //    color = mix(uColor, uBorderColor, borderAlpha / totalAlpha);
+    // }
     
-    float shapeAlpha = borderAlpha + (fillAlpha * uBgOpacity);
-    float finalOpacity = shapeAlpha * uOpacity;
+    // float shapeAlpha = borderAlpha + (fillAlpha * uBgOpacity);
+    // float finalOpacity = shapeAlpha * uOpacity;
     
-    if (finalOpacity < 0.001) discard;
+    // if (finalOpacity < 0.001) discard;
 
-    gl_FragColor = vec4(color, finalOpacity);
+    // gl_FragColor = vec4(color, finalOpacity);
     // gl_FragColor = vec4(color, bgMask);
 
     #include <colorspace_fragment>
