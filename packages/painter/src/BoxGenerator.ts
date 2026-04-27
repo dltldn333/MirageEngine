@@ -57,15 +57,11 @@ const fragmentShader = /* glsl */ `
     // # border-radius
     vec2 xRadii = mix(uRadius.xw, uRadius.yz, step(0.0, p.x));
     float r = mix(xRadii.y, xRadii.x, step(0.0, p.y));
-    
-    // d == distance (returned border radius distance)
     float d = sdRoundedBox(p, halfSize, r);
 
     // 1px blur for anti-aliasing
     float aa = 1.0; 
-
-    //================ complete===============//
-
+    //================ complete ===============//
 
     // ---develop---
     float bgMask = 1.0 - smoothstep(0.0, aa, d);
@@ -74,8 +70,7 @@ const fragmentShader = /* glsl */ `
     // ---develop---
 
 
-    // A of rgba
-    // Alpha == visible (0 or 1(without smoothstep))
+    //================ A of rgba ===============//
 
     // fill area
     float fillAlpha = 1.0 - smoothstep(-uBorderWidth - aa, -uBorderWidth, d);
@@ -89,7 +84,7 @@ const fragmentShader = /* glsl */ `
       borderAlpha = (1.0 - smoothstep(0.0, aa, d)) - fillAlpha;
     }
 
-    // R,G,B of rgba
+    //================ R,G,B of rgba ===============//
     vec3 color = uColor;
     
     float totalAlpha = borderAlpha + fillAlpha;
