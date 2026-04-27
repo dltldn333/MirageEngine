@@ -65,15 +65,28 @@ const fragmentShader = /* glsl */ `
 
     // ---develop---
 
-    // x == 0~1 -> 1
+    // x == 0~aa -> 1
     // x < 0 -> 0 
-    // x > 1 -> 1
+    // x > aa -> 1
     float bgMask = 1.0 - smoothstep(0.0, aa, d);
 
 
+    // v valley
+    // 10px -> 5
+    float halfBorder = uBorderWidth * 0.5;
+    // 10px :
+    // -10 -> 0
+    // -15 -> 5
+    // -5 -> -5
+    float borderD = abs(d + halfBorder) - halfBorder;
+
+
+    float borderAlpha = 1.0 - smoothstep(0.0, aa, borderD);
+
+    
+
+
     // ---develop---
-
-
     //================ A of rgba ===============//
     float fillAlpha = 1.0 - smoothstep(-uBorderWidth - aa, -uBorderWidth, d);
     
@@ -99,7 +112,7 @@ const fragmentShader = /* glsl */ `
     
     if (finalOpacity < 0.001) discard;
 
-    // gl_FragColor = vec4(color, finalOpacity);
+    gl_FragColor = vec4(color, finalOpacity);
     // gl_FragColor = vec4(color, bgMask);
 
     #include <colorspace_fragment>
