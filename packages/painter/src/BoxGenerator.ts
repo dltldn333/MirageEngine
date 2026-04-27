@@ -75,16 +75,18 @@ const fragmentShader = /* glsl */ `
     // 10px -> 5
     float halfBorder = uBorderWidth * 0.5;
     // 10px :
+    // 0 -> 0
     // -10 -> 0
-    // -15 -> 5
     // -5 -> -5
     float borderD = abs(d + halfBorder) - halfBorder;
+    // ^ border 내부는 음수/외부는 양수
 
 
     float borderAlpha = 1.0 - smoothstep(0.0, aa, borderD);
 
-    
 
+
+    
 
     // ---develop---
     //================ A of rgba ===============//
