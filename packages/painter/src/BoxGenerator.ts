@@ -92,21 +92,18 @@ const fragmentShader = /* glsl */ `
       borderAlpha = 0.0;
     }
 
-    
+    float aFront = borderAlpha;
+    float aBack = uBgOpacity;
+    float aOut = aFront + aBack * (1.0 - aFront);
 
+    float safeAlpha = max(aOut, 0.0001);
+    vec3 cOut = (uBorderColor * aFront + uColor * aBack * (1.0 - aFront)) / safeAlpha;
 
-    // [!] uColor 네이밍 고민 해봐야 할 듯
-    vec4 bgColor = vec4(uColor, uBgOpacity);
-    vec4 borderColor = vec4(uBorderColor, 1.0);
-
-    vec4 finalColor = mix(bgColor, borderColor, borderAlpha);
-    
-    float finalOpacity = finalColor.a * bgMask * uOpacity;
+    float finalOpacity = aOut * bgMask * uOpacity;
 
     if (finalOpacity < 0.001) discard;
 
-    gl_FragColor = vec4(finalColor.rgb, finalOpacity);
-
+    gl_FragColor = vec4(cOut, finalOpacity);
 
     #include <colorspace_fragment>
   }
