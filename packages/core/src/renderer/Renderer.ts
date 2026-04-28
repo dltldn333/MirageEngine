@@ -62,7 +62,7 @@ export class Renderer {
       alpha: true,
       antialias: true,
       // [new]
-      // premultipliedAlpha: false
+      // premultipliedAlpha: true
     });
     
 
