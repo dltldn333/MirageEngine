@@ -11,7 +11,7 @@ function setBorderRadius(target: THREE.Vector4, radius: string) {
     target.set(0, 0, 0, 0);
     return;
   }
-  const arr = radius.split('/')[0].trim().split(/\s+/);
+  const arr = radius.split("/")[0].trim().split(/\s+/);
   const tl = parsePixelValue(arr[0]);
   const tr = parsePixelValue(arr[1] ?? arr[0]);
   const br = parsePixelValue(arr[2] ?? arr[0]);
@@ -20,8 +20,7 @@ function setBorderRadius(target: THREE.Vector4, radius: string) {
   target.set(tl, tr, br, bl);
 }
 
-
-const vertexShader = /* glsl */`
+const vertexShader = /* glsl */ `
   varying vec2 vUv;
   void main() {
     vUv = uv;
@@ -62,15 +61,11 @@ const fragmentShader = /* glsl */ `
 
     // 1px blur for anti-aliasing
     float aa = 1.0; 
-    //================ complete ===============//
-
-    // ---develop---
 
     // x == 0~aa -> 1
     // x < 0 -> 0 
     // x > aa -> 1
     float bgMask = 1.0 - smoothstep(0.0, aa, d);
-
 
     // v valley
     // 10px -> 5
@@ -140,7 +135,6 @@ export function createBoxMaterial(
   const parsedBg = parseColor(styles.backgroundColor);
   const parsedBorder = parseColor(styles.borderColor);
 
-
   // console.log(parsedBorder.color )
 
   const uniforms = {
@@ -151,9 +145,9 @@ export function createBoxMaterial(
     uBorderColor: { value: parsedBorder.color },
     uOpacity: { value: styles.opacity ?? 1.0 },
     uBgOpacity: { value: parsedBg.alpha },
-    uBorderOpacity: { value: parsedBorder.alpha }
+    uBorderOpacity: { value: parsedBorder.alpha },
   };
-  console.log(parsedBorder.alpha)
+  console.log(parsedBorder.alpha);
 
   // border radius value initialize
   setBorderRadius(uniforms.uRadius.value, styles.borderRadius);
