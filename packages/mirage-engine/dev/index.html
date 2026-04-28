@@ -43,6 +43,8 @@
         display: block;
         /* border: 2px solid blue; */
         z-index: 999;
+        /* transform: scaleY(-1); 
+        filter: blur(1px); */
       }
 
       #test-btn {
@@ -51,10 +53,21 @@
         cursor: pointer;
         border: 1px solid #333;
       }
+
+      #css-test span{
+        background-color: rgba(255, 255, 255, 0);;
+        border: solid 10px rgba(255, 0, 255, 0.5);
+        padding: 10px;
+        color: blue;
+        border-radius: 0px 5px 10px 20px;
+      }
     </style>
   </head>
   <body>
     <div id="root">
+      <div id="css-test">
+        <span>TEST</span>
+      </div>
       <h1>mirage-engine 동기화 테스트 (+GSAP)</h1>
       <button id="test-btn" onclick="alert('test')">테스트 버튼</button>
       <p>
@@ -93,7 +106,7 @@
 
     <script type="module" src="./main.ts"></script>
 
-    <script id="dom-manipulator-script">
+    <!-- <script id="dom-manipulator-script">
       console.log("DOM 조작기: 테스트 시나리오 시작...");
 
       setTimeout(() => {
@@ -126,6 +139,6 @@
           ease: "power2.inOut",
         });
       }, 6000);
-    </script>
+    </script> -->
   </body>
 </html>
