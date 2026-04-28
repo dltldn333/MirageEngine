@@ -6,12 +6,12 @@ function parsePixelValue(value: string | number): number {
   return parseFloat(value) || 0;
 }
 
-function setBorderRadius(target, radius:string) {
+function setBorderRadius(target: THREE.Vector4, radius: string) {
   if (!radius) {
     target.set(0, 0, 0, 0);
     return;
   }
-  const arr = radius.split('/')[0].trim().split(/\s+/);
+  const arr = radius.split("/")[0].trim().split(/\s+/);
   const tl = parsePixelValue(arr[0]);
   const tr = parsePixelValue(arr[1] ?? arr[0]);
   const br = parsePixelValue(arr[2] ?? arr[0]);
@@ -20,8 +20,7 @@ function setBorderRadius(target, radius:string) {
   target.set(tl, tr, br, bl);
 }
 
-
-const vertexShader = /* glsl */`
+const vertexShader = /* glsl */ `
   varying vec2 vUv;
   void main() {
     vUv = uv;
@@ -36,7 +35,7 @@ const fragmentShader = /* glsl */ `
   uniform vec2 uSize;
   uniform vec4 uRadius;
   uniform float uBorderWidth;
-  uniform vec3 uColor;
+  uniform vec3 uBgColor;
   uniform vec3 uBorderColor;
   uniform float uOpacity;
   uniform float uBgOpacity;
@@ -62,15 +61,11 @@ const fragmentShader = /* glsl */ `
 
     // 1px blur for anti-aliasing
     float aa = 1.0; 
-    //================ complete ===============//
-
-    // ---develop---
 
     // x == 0~aa -> 1
     // x < 0 -> 0 
     // x > aa -> 1
     float bgMask = 1.0 - smoothstep(0.0, aa, d);
-
 
     // v valley
     // 10px -> 5
@@ -92,52 +87,18 @@ const fragmentShader = /* glsl */ `
       borderAlpha = 0.0;
     }
 
-    
+    float aFront = borderAlpha;
+    float aBack = uBgOpacity;
+    float aOut = aFront + aBack * (1.0 - aFront);
 
+    float safeAlpha = max(aOut, 0.0001);
+    vec3 cOut = (uBorderColor * aFront + uBgColor * aBack * (1.0 - aFront)) / safeAlpha;
 
-    // [!] uColor 네이밍 고민 해봐야 할 듯
-    vec4 bgColor = vec4(uColor, uBgOpacity);
-    vec4 borderColor = vec4(uBorderColor, 1.0);
-
-    vec4 finalColor = mix(bgColor, borderColor, borderAlpha);
-    
-    float finalOpacity = finalColor.a * bgMask * uOpacity;
+    float finalOpacity = aOut * bgMask * uOpacity;
 
     if (finalOpacity < 0.001) discard;
 
-    gl_FragColor = vec4(finalColor.rgb, finalOpacity);
-
-
-    
-
-    // ---develop---
-    //================ A of rgba ===============//
-    // float fillAlpha = 1.0 - smoothstep(-uBorderWidth - aa, -uBorderWidth, d);
-    
-    // float borderAlpha = 0.0;
-    
-    // // if has border
-    // if (uBorderWidth > 0.01) {
-    //   // entire - fill
-    //   borderAlpha = (1.0 - smoothstep(0.0, aa, d)) - fillAlpha;
-    // }
-
-    // //================ R,G,B of rgba ===============//
-    // vec3 color = uColor;
-    
-    // float totalAlpha = borderAlpha + fillAlpha;
-    
-    // if (totalAlpha > 0.001) {
-    //    color = mix(uColor, uBorderColor, borderAlpha / totalAlpha);
-    // }
-    
-    // float shapeAlpha = borderAlpha + (fillAlpha * uBgOpacity);
-    // float finalOpacity = shapeAlpha * uOpacity;
-    
-    // if (finalOpacity < 0.001) discard;
-
-    // gl_FragColor = vec4(color, finalOpacity);
-    // gl_FragColor = vec4(color, bgMask);
+    gl_FragColor = vec4(cOut, finalOpacity);
 
     #include <colorspace_fragment>
   }
@@ -151,8 +112,6 @@ function parseColor(colorStr: string) {
   const rgbaMatch = colorStr.match(
     /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/,
   );
-
-  // console.log(rgbaMatch)
 
   if (rgbaMatch) {
     const r = parseInt(rgbaMatch[1], 10);
@@ -174,20 +133,16 @@ export function createBoxMaterial(
   const parsedBg = parseColor(styles.backgroundColor);
   const parsedBorder = parseColor(styles.borderColor);
 
-
-  // console.log(parsedBorder.color )
-
   const uniforms = {
     uSize: { value: new THREE.Vector2(width, height) },
     uRadius: { value: new THREE.Vector4(0, 0, 0, 0) },
     uBorderWidth: { value: parsePixelValue(styles.borderWidth) },
-    uColor: { value: parsedBg.color },
+    uBgColor: { value: parsedBg.color },
     uBorderColor: { value: parsedBorder.color },
     uOpacity: { value: styles.opacity ?? 1.0 },
     uBgOpacity: { value: parsedBg.alpha },
-    uBorderOpacity: { value: parsedBorder.alpha }
+    uBorderOpacity: { value: parsedBorder.alpha },
   };
-  console.log(parsedBorder.alpha)
 
   // border radius value initialize
   setBorderRadius(uniforms.uRadius.value, styles.borderRadius);
@@ -218,7 +173,7 @@ export function updateBoxMaterial(
   setBorderRadius(material.uniforms.uRadius.value, styles.borderRadius);
   material.uniforms.uBorderWidth.value = parsePixelValue(styles.borderWidth);
 
-  material.uniforms.uColor.value.copy(parsedBg.color);
+  material.uniforms.uBgColor.value.copy(parsedBg.color);
   material.uniforms.uBorderColor.value.copy(parsedBorder.color);
 
   material.uniforms.uOpacity.value = styles.opacity ?? 1.0;
