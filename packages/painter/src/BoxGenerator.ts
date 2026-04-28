@@ -35,7 +35,7 @@ const fragmentShader = /* glsl */ `
   uniform vec2 uSize;
   uniform vec4 uRadius;
   uniform float uBorderWidth;
-  uniform vec3 uColor;
+  uniform vec3 uBgColor;
   uniform vec3 uBorderColor;
   uniform float uOpacity;
   uniform float uBgOpacity;
@@ -92,7 +92,7 @@ const fragmentShader = /* glsl */ `
     float aOut = aFront + aBack * (1.0 - aFront);
 
     float safeAlpha = max(aOut, 0.0001);
-    vec3 cOut = (uBorderColor * aFront + uColor * aBack * (1.0 - aFront)) / safeAlpha;
+    vec3 cOut = (uBorderColor * aFront + uBgColor * aBack * (1.0 - aFront)) / safeAlpha;
 
     float finalOpacity = aOut * bgMask * uOpacity;
 
@@ -137,7 +137,7 @@ export function createBoxMaterial(
     uSize: { value: new THREE.Vector2(width, height) },
     uRadius: { value: new THREE.Vector4(0, 0, 0, 0) },
     uBorderWidth: { value: parsePixelValue(styles.borderWidth) },
-    uColor: { value: parsedBg.color },
+    uBgColor: { value: parsedBg.color },
     uBorderColor: { value: parsedBorder.color },
     uOpacity: { value: styles.opacity ?? 1.0 },
     uBgOpacity: { value: parsedBg.alpha },
@@ -173,7 +173,7 @@ export function updateBoxMaterial(
   setBorderRadius(material.uniforms.uRadius.value, styles.borderRadius);
   material.uniforms.uBorderWidth.value = parsePixelValue(styles.borderWidth);
 
-  material.uniforms.uColor.value.copy(parsedBg.color);
+  material.uniforms.uBgColor.value.copy(parsedBg.color);
   material.uniforms.uBorderColor.value.copy(parsedBorder.color);
 
   material.uniforms.uOpacity.value = styles.opacity ?? 1.0;
