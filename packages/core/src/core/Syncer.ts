@@ -6,10 +6,13 @@ import {
   DIRTY_STRUCTURE,
   DIRTY_STYLE,
 } from "../types";
+import { ExtractorConfig } from "../dom/Extractor";
 
 export class Syncer {
   private target: HTMLElement;
   private renderer: Renderer;
+  private extractorConfig?: ExtractorConfig;
+
   private observer: MutationObserver;
 
   private isDomDirty: boolean = false;
@@ -20,9 +23,10 @@ export class Syncer {
   private mutationTimer: number | null = null;
   private cssTimer: number | null = null;
 
-  constructor(target: HTMLElement, renderer: Renderer) {
+  constructor(target: HTMLElement, renderer: Renderer, extractorConfig?: ExtractorConfig) {
     this.target = target;
     this.renderer = renderer;
+    this.extractorConfig = extractorConfig;
 
     this.observer = new MutationObserver((mutations) => {
       let currentMask = DIRTY_NONE;
@@ -126,7 +130,7 @@ export class Syncer {
 
   private forceUpdateScene() {
     this.isDomDirty = false;
-    const sceneGraph = extractSceneGraph(this.target, this.pendingMask);
+    const sceneGraph = extractSceneGraph(this.target, this.pendingMask, this.extractorConfig);
 
     if (sceneGraph) {
       this.renderer.syncScene(sceneGraph);
