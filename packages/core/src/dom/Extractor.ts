@@ -9,6 +9,11 @@ import {
 
 import { BoxStyles, TextStyles } from "@mirage-engine/painter";
 
+export interface ExtractorConfig {
+  includeClasses?: string[]; 
+  excludeClasses?: string[];
+}
+
 // Helper function: getTextNodeRect, isValidTextNode, isLeafTextElement, extractTextStyles
 
 function getTextNodeRect(textNode: Text) {
@@ -50,7 +55,8 @@ export function extractSceneGraph(
     DIRTY_STYLE |
     DIRTY_ZINDEX |
     DIRTY_CONTENT |
-    DIRTY_STRUCTURE
+    DIRTY_STRUCTURE,
+    config?: ExtractorConfig
 ): SceneNode | null {
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {
@@ -98,6 +104,18 @@ export function extractSceneGraph(
   }
 
   const element = sourceNode as HTMLElement;
+
+  if (config) {
+    if (config.excludeClasses && config.excludeClasses.length > 0) {
+      const isExcluded = config.excludeClasses.some((cls) => element.classList.contains(cls));
+      if (isExcluded) return null; 
+    }
+    if (config.includeClasses && config.includeClasses.length > 0) {
+      const isIncluded = config.includeClasses.some((cls) => element.classList.contains(cls));
+      if (!isIncluded) return null;
+    }
+  }
+
   const rect = element.getBoundingClientRect();
   const computed = window.getComputedStyle(element);
 
@@ -128,7 +146,7 @@ export function extractSceneGraph(
 
   Array.from(element.childNodes).forEach((child) => {
     // Recurring
-    const childNode = extractSceneGraph(child, initialMask);
+    const childNode = extractSceneGraph(child, initialMask, config);
     if (childNode) {
       children.push(childNode);
     }
