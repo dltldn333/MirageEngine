@@ -6,7 +6,7 @@ function parsePixelValue(value: string | number): number {
   return parseFloat(value) || 0;
 }
 
-function setBorderRadius(target, radius:string) {
+function setBorderRadius(target: THREE.Vector4, radius: string) {
   if (!radius) {
     target.set(0, 0, 0, 0);
     return;
@@ -107,37 +107,6 @@ const fragmentShader = /* glsl */ `
 
     gl_FragColor = vec4(finalColor.rgb, finalOpacity);
 
-
-    
-
-    // ---develop---
-    //================ A of rgba ===============//
-    // float fillAlpha = 1.0 - smoothstep(-uBorderWidth - aa, -uBorderWidth, d);
-    
-    // float borderAlpha = 0.0;
-    
-    // // if has border
-    // if (uBorderWidth > 0.01) {
-    //   // entire - fill
-    //   borderAlpha = (1.0 - smoothstep(0.0, aa, d)) - fillAlpha;
-    // }
-
-    // //================ R,G,B of rgba ===============//
-    // vec3 color = uColor;
-    
-    // float totalAlpha = borderAlpha + fillAlpha;
-    
-    // if (totalAlpha > 0.001) {
-    //    color = mix(uColor, uBorderColor, borderAlpha / totalAlpha);
-    // }
-    
-    // float shapeAlpha = borderAlpha + (fillAlpha * uBgOpacity);
-    // float finalOpacity = shapeAlpha * uOpacity;
-    
-    // if (finalOpacity < 0.001) discard;
-
-    // gl_FragColor = vec4(color, finalOpacity);
-    // gl_FragColor = vec4(color, bgMask);
 
     #include <colorspace_fragment>
   }
