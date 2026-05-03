@@ -5,7 +5,6 @@ import { ExtractorConfig } from "@mirage-engine/core/";
 export class Mirage {
   private _engine: Engine;
   private _extractorConfig?: ExtractorConfig;
-  // private _engine: Engine | Traveler;
 
   constructor(target: HTMLElement, config: MirageConfig, extractorConfig?: ExtractorConfig) {
     if (!target) {
