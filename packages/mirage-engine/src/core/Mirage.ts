@@ -13,11 +13,6 @@ export class Mirage {
     }
     this._extractorConfig = extractorConfig;
     this._engine = new Engine(target, config, this._extractorConfig);
-    // if (config.mode === "travel") {
-    //   this._engine = new Traveler(target, config);
-    // } else {
-    //   this._engine = new Engine(target, config);
-    // }
   }
 
   public start(): void {
