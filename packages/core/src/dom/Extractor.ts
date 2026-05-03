@@ -8,11 +8,7 @@ import {
 } from "../types";
 
 import { BoxStyles, TextStyles } from "@mirage-engine/painter";
-
-export interface ExtractorConfig {
-  includeClasses?: string[]; 
-  excludeClasses?: string[];
-}
+import { ExtractorConfig } from "../types/config";
 
 // Helper function: getTextNodeRect, isValidTextNode, isLeafTextElement, extractTextStyles
 

@@ -6,7 +6,7 @@ import {
   DIRTY_STRUCTURE,
   DIRTY_STYLE,
 } from "../types";
-import { ExtractorConfig } from "../dom/Extractor";
+import { ExtractorConfig } from "../types/config";
 
 export class Syncer {
   private target: HTMLElement;

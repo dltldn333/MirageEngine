@@ -1,7 +1,7 @@
 import { CoreConfig } from "../types";
 import { Renderer } from "../renderer/Renderer";
 import { Syncer } from "./Syncer";
-import { ExtractorConfig } from "../dom/Extractor";
+import { ExtractorConfig } from "../types/config";
 
 export class Engine {
   private renderer: Renderer;

@@ -18,4 +18,10 @@ export interface DuplicateConfig extends BaseConfig {
   container?: HTMLElement; 
 }
 
+
+export interface ExtractorConfig {
+  includeClasses?: string[]; 
+  excludeClasses?: string[];
+}
+
 export type CoreConfig = OverlayConfig | DuplicateConfig;
