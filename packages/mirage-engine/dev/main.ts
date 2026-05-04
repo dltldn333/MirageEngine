@@ -10,7 +10,7 @@ const mirage = new Mirage(
     mode: "duplicate",
     container: container,
   },
-  { excludeClasses: ["exclude"] },
+  { excludeTree: ["exclude"] },
 );
 
 mirage.start();
