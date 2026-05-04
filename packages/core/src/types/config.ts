@@ -19,6 +19,7 @@ export interface DuplicateConfig extends BaseConfig {
 }
 
 
+// Extractor Config -> conditional의 의미를 포함하는 형태로 변경
 export interface ExtractorConfig {
   includeTree: string[]; 
   excludeTree?: string[];
