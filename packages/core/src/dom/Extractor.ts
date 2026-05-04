@@ -102,12 +102,12 @@ export function extractSceneGraph(
   const element = sourceNode as HTMLElement;
 
   if (config) {
-    if (config.excludeClasses && config.excludeClasses.length > 0) {
-      const isExcluded = config.excludeClasses.some((cls) => element.classList.contains(cls));
+    if (config.excludeTree && config.excludeTree.length > 0) {
+      const isExcluded = config.excludeTree.some((cls) => element.classList.contains(cls));
       if (isExcluded) return null; 
     }
-    if (config.includeClasses && config.includeClasses.length > 0) {
-      const isIncluded = config.includeClasses.some((cls) => element.classList.contains(cls));
+    if (config.includeTree && config.includeTree.length > 0) {
+      const isIncluded = config.includeTree.some((cls) => element.classList.contains(cls));
       if (!isIncluded) return null;
     }
   }
