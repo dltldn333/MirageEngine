@@ -20,8 +20,8 @@ export interface DuplicateConfig extends BaseConfig {
 
 
 export interface ExtractorConfig {
-  includeClasses?: string[]; 
-  excludeClasses?: string[];
+  includeTree: string[]; 
+  excludeTree?: string[];
 }
 
 export type CoreConfig = OverlayConfig | DuplicateConfig;
