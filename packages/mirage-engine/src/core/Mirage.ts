@@ -4,7 +4,7 @@ import { FilterConfig } from "@mirage-engine/core/";
 
 export class Mirage {
   private _engine: Engine;
-  private _filterConfig?: FilterConfig;
+  private _filterConfig?: MirageConfig.filterConfig;
 
   constructor(target: HTMLElement, config: MirageConfig, filterConfig?: FilterConfig) {
     if (!target) {
