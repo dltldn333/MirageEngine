@@ -8,6 +8,7 @@ import {
 } from "../types";
 
 import { BoxStyles, TextStyles } from "@mirage-engine/painter";
+import { FilterConfig } from "../types/config";
 
 // Helper function: getTextNodeRect, isValidTextNode, isLeafTextElement, extractTextStyles
 
