@@ -1,7 +1,7 @@
 export type TextQuality = "low" | "medium" | "high" | number;
 export type MirageMode = "overlay" | "duplicate";
 
-interface FilterConfig {
+export interface FilterConfig {
   includeTree?: string[];
   excludeTree?: string[];
   includeSelf?: string[];
