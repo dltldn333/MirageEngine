@@ -16,11 +16,10 @@ export interface OverlayConfig extends BaseConfig {
 export interface DuplicateConfig extends BaseConfig {
   mode: "duplicate"; 
   container?: HTMLElement; 
-}
+}``
 
 
-// Extractor Config -> conditional의 의미를 포함하는 형태로 변경
-export interface ExtractorConfig {
+export interface FilterConfig {
   includeTree?: string[]; 
   excludeTree?: string[];
   includeSelf?: string[];
