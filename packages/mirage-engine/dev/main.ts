@@ -9,8 +9,10 @@ const mirage = new Mirage(
     textQuality: "high",
     mode: "duplicate",
     container: container,
+    filter: {
+      excludeTree: ["exclude"],
+    },
   },
-  { excludeTree: ["exclude"] },
 );
 
 mirage.start();
