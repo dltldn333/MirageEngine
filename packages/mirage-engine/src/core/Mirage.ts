@@ -1,17 +1,17 @@
 import { MirageConfig } from "@/types";
 import { Engine } from "@mirage-engine/core";
-import { ExtractorConfig } from "@mirage-engine/core/"; 
+import { FilterConfig } from "@mirage-engine/core/"; 
 
 export class Mirage {
   private _engine: Engine;
-  private _extractorConfig?: ExtractorConfig;
+  private _filterConfig?: FilterConfig;
 
-  constructor(target: HTMLElement, config: MirageConfig, extractorConfig?: ExtractorConfig) {
+  constructor(target: HTMLElement, config: MirageConfig, filterConfig?: FilterConfig) {
     if (!target) {
       throw new Error("[Mirage] Target element is required.");
     }
-    this._extractorConfig = extractorConfig;
-    this._engine = new Engine(target, config, this._extractorConfig);
+    this._filterConfig = filterConfig;
+    this._engine = new Engine(target, config, this._filterConfig);
   }
 
   public start(): void {

@@ -8,7 +8,7 @@ import {
 } from "../types";
 
 import { BoxStyles, TextStyles } from "@mirage-engine/painter";
-import { ExtractorConfig } from "../types/config";
+import { FilterConfig } from "../types/config";
 
 // Helper function: getTextNodeRect, isValidTextNode, isLeafTextElement, extractTextStyles
 
@@ -52,7 +52,7 @@ export function extractSceneGraph(
     DIRTY_ZINDEX |
     DIRTY_CONTENT |
     DIRTY_STRUCTURE,
-    config?: ExtractorConfig
+    config?: FilterConfig
 ): SceneNode | null {
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {

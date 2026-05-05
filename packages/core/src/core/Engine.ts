@@ -1,17 +1,17 @@
 import { CoreConfig } from "../types";
 import { Renderer } from "../renderer/Renderer";
 import { Syncer } from "./Syncer";
-import { ExtractorConfig } from "../types/config";
+import { FilterConfig } from "../types/config";
 
 export class Engine {
   private renderer: Renderer;
   private syncer: Syncer;
   private target: HTMLElement;
-  private extractorConfig?: ExtractorConfig;
+  private filterConfig?: FilterConfig;
 
-  constructor(target: HTMLElement, config: CoreConfig, extractorConfig?: ExtractorConfig) {
+  constructor(target: HTMLElement, config: CoreConfig, filterConfig?: FilterConfig) {
     this.target = target;
-    this.extractorConfig = extractorConfig;
+    this.filterConfig = filterConfig;
 
     let mountContainer: HTMLElement | undefined;
 
@@ -30,7 +30,7 @@ export class Engine {
 
     this.renderer.mount();
 
-    this.syncer = new Syncer(this.target, this.renderer, this.extractorConfig);
+    this.syncer = new Syncer(this.target, this.renderer, this.filterConfig);
   }
 
   public start() {
