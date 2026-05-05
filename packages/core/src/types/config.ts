@@ -16,7 +16,7 @@ export interface OverlayConfig extends BaseConfig {
 export interface DuplicateConfig extends BaseConfig {
   mode: "duplicate"; 
   container?: HTMLElement; 
-}``
+}
 
 
 export interface FilterConfig {
