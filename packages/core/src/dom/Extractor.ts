@@ -52,7 +52,7 @@ export function extractSceneGraph(
     DIRTY_ZINDEX |
     DIRTY_CONTENT |
     DIRTY_STRUCTURE,
-    filter?: FilterConfig
+  filter?: FilterConfig,
 ): SceneNode | null {
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {
@@ -101,16 +101,13 @@ export function extractSceneGraph(
 
   const element = sourceNode as HTMLElement;
 
-  if (filter) {
-    if (filter.excludeTree && filter.excludeTree.length > 0) {
-      const isExcluded = filter.excludeTree.some((cls) => element.classList.contains(cls));
-      if (isExcluded) return null; 
-    }
-    if (filter.includeTree && filter.includeTree.length > 0) {
-      const isIncluded = filter.includeTree.some((cls) => element.classList.contains(cls));
-      if (!isIncluded) return null;
-    }
+  if (filter && filter.excludeTree && filter.excludeTree.length > 0) {
+    const isExcluded = filter.excludeTree.some((cls) =>
+      element.classList.contains(cls),
+    );
+    if (isExcluded) return null;
   }
+
 
   const rect = element.getBoundingClientRect();
   const computed = window.getComputedStyle(element);
