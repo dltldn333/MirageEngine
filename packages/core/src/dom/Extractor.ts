@@ -107,12 +107,8 @@ export function extractSceneGraph(
      element.classList.contains(cls)
 ) ?? false;
 
-  // if (filter && filter.excludeTree && filter.excludeTree.length > 0) {
-  //   const isExcluded = filter.excludeTree.some((cls) =>
-  //     element.classList.contains(cls),
-  //   );
-  //   if (isExcluded) return null;
-  // }
+  const isTreeExcludedByDataAttr = element.dataset.mirage === "excludeTree";
+
 
 
   const rect = element.getBoundingClientRect();
