@@ -1,19 +1,19 @@
 import { Mirage } from "@/index";
+import { MirageConfig } from "@/types";
 
 const target = document.querySelector("#root") as HTMLElement;
 const container = document.querySelector("#space") as HTMLElement;
 
-const mirage = new Mirage(
-  target,
-  {
-    textQuality: "high",
-    mode: "duplicate",
-    container: container,
-    filter: {
-      excludeTree: ["exclude"],
-    },
-  },
-);
+const mirageConifg: MirageConfig = {
+  textQuality: "high",
+  mode: "duplicate",
+  container: container,
+  // filter: {
+  //   excludeTree: ["exclude"],
+  // },
+};
+const mirage = new Mirage(target, mirageConifg);
+console.log(mirageConifg.filter);
 
 mirage.start();
 // while (true) {
@@ -29,3 +29,11 @@ mirage.start();
 // function stopMirage() {
 //   mirage.stop();
 // }
+
+const testId = document.querySelector("#box2") as HTMLElement;
+
+// data attribute filtering test
+setTimeout(() => {
+  testId.style.backgroundColor = "purple";
+  testId.dataset.mirageFilter = "";
+} , 3000);
