@@ -101,6 +101,8 @@ export function extractSceneGraph(
 
   const element = sourceNode as HTMLElement;
 
+
+  // Exclude Tree filter 
   if (filter && filter.excludeTree && filter.excludeTree.length > 0) {
     const isExcluded = filter.excludeTree.some((cls) =>
       element.classList.contains(cls),
