@@ -101,15 +101,16 @@ export function extractSceneGraph(
 
   const element = sourceNode as HTMLElement;
 
-
-  // Exclude Tree filter 
-  const isTreeExcludedByClass = filter?.excludeTree?.some((cls) =>
-     element.classList.contains(cls)
-) ?? false;
+  // Exclude Tree filter
+  // by class
+  if (filter && filter.excludeTree && filter.excludeTree.length > 0) {
+    const isExcluded = filter.excludeTree.some((cls) =>
+      element.classList.contains(cls),
+    );
+    if (isExcluded) return null;
+  }
 
   const isTreeExcludedByDataAttr = element.dataset.mirage === "excludeTree";
-
-
 
   const rect = element.getBoundingClientRect();
   const computed = window.getComputedStyle(element);
