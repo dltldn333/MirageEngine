@@ -102,6 +102,9 @@ export function extractSceneGraph(
   const element = sourceNode as HTMLElement;
 
   // Exclude Tree filter
+  //by data attribute
+  const filterData = element.dataset.mirageFilter;
+  if (filterData && filterData.includes("exclude-tree")) return null;
   // by class
   if (filter && filter.excludeTree && filter.excludeTree.length > 0) {
     const isExcluded = filter.excludeTree.some((cls) =>
@@ -109,8 +112,6 @@ export function extractSceneGraph(
     );
     if (isExcluded) return null;
   }
-
-  const isTreeExcludedByDataAttr = element.dataset.mirage === "excludeTree";
 
   const rect = element.getBoundingClientRect();
   const computed = window.getComputedStyle(element);
