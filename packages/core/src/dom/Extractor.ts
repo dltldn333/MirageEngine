@@ -101,16 +101,16 @@ export function extractSceneGraph(
 
   const element = sourceNode as HTMLElement;
 
-  // exit point filter
-  //by data attribute
+  // [Filter] end
+  // by data attribute
   const filterData = element.dataset.mirageFilter;
-  if (filterData && filterData.includes("exit-point")) return null;
+  if (filterData && filterData.includes("end")) return null;
   // by class
-  if (filter && filter.exitPoint && filter.exitPoint.length > 0) {
-    const isExitPoint = filter.exitPoint.some((cls) =>
+  if (filter && filter.end && filter.end.length > 0) {
+    const isEnd = filter.end.some((cls) =>
       element.classList.contains(cls),
     );
-    if (isExitPoint) return null;
+    if (isEnd) return null;
   }
 
   const rect = element.getBoundingClientRect();
