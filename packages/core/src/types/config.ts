@@ -6,6 +6,7 @@ export interface FilterConfig {
   excludeTree?: string[];
   includeSelf?: string[];
   excludeSelf?: string[];
+  exitPoint?: string[];
 }
 
 interface BaseConfig {
