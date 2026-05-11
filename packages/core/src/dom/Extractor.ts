@@ -24,8 +24,9 @@ function getTextNodeRect(textNode: Text) {
   };
 }
 
+const filterTogle = false;
+
 function extractTextStyles(computed: CSSStyleDeclaration): TextStyles {
-  const filterTogle = false;
   const fontSize = parseFloat(computed.fontSize);
   let lineHeight = parseFloat(computed.lineHeight);
   if (isNaN(lineHeight)) {
