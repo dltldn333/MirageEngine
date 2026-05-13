@@ -58,6 +58,7 @@ export function extractSceneGraph(
   visibleFlow: Visibility,
   filter?: FilterConfig,
 ): SceneNode | null {
+
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {
     const textNode = sourceNode as Text;
@@ -106,16 +107,22 @@ export function extractSceneGraph(
   const element = sourceNode as HTMLElement;
 
   // [[[Filter]]]
-
-  // [Filter] end
-  // by data attribute
   const filterData = element.dataset.mirageFilter;
-  if (filterData && filterData.includes("end")) return null;
-  // by class
-  if (filter && filter.end && filter.end.length > 0) {
-    const isEnd = filter.end.some((cls) => element.classList.contains(cls));
-    if (isEnd) return null;
+  let inheritedVisible = visibleFlow;
+  if (filterData) {
+    const filterSet = new Set(filterData.split(/\s+/));
+
+    // [Filter] end
+    // by data attribute
+    if (filterSet.has("end")) return null;
+    // by class
+    if (filter && filter.end && filter.end.length > 0) {
+      const isEnd = filter.end.some((cls) => element.classList.contains(cls));
+      if (isEnd) return null;
+    }
   }
+
+
 
   const rect = element.getBoundingClientRect();
   const computed = window.getComputedStyle(element);

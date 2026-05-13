@@ -12,3 +12,10 @@ export const INCLUDED = 1;
 
 // 다른 파일에서 파라미터 타입 지정용으로 사용
 export type Visibility = typeof EXCLUDED | typeof INCLUDED;
+
+export type MirageFilter = 
+  | 'include-tree' 
+  | 'exclude-tree' 
+  | 'include-self' 
+  | 'exclude-self' 
+  | 'end';
