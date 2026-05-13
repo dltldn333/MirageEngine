@@ -133,26 +133,19 @@ export function extractSceneGraph(
       );
     }
 
-    // [Filter] include-tree
     if (filterSet.has("include-tree")) {
       inheritedVisible = INCLUDED;
-    }
-    // [Filter] exclude-tree
-    else if (filterSet.has("exclude-tree")) {
+    } else if (filterSet.has("exclude-tree")) {
       inheritedVisible = EXCLUDED;
     }
+
     let visibleFlag = inheritedVisible;
 
-    // [Filter] include-self
     if (filterSet.has("include-self")) {
       visibleFlag = INCLUDED;
-    }
-    // [Filter] exclude-self
-    else if (filterSet.has("exclude-self")) {
+    } else if (filterSet.has("exclude-self")) {
       visibleFlag = EXCLUDED;
     }
-    // [Filter] end
-    console.log("filterSet", filterSet);
     if (filterSet.has("end")) return null;
   }
 
