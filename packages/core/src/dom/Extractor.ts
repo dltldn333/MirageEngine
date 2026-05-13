@@ -106,7 +106,7 @@ export function extractSceneGraph(
 
   const element = sourceNode as HTMLElement;
 
-  // [[[Filter]]]
+  // [[Filter]] data attribute based filtering
   const filterData = element.dataset.mirageFilter;
   let inheritedVisible = visibleFlow;
 
@@ -136,25 +136,33 @@ export function extractSceneGraph(
     // [Filter] include-tree
     if (filterSet.has("include-tree")) {
       inheritedVisible = INCLUDED;
-    } 
+    }
     // [Filter] exclude-tree
     else if (filterSet.has("exclude-tree")) {
       inheritedVisible = EXCLUDED;
     }
-    
+    let visibleFlag = inheritedVisible;
 
-
+    // [Filter] include-self
+    if (filterSet.has("include-self")) {
+      visibleFlag = INCLUDED;
+    }
+    // [Filter] exclude-self
+    else if (filterSet.has("exclude-self")) {
+      visibleFlag = EXCLUDED;
+    }
     // [Filter] end
-    // by data attribute
     console.log("filterSet", filterSet);
     if (filterSet.has("end")) return null;
-    // by class
-    if (filterConfig && filterConfig.end && filterConfig.end.length > 0) {
-      const isEnd = filterConfig.end.some((cls) =>
-        element.classList.contains(cls),
-      );
-      if (isEnd) return null;
-    }
+  }
+
+  // [[filter]] class based filtering
+  // [Filter] end
+  if (filterConfig && filterConfig.end && filterConfig.end.length > 0) {
+    const isEnd = filterConfig.end.some((cls) =>
+      element.classList.contains(cls),
+    );
+    if (isEnd) return null;
   }
 
   const rect = element.getBoundingClientRect();
