@@ -8,7 +8,7 @@ import {
   Visibility,
   EXCLUDED,
   INCLUDED,
-  MirageFilter,
+  ALLOWED_FILTERS,
 } from "../types";
 
 import { BoxStyles, TextStyles } from "@mirage-engine/painter";
@@ -57,7 +57,7 @@ export function extractSceneGraph(
     DIRTY_CONTENT |
     DIRTY_STRUCTURE,
   visibleFlow: Visibility,
-  filter?: FilterConfig,
+  filterConfig?: FilterConfig,
 ): SceneNode | null {
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {
@@ -112,30 +112,37 @@ export function extractSceneGraph(
 
   if (filterData) {
     const filterSet = new Set(filterData.split(/\s+/));
-    const ALLOWED_FILTERS: MirageFilter[] = [
-      "include-tree",
-      "exclude-tree",
-      "include-self",
-      "exclude-self",
-      "end",
-    ];
 
+    // error check
     for (const token of filterSet) {
-      if (!ALLOWED_FILTERS.includes(token as MirageFilter)) {
+      if (!ALLOWED_FILTERS.includes(token)) {
         throw new Error(
           `[MirageEngine] Invalid filter token: '${token}'. ` +
             `Expected one of: 'include-tree', 'exclude-tree', 'include-self', 'exclude-self', 'end'.`,
         );
       }
     }
+    if (filterSet.has("include-tree") && filterSet.has("exclude-tree")) {
+      throw new Error(
+        `[MirageEngine] Conflicting filters: 'include-tree' and 'exclude-tree' cannot be used together on the same element.`,
+      );
+    }
+    if (filterSet.has("include-self") && filterSet.has("exclude-self")) {
+      throw new Error(
+        `[MirageEngine] Conflicting filters: 'include-self' and 'exclude-self' cannot be used together on the same element.`,
+      );
+    }
+
 
     // [Filter] end
     // by data attribute
     console.log("filterSet", filterSet);
     if (filterSet.has("end")) return null;
     // by class
-    if (filter && filter.end && filter.end.length > 0) {
-      const isEnd = filter.end.some((cls) => element.classList.contains(cls));
+    if (filterConfig && filterConfig.end && filterConfig.end.length > 0) {
+      const isEnd = filterConfig.end.some((cls) =>
+        element.classList.contains(cls),
+      );
       if (isEnd) return null;
     }
   }
@@ -174,7 +181,7 @@ export function extractSceneGraph(
       child,
       initialMask,
       inheritedVisible,
-      filter,
+      filterConfig,
     );
     if (childNode) {
       children.push(childNode);
