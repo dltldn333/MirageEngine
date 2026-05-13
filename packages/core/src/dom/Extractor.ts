@@ -5,9 +5,9 @@ import {
   DIRTY_ZINDEX,
   DIRTY_STRUCTURE,
   SceneNode,
-    Visibility,
+  Visibility,
   EXCLUDED,
-  INCLUDED
+  INCLUDED,
 } from "../types";
 
 import { BoxStyles, TextStyles } from "@mirage-engine/painter";
@@ -26,8 +26,6 @@ function getTextNodeRect(textNode: Text) {
     height: rect.height,
   };
 }
-
-
 
 function extractTextStyles(computed: CSSStyleDeclaration): TextStyles {
   const fontSize = parseFloat(computed.fontSize);
@@ -57,7 +55,7 @@ export function extractSceneGraph(
     DIRTY_ZINDEX |
     DIRTY_CONTENT |
     DIRTY_STRUCTURE,
-  inheritedVisible: Visibility,
+  visibleFlow: Visibility,
   filter?: FilterConfig,
 ): SceneNode | null {
   // Check text node
@@ -109,17 +107,13 @@ export function extractSceneGraph(
 
   // [[[Filter]]]
 
-
-
   // [Filter] end
   // by data attribute
   const filterData = element.dataset.mirageFilter;
   if (filterData && filterData.includes("end")) return null;
   // by class
   if (filter && filter.end && filter.end.length > 0) {
-    const isEnd = filter.end.some((cls) =>
-      element.classList.contains(cls),
-    );
+    const isEnd = filter.end.some((cls) => element.classList.contains(cls));
     if (isEnd) return null;
   }
 
@@ -153,7 +147,12 @@ export function extractSceneGraph(
 
   Array.from(element.childNodes).forEach((child) => {
     // Recurring
-    const childNode = extractSceneGraph(child, initialMask, filter);
+    const childNode = extractSceneGraph(
+      child,
+      initialMask,
+      inheritedVisible,
+      filter,
+    );
     if (childNode) {
       children.push(childNode);
     }
