@@ -8,6 +8,7 @@ import {
   Visibility,
   EXCLUDED,
   INCLUDED,
+  MirageFilter,
 } from "../types";
 
 import { BoxStyles, TextStyles } from "@mirage-engine/painter";
@@ -58,7 +59,6 @@ export function extractSceneGraph(
   visibleFlow: Visibility,
   filter?: FilterConfig,
 ): SceneNode | null {
-
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {
     const textNode = sourceNode as Text;
@@ -109,11 +109,20 @@ export function extractSceneGraph(
   // [[[Filter]]]
   const filterData = element.dataset.mirageFilter;
   let inheritedVisible = visibleFlow;
+
   if (filterData) {
     const filterSet = new Set(filterData.split(/\s+/));
+    const ALLOWED_FILTERS: MirageFilter[] = [
+      "include-tree",
+      "exclude-tree",
+      "include-self",
+      "exclude-self",
+      "end",
+    ];
 
     // [Filter] end
     // by data attribute
+    console.log("filterSet", filterSet);
     if (filterSet.has("end")) return null;
     // by class
     if (filter && filter.end && filter.end.length > 0) {
@@ -121,8 +130,6 @@ export function extractSceneGraph(
       if (isEnd) return null;
     }
   }
-
-
 
   const rect = element.getBoundingClientRect();
   const computed = window.getComputedStyle(element);
