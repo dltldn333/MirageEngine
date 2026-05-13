@@ -9,3 +9,6 @@ export const DIRTY_CONTENT = 1 << 4;   // 16: text content changed (00010000)
 // Filtering Flag
 export const EXCLUDED = 0;
 export const INCLUDED = 1;
+
+// 다른 파일에서 파라미터 타입 지정용으로 사용
+export type Visibility = typeof EXCLUDED | typeof INCLUDED;

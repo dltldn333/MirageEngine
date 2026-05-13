@@ -6,6 +6,7 @@ import {
   DIRTY_RECT,
   DIRTY_STRUCTURE,
   DIRTY_STYLE,
+  INCLUDED
 } from "../types";
 
 export class Syncer {
@@ -130,7 +131,7 @@ export class Syncer {
 
   private forceUpdateScene() {
     this.isDomDirty = false;
-    const sceneGraph = extractSceneGraph(this.target, this.pendingMask, this.filter);
+    const sceneGraph = extractSceneGraph(this.target, this.pendingMask, INCLUDED, this.filter);
 
     if (sceneGraph) {
       this.renderer.syncScene(sceneGraph);

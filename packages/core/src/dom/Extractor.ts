@@ -5,6 +5,9 @@ import {
   DIRTY_ZINDEX,
   DIRTY_STRUCTURE,
   SceneNode,
+    Visibility,
+  EXCLUDED,
+  INCLUDED
 } from "../types";
 
 import { BoxStyles, TextStyles } from "@mirage-engine/painter";
@@ -54,6 +57,7 @@ export function extractSceneGraph(
     DIRTY_ZINDEX |
     DIRTY_CONTENT |
     DIRTY_STRUCTURE,
+  inheritedVisible: Visibility,
   filter?: FilterConfig,
 ): SceneNode | null {
   // Check text node
@@ -102,6 +106,10 @@ export function extractSceneGraph(
   }
 
   const element = sourceNode as HTMLElement;
+
+  // [[[Filter]]]
+
+
 
   // [Filter] end
   // by data attribute
