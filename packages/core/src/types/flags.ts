@@ -8,5 +8,4 @@ export const DIRTY_CONTENT = 1 << 4;   // 16: text content changed (00010000)
 
 // Filtering Flag
 export const EXCLUDED = 0;
-
-export const INCLUDED = 2;
+export const INCLUDED = 1;
