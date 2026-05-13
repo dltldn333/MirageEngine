@@ -120,6 +120,15 @@ export function extractSceneGraph(
       "end",
     ];
 
+    for (const token of filterSet) {
+      if (!ALLOWED_FILTERS.includes(token as MirageFilter)) {
+        throw new Error(
+          `[MirageEngine] Invalid filter token: '${token}'. ` +
+            `Expected one of: 'include-tree', 'exclude-tree', 'include-self', 'exclude-self', 'end'.`,
+        );
+      }
+    }
+
     // [Filter] end
     // by data attribute
     console.log("filterSet", filterSet);
