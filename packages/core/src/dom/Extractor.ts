@@ -133,6 +133,16 @@ export function extractSceneGraph(
       );
     }
 
+    // [Filter] include-tree
+    if (filterSet.has("include-tree")) {
+      inheritedVisible = INCLUDED;
+    } 
+    // [Filter] exclude-tree
+    else if (filterSet.has("exclude-tree")) {
+      inheritedVisible = EXCLUDED;
+    }
+    
+
 
     // [Filter] end
     // by data attribute
