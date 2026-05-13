@@ -24,7 +24,7 @@ function getTextNodeRect(textNode: Text) {
   };
 }
 
-const filterTogle = false;
+
 
 function extractTextStyles(computed: CSSStyleDeclaration): TextStyles {
   const fontSize = parseFloat(computed.fontSize);
