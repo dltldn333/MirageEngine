@@ -56,7 +56,7 @@ export function extractSceneGraph(
     DIRTY_ZINDEX |
     DIRTY_CONTENT |
     DIRTY_STRUCTURE,
-  visibleFlow: Visibility,
+  inheritedFlow: Visibility,
   filterConfig?: FilterConfig,
 ): SceneNode | null {
   // Check text node
@@ -108,8 +108,8 @@ export function extractSceneGraph(
 
   // [[Filter]] data attribute based filtering
   const filterData = element.dataset.mirageFilter;
-  let inheritedVisible = visibleFlow;
-
+  let visibleFlow = inheritedFlow;
+  let visibleFlag = inheritedFlow;
   if (filterData) {
     const filterSet = new Set(filterData.split(/\s+/));
 
@@ -122,6 +122,7 @@ export function extractSceneGraph(
         );
       }
     }
+    if (filterSet.has("end")) return null;
     if (filterSet.has("include-tree") && filterSet.has("exclude-tree")) {
       throw new Error(
         `[MirageEngine] Conflicting filters: 'include-tree' and 'exclude-tree' cannot be used together on the same element.`,
@@ -134,19 +135,18 @@ export function extractSceneGraph(
     }
 
     if (filterSet.has("include-tree")) {
-      inheritedVisible = INCLUDED;
+      visibleFlow = INCLUDED;
     } else if (filterSet.has("exclude-tree")) {
-      inheritedVisible = EXCLUDED;
+      visibleFlow = EXCLUDED;
     }
 
-    let visibleFlag = inheritedVisible;
+    visibleFlag = visibleFlow;
 
     if (filterSet.has("include-self")) {
       visibleFlag = INCLUDED;
     } else if (filterSet.has("exclude-self")) {
       visibleFlag = EXCLUDED;
     }
-    if (filterSet.has("end")) return null;
   }
 
   // [[filter]] class based filtering
@@ -191,7 +191,7 @@ export function extractSceneGraph(
     const childNode = extractSceneGraph(
       child,
       initialMask,
-      inheritedVisible,
+      visibleFlow,
       filterConfig,
     );
     if (childNode) {
