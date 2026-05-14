@@ -122,7 +122,7 @@ export function extractSceneGraph(
         );
       }
     }
-    
+
     if (filterSet.has("end")) return null;
 
     // error check
@@ -216,6 +216,7 @@ export function extractSceneGraph(
     textContent,
     textStyles,
     dirtyMask: initialMask,
+    visibility: visibleFlag,
     children,
   };
 }
