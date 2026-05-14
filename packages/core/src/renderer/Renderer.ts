@@ -6,6 +6,7 @@ import {
   CoreConfig,
   MirageMode,
   Visibility,
+  INCLUDED,
   SYSTEM
 } from "../types";
 import { Painter } from "@mirage-engine/painter";
@@ -183,7 +184,7 @@ export class Renderer {
   }
 
   private calculateLayerNum(visibility: Visibility) {
-    return (1 - visibility) * 30;
+    return (1 - (visibility & INCLUDED)) * 30;
   }
 
   private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
