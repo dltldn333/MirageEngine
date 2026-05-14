@@ -137,17 +137,17 @@ export function extractSceneGraph(
     }
 
     if (filterSet.has("include-tree")) {
-      visibleFlow = INCLUDED;
+      visibleFlow = (visibleFlow | INCLUDED) as Visibility;
     } else if (filterSet.has("exclude-tree")) {
-      visibleFlow = EXCLUDED;
+      visibleFlow = (visibleFlow & ~ INCLUDED) as Visibility;
     }
 
     visibleFlag = visibleFlow;
 
     if (filterSet.has("include-self")) {
-      visibleFlag = INCLUDED;
+      visibleFlag = (visibleFlag | INCLUDED) as Visibility;
     } else if (filterSet.has("exclude-self")) {
-      visibleFlag = EXCLUDED;
+      visibleFlag = (visibleFlag & ~ INCLUDED) as Visibility;
     }
   }
 
@@ -166,6 +166,7 @@ export function extractSceneGraph(
   if (travelData) {
     const travelSet = new Set(travelData.split(/\s+/));
     if (travelSet.has("traveler")) {
+      // visibleFlag = (visibleFlag & 1) as Visibility;
     }
   }
 
