@@ -69,8 +69,8 @@
         <span>TEST</span>
       </div>
       <h1 data-mirage-filter="include-self">
-        mirage-engine 동기화 테스트 (+GSAP)
-        <span>test</span>
+        mirage-engine 테스트 환경
+        <span style="color: darkorange">(not-included)</span>
       </h1>
       <button id="test-btn" onclick="alert('test')">테스트 버튼</button>
       <p>
@@ -89,13 +89,24 @@
         "
         data-mirage-filter="include-tree"
       >
+        <div
+          class="box"
+          style="
+            background-color: lightseagreen;
+            color: white;
+            text-align: center;
+          "
+          data-mirage-filter="exclude-self"
+        >
+          (exclude-self)
+        </div>
         <div id="box1" class="box" style="background-color: steelblue">
           Box 1 (2초 뒤 색상 변경 - CSS)
         </div>
 
         <div
           id="box2"
-          class="box exclude"
+          class="box"
           style="background-color: seagreen; opacity: 0.8"
         >
           Box 2 (반투명)
