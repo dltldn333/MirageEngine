@@ -33,7 +33,6 @@
         font-family: "Times New Roman", Times, serif;
         width: 100%;
         height: 60px;
-        margin-top: 15px;
         box-sizing: border-box;
         transition: all 0.5s ease;
         border-radius: 8px;
@@ -54,8 +53,8 @@
         border: 1px solid #333;
       }
 
-      #css-test span{
-        background-color: rgba(255, 255, 255, 0);;
+      #css-test span {
+        background-color: rgba(255, 255, 255, 0);
         border: solid 10px rgba(255, 0, 255, 0.5);
         padding: 10px;
         color: blue;
@@ -64,11 +63,15 @@
     </style>
   </head>
   <body>
-    <div id="root">
+    <!-- <div id="root" class="exclude"> -->
+    <div id="root" data-mirage-filter="exclude-tree">
       <div id="css-test">
         <span>TEST</span>
       </div>
-      <h1>mirage-engine 동기화 테스트 (+GSAP)</h1>
+      <h1 data-mirage-filter="include-self">
+        mirage-engine 테스트 환경
+        <span style="color: darkorange">(not-included)</span>
+      </h1>
       <button id="test-btn" onclick="alert('test')">테스트 버튼</button>
       <p>
         2초: 파란박스 색 변경 (CSS Transition) <br />
@@ -76,21 +79,40 @@
         <b>6초: 보라색 박스 GSAP 이동 (JS 애니메이션)</b>
       </p>
 
-      <div id="box1" class="box" style="background-color: steelblue">
-        Box 1 (2초 뒤 색상 변경 - CSS)
-      </div>
-
       <div
-        id="box2"
-        class="box"
-        style="background-color: seagreen; opacity: 0.8"
+        style="
+          display: flex;
+          gap: 20px;
+          background: lightcoral;
+          padding: 20px;
+          border-radius: 10px;
+        "
+        data-mirage-filter="include-tree"
       >
-        Box 2 (반투명)
         <div
-          id="box2-child"
-          style="background-color: white; height: 20px; margin: 5px"
+          class="box"
+          style="
+            background-color: lightseagreen;
+            color: white;
+            text-align: center;
+          "
+          data-mirage-filter="exclude-self"
         >
-          Child Box
+          (exclude-self)
+        </div>
+        <div id="box1" class="box" style="background-color: steelblue">
+          Box 1 (2초 뒤 색상 변경 - CSS)
+        </div>
+
+        <div
+          id="box2"
+          class="box"
+          style="background-color: seagreen; opacity: 0.8"
+        >
+          Box 2 (반투명)
+          <div id="box2-child" style="background-color: white; height: 20px">
+            Child box
+          </div>
         </div>
       </div>
 

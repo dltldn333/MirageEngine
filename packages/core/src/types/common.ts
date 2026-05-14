@@ -1,4 +1,5 @@
 import { TextStyles, BoxStyles } from "@mirage-engine/painter";
+import { Visibility } from "./flags";
 
 export type NodeType = "BOX" | "TEXT"
 
@@ -21,7 +22,10 @@ export interface SceneNode {
   textStyles?: TextStyles;
 
   dirtyMask: number;
-  // TODO: SceneNode의 sort 로직 추가(아마도
+  // TODO: SceneNode의 sort 로직 추가(아마도)
+
+  visibility: Visibility;
+  
   children: SceneNode[];
 }
 
