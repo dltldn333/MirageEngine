@@ -186,7 +186,7 @@ export class Renderer {
   private updateMeshLayers(node: SceneNode, mesh: THREE.Mesh) {
     const layerNum = (1 - (node.visibility & USER_LAYER)) * 30;
     mesh.layers.set(layerNum);
-    if (node.visibility & SYSTEM_LAYER) {
+    if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) {
       mesh.layers.enable(29);
     }
   }
