@@ -7,7 +7,7 @@ import {
   MirageMode,
   Visibility,
   USER_LAYER,
-  SYSTEM_LAYER
+  SYSTEM_LAYER,
 } from "../types";
 import { Painter } from "@mirage-engine/painter";
 
@@ -183,8 +183,12 @@ export class Renderer {
     }
   }
 
-  private calculateLayerNum(visibility: Visibility) {
-    return (1 - (visibility & USER_LAYER)) * 30;
+  private updateMeshLayers(node: SceneNode, mesh: THREE.Mesh) {
+    const layerNum = (1 - (node.visibility & USER_LAYER)) * 30;
+    mesh.layers.set(layerNum);
+    if (node.visibility & SYSTEM_LAYER) {
+      mesh.layers.enable(29);
+    }
   }
 
   private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
@@ -202,10 +206,7 @@ export class Renderer {
       );
 
       mesh = new THREE.Mesh(geometry, material);
-      mesh.layers.set(this.calculateLayerNum(node.visibility));
-      if (node.visibility & SYSTEM_LAYER) {
-        mesh.layers.enable(29)
-      }
+
       if (node.type === "TEXT") mesh.name = "BG_MESH";
       this.scene.add(mesh);
       this.meshMap.set(node.element, mesh);
@@ -214,6 +215,7 @@ export class Renderer {
     mesh.userData.domRect = node.rect;
 
     this.updateMeshProperties(mesh, node);
+    this.updateMeshLayers(node, mesh);
 
     if (node.type === "BOX") {
       for (const child of node.children) {
@@ -257,7 +259,7 @@ export class Renderer {
 
       textMesh.name = "TEXT_CHILD";
       textMesh.userData = { styleHash: currentStyleHash };
-      textMesh.layers.set(this.calculateLayerNum(node.visibility));
+      this.updateMeshLayers(node, textMesh);
       textMesh.position.z = 0.005;
       parentMesh.add(textMesh);
     }
