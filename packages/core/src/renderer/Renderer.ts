@@ -6,8 +6,8 @@ import {
   CoreConfig,
   MirageMode,
   Visibility,
-  INCLUDED,
-  SYSTEM
+  USER_LAYER,
+  SYSTEM_LAYER
 } from "../types";
 import { Painter } from "@mirage-engine/painter";
 
@@ -155,7 +155,7 @@ export class Renderer {
       this.camera.right = this.targetRect.width / 2;
       this.camera.top = this.targetRect.height / 2;
       this.camera.bottom = this.targetRect.height / -2;
-      this.camera.layers.set(0);
+      this.camera.layers.set(29);
       this.camera.updateProjectionMatrix();
 
       this.updateCanvasLayout();
@@ -184,7 +184,7 @@ export class Renderer {
   }
 
   private calculateLayerNum(visibility: Visibility) {
-    return (1 - (visibility & INCLUDED)) * 30;
+    return (1 - (visibility & USER_LAYER)) * 30;
   }
 
   private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
@@ -203,8 +203,8 @@ export class Renderer {
 
       mesh = new THREE.Mesh(geometry, material);
       mesh.layers.set(this.calculateLayerNum(node.visibility));
-      if (node.visibility & SYSTEM) {
-        console.log("System node detected:", node.element);
+      if (node.visibility & SYSTEM_LAYER) {
+        mesh.layers.enable(29)
       }
       if (node.type === "TEXT") mesh.name = "BG_MESH";
       this.scene.add(mesh);
@@ -257,8 +257,7 @@ export class Renderer {
 
       textMesh.name = "TEXT_CHILD";
       textMesh.userData = { styleHash: currentStyleHash };
-      const layerNum = this.calculateLayerNum(node.visibility);
-      textMesh.layers.set(layerNum);
+      textMesh.layers.set(this.calculateLayerNum(node.visibility));
       textMesh.position.z = 0.005;
       parentMesh.add(textMesh);
     }

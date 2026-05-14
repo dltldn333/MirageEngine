@@ -6,9 +6,8 @@ import {
   DIRTY_STRUCTURE,
   SceneNode,
   Visibility,
-  EXCLUDED,
-  INCLUDED,
-  SYSTEM,
+  USER_LAYER,
+  SYSTEM_LAYER,
   ALLOWED_FILTERS,
 } from "../types";
 
@@ -137,17 +136,17 @@ export function extractSceneGraph(
     }
 
     if (filterSet.has("include-tree")) {
-      visibleFlow = (visibleFlow | INCLUDED) as Visibility;
+      visibleFlow = (visibleFlow | USER_LAYER) as Visibility;
     } else if (filterSet.has("exclude-tree")) {
-      visibleFlow = (visibleFlow & ~ INCLUDED) as Visibility;
+      visibleFlow = (visibleFlow & ~ USER_LAYER) as Visibility;
     }
 
     visibleFlag = visibleFlow;
 
     if (filterSet.has("include-self")) {
-      visibleFlag = (visibleFlag | INCLUDED) as Visibility;
+      visibleFlag = (visibleFlag | USER_LAYER) as Visibility;
     } else if (filterSet.has("exclude-self")) {
-      visibleFlag = (visibleFlag & ~ INCLUDED) as Visibility;
+      visibleFlag = (visibleFlag & ~ USER_LAYER) as Visibility;
     }
   }
 
@@ -160,13 +159,13 @@ export function extractSceneGraph(
   //   if (isEnd) return null;
   // }
 
-  visibleFlag = (visibleFlag | (inheritedFlow & SYSTEM)) as Visibility;
+  visibleFlag = (visibleFlag | (inheritedFlow & SYSTEM_LAYER)) as Visibility;
 
   const travelData = element.dataset.mirageTravel;
   if (travelData) {
     const travelSet = new Set(travelData.split(/\s+/));
     if (travelSet.has("traveler")) {
-      // visibleFlag = (visibleFlag & 1) as Visibility;
+      visibleFlag = (visibleFlag & ~SYSTEM_LAYER) as Visibility;
     }
   }
 

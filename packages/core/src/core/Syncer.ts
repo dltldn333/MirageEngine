@@ -6,8 +6,8 @@ import {
   DIRTY_RECT,
   DIRTY_STRUCTURE,
   DIRTY_STYLE,
-  INCLUDED,
-  SYSTEM,
+  USER_LAYER,
+  SYSTEM_LAYER,
   Visibility,
 } from "../types";
 
@@ -135,11 +135,10 @@ export class Syncer {
     this.isDomDirty = false;
     const enabledTraveler =
       document.querySelector("[data-mirage-travel='traveler']") !== null;
-    console.log(enabledTraveler);
     const sceneGraph = extractSceneGraph(
       this.target,
       this.pendingMask,
-      enabledTraveler ? ((INCLUDED | SYSTEM) as Visibility) : INCLUDED,
+      (enabledTraveler ? USER_LAYER | SYSTEM_LAYER : USER_LAYER) as Visibility,
       this.filter,
     );
 

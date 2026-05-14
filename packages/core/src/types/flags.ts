@@ -7,9 +7,9 @@ export const DIRTY_STRUCTURE = 1 << 3; // 8: childNode add / delete (00001000)
 export const DIRTY_CONTENT = 1 << 4; // 16: text content changed (00010000)
 
 // Filtering Flag
-export const INCLUDED = 1;
+export const USER_LAYER = 1 << 0;
+export const SYSTEM_LAYER = 1 << 1;
 export const EXCLUDED = 0;
-export const SYSTEM = 1 << 1;
 
 export type Visibility = 0 | 1 | 2 | 3;
 
