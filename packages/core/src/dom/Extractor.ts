@@ -188,11 +188,12 @@ export function extractSceneGraph(
   const children: SceneNode[] = [];
 
   Array.from(element.childNodes).forEach((child) => {
-    // Recurring
+    const visibleFlowToPass =
+      child.nodeType === Node.TEXT_NODE ? visibleFlag : visibleFlow;
     const childNode = extractSceneGraph(
       child,
       initialMask,
-      visibleFlow,
+      visibleFlowToPass,
       filterConfig,
     );
     if (childNode) {
