@@ -5,6 +5,8 @@ import {
   TextQuality,
   CoreConfig,
   MirageMode,
+  Visibility,
+  SYSTEM
 } from "../types";
 import { Painter } from "@mirage-engine/painter";
 
@@ -180,6 +182,10 @@ export class Renderer {
     }
   }
 
+  private calculateLayerNum(visibility: Visibility) {
+    return (1 - visibility) * 30;
+  }
+
   private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
     activeElements.add(node.element);
 
@@ -195,7 +201,10 @@ export class Renderer {
       );
 
       mesh = new THREE.Mesh(geometry, material);
-      mesh.layers.set(node.visibility);
+      mesh.layers.set(this.calculateLayerNum(node.visibility));
+      if (node.visibility & SYSTEM) {
+        console.log("System node detected:", node.element);
+      }
       if (node.type === "TEXT") mesh.name = "BG_MESH";
       this.scene.add(mesh);
       this.meshMap.set(node.element, mesh);
@@ -247,7 +256,8 @@ export class Renderer {
 
       textMesh.name = "TEXT_CHILD";
       textMesh.userData = { styleHash: currentStyleHash };
-      textMesh.layers.set(node.visibility);
+      const layerNum = this.calculateLayerNum(node.visibility);
+      textMesh.layers.set(layerNum);
       textMesh.position.z = 0.005;
       parentMesh.add(textMesh);
     }

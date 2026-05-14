@@ -159,12 +159,11 @@ export function extractSceneGraph(
   //   );
   //   if (isEnd) return null;
   // }
-
-  const travelData = element.dataset.mirageFilter;
+  visibleFlag = (visibleFlag | SYSTEM) as Visibility;
+  const travelData = element.dataset.mirageTravel;
   if (travelData) {
     const travelSet = new Set(travelData.split(/\s+/));
     if (travelSet.has("traveler")) {
-      visibleFlag = (visibleFlag | SYSTEM) as Visibility;
     }
   }
 
