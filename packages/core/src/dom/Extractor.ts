@@ -159,7 +159,9 @@ export function extractSceneGraph(
   //   );
   //   if (isEnd) return null;
   // }
-  visibleFlag = (visibleFlag | SYSTEM) as Visibility;
+
+  visibleFlag = (visibleFlag | (inheritedFlow & SYSTEM)) as Visibility;
+
   const travelData = element.dataset.mirageTravel;
   if (travelData) {
     const travelSet = new Set(travelData.split(/\s+/));

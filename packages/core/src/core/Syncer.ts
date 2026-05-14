@@ -6,7 +6,9 @@ import {
   DIRTY_RECT,
   DIRTY_STRUCTURE,
   DIRTY_STYLE,
-  INCLUDED
+  INCLUDED,
+  SYSTEM,
+  Visibility,
 } from "../types";
 
 export class Syncer {
@@ -131,7 +133,15 @@ export class Syncer {
 
   private forceUpdateScene() {
     this.isDomDirty = false;
-    const sceneGraph = extractSceneGraph(this.target, this.pendingMask, INCLUDED, this.filter);
+    const enabledTraveler =
+      document.querySelector("[data-mirage-travel='traveler']") !== null;
+    console.log(enabledTraveler);
+    const sceneGraph = extractSceneGraph(
+      this.target,
+      this.pendingMask,
+      enabledTraveler ? ((INCLUDED | SYSTEM) as Visibility) : INCLUDED,
+      this.filter,
+    );
 
     if (sceneGraph) {
       this.renderer.syncScene(sceneGraph);
