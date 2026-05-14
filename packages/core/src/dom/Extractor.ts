@@ -100,6 +100,7 @@ export function extractSceneGraph(
       textContent: normalizedText,
       textStyles: extractTextStyles(computed),
       dirtyMask: initialMask,
+      visibility: inheritedFlow,
       children: [],
     };
   }
