@@ -1,5 +1,13 @@
 # mirage-engine
 
+## 0.2.15
+
+### Patch Changes
+
+- 966aa37: provide filtering api
+- Updated dependencies [966aa37]
+  - @mirage-engine/core@0.1.0
+
 ## 0.2.14
 
 ### Patch Changes
