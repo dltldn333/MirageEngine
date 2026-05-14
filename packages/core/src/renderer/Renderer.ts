@@ -54,10 +54,15 @@ export class Renderer {
     );
     this.camera.position.z = 100;
 
+    // [new]
+    // THREE.ColorManagement.enabled = false;
+
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
       alpha: true,
       antialias: true,
+      // [new]
+      // premultipliedAlpha: true
     });
 
     this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -147,6 +152,7 @@ export class Renderer {
       this.camera.right = this.targetRect.width / 2;
       this.camera.top = this.targetRect.height / 2;
       this.camera.bottom = this.targetRect.height / -2;
+      this.camera.layers.set(0);
       this.camera.updateProjectionMatrix();
 
       this.updateCanvasLayout();
@@ -189,8 +195,8 @@ export class Renderer {
       );
 
       mesh = new THREE.Mesh(geometry, material);
+      mesh.layers.set(node.visibility);
       if (node.type === "TEXT") mesh.name = "BG_MESH";
-
       this.scene.add(mesh);
       this.meshMap.set(node.element, mesh);
     }
@@ -241,7 +247,7 @@ export class Renderer {
 
       textMesh.name = "TEXT_CHILD";
       textMesh.userData = { styleHash: currentStyleHash };
-
+      textMesh.layers.set(node.visibility);
       textMesh.position.z = 0.005;
       parentMesh.add(textMesh);
     }

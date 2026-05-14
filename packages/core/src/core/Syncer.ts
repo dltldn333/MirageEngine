@@ -1,3 +1,4 @@
+import { FilterConfig } from "../types/config";
 import { Renderer } from "../renderer/Renderer";
 import { extractSceneGraph } from "../dom/Extractor";
 import {
@@ -5,11 +6,14 @@ import {
   DIRTY_RECT,
   DIRTY_STRUCTURE,
   DIRTY_STYLE,
+  INCLUDED
 } from "../types";
 
 export class Syncer {
   private target: HTMLElement;
   private renderer: Renderer;
+  private filter?: FilterConfig;
+
   private observer: MutationObserver;
 
   private isDomDirty: boolean = false;
@@ -20,9 +24,10 @@ export class Syncer {
   private mutationTimer: number | null = null;
   private cssTimer: number | null = null;
 
-  constructor(target: HTMLElement, renderer: Renderer) {
+  constructor(target: HTMLElement, renderer: Renderer, filter?: FilterConfig) {
     this.target = target;
     this.renderer = renderer;
+    this.filter = filter;
 
     this.observer = new MutationObserver((mutations) => {
       let currentMask = DIRTY_NONE;
@@ -126,7 +131,7 @@ export class Syncer {
 
   private forceUpdateScene() {
     this.isDomDirty = false;
-    const sceneGraph = extractSceneGraph(this.target, this.pendingMask);
+    const sceneGraph = extractSceneGraph(this.target, this.pendingMask, INCLUDED, this.filter);
 
     if (sceneGraph) {
       this.renderer.syncScene(sceneGraph);

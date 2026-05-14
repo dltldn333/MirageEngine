@@ -5,9 +5,14 @@ import {
   DIRTY_ZINDEX,
   DIRTY_STRUCTURE,
   SceneNode,
+  Visibility,
+  EXCLUDED,
+  INCLUDED,
+  ALLOWED_FILTERS,
 } from "../types";
 
 import { BoxStyles, TextStyles } from "@mirage-engine/painter";
+import { FilterConfig } from "../types/config";
 
 // Helper function: getTextNodeRect, isValidTextNode, isLeafTextElement, extractTextStyles
 
@@ -50,12 +55,13 @@ export function extractSceneGraph(
     DIRTY_STYLE |
     DIRTY_ZINDEX |
     DIRTY_CONTENT |
-    DIRTY_STRUCTURE
+    DIRTY_STRUCTURE,
+  inheritedFlow: Visibility,
+  filterConfig?: FilterConfig,
 ): SceneNode | null {
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {
     const textNode = sourceNode as Text;
-
     // empthy text check
     if (!textNode.textContent || !textNode.textContent.trim()) return null;
     const normalizedText = textNode.textContent.replace(/\s+/g, " ").trim();
@@ -93,11 +99,66 @@ export function extractSceneGraph(
       textContent: normalizedText,
       textStyles: extractTextStyles(computed),
       dirtyMask: initialMask,
+      visibility: inheritedFlow,
       children: [],
     };
   }
 
   const element = sourceNode as HTMLElement;
+  // [[Filter]] data attribute based filtering
+  const filterData = element.dataset.mirageFilter;
+  let visibleFlow = inheritedFlow;
+  let visibleFlag = inheritedFlow;
+  if (filterData) {
+    const filterSet = new Set(filterData.split(/\s+/));
+    // error check
+    for (const token of filterSet) {
+      if (!ALLOWED_FILTERS.includes(token)) {
+        throw new Error(
+          `[MirageEngine] Invalid filter token: '${token}'. ` +
+            `Expected one of: 'include-tree', 'exclude-tree', 'include-self', 'exclude-self', 'end'.`,
+        );
+      }
+    }
+
+    if (filterSet.has("end")) return null;
+
+    // error check
+    if (filterSet.has("include-tree") && filterSet.has("exclude-tree")) {
+      throw new Error(
+        `[MirageEngine] Conflicting filters: 'include-tree' and 'exclude-tree' cannot be used together on the same element.`,
+      );
+    }
+    if (filterSet.has("include-self") && filterSet.has("exclude-self")) {
+      throw new Error(
+        `[MirageEngine] Conflicting filters: 'include-self' and 'exclude-self' cannot be used together on the same element.`,
+      );
+    }
+
+    if (filterSet.has("include-tree")) {
+      visibleFlow = INCLUDED;
+    } else if (filterSet.has("exclude-tree")) {
+      visibleFlow = EXCLUDED;
+    }
+
+    visibleFlag = visibleFlow;
+
+    if (filterSet.has("include-self")) {
+      visibleFlag = INCLUDED;
+    } else if (filterSet.has("exclude-self")) {
+      visibleFlag = EXCLUDED;
+    }
+  }
+
+  // [[filter]] class based filtering
+  // [Filter] end
+  if (filterConfig && filterConfig.end && filterConfig.end.length > 0) {
+    const isEnd = filterConfig.end.some((cls) =>
+      element.classList.contains(cls),
+    );
+    if (isEnd) return null;
+  }
+
   const rect = element.getBoundingClientRect();
   const computed = window.getComputedStyle(element);
 
@@ -127,8 +188,14 @@ export function extractSceneGraph(
   const children: SceneNode[] = [];
 
   Array.from(element.childNodes).forEach((child) => {
-    // Recurring
-    const childNode = extractSceneGraph(child, initialMask);
+    const visibleFlowToPass =
+      child.nodeType === Node.TEXT_NODE ? visibleFlag : visibleFlow;
+    const childNode = extractSceneGraph(
+      child,
+      initialMask,
+      visibleFlowToPass,
+      filterConfig,
+    );
     if (childNode) {
       children.push(childNode);
     }
@@ -148,6 +215,7 @@ export function extractSceneGraph(
     textContent,
     textStyles,
     dirtyMask: initialMask,
+    visibility: visibleFlag,
     children,
   };
 }
