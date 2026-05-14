@@ -8,6 +8,7 @@ import {
   Visibility,
   EXCLUDED,
   INCLUDED,
+  SYSTEM,
   ALLOWED_FILTERS,
 } from "../types";
 
@@ -152,11 +153,19 @@ export function extractSceneGraph(
 
   // [[filter]] class based filtering
   // [Filter] end
-  if (filterConfig && filterConfig.end && filterConfig.end.length > 0) {
-    const isEnd = filterConfig.end.some((cls) =>
-      element.classList.contains(cls),
-    );
-    if (isEnd) return null;
+  // if (filterConfig && filterConfig.end && filterConfig.end.length > 0) {
+  //   const isEnd = filterConfig.end.some((cls) =>
+  //     element.classList.contains(cls),
+  //   );
+  //   if (isEnd) return null;
+  // }
+
+  const travelData = element.dataset.mirageFilter;
+  if (travelData) {
+    const travelSet = new Set(travelData.split(/\s+/));
+    if (travelSet.has("traveler")) {
+      visibleFlag = (visibleFlag | SYSTEM) as Visibility;
+    }
   }
 
   const rect = element.getBoundingClientRect();
