@@ -33,7 +33,6 @@
         font-family: "Times New Roman", Times, serif;
         width: 100%;
         height: 60px;
-        margin-top: 15px;
         box-sizing: border-box;
         transition: all 0.5s ease;
         border-radius: 8px;
@@ -65,11 +64,13 @@
   </head>
   <body>
     <!-- <div id="root" class="exclude"> -->
-    <div id="root">
+    <div id="root" data-mirage-filter="exclude-tree">
       <div id="css-test">
         <span>TEST</span>
       </div>
-      <h1>mirage-engine 동기화 테스트 (+GSAP)</h1>
+      <h1 data-mirage-filter="include-self">
+        mirage-engine 동기화 테스트 (+GSAP)
+      </h1>
       <button id="test-btn" onclick="alert('test')">테스트 버튼</button>
       <p>
         2초: 파란박스 색 변경 (CSS Transition) <br />
@@ -77,22 +78,29 @@
         <b>6초: 보라색 박스 GSAP 이동 (JS 애니메이션)</b>
       </p>
 
-      <div id="box1" class="box" style="background-color: steelblue">
-        Box 1 (2초 뒤 색상 변경 - CSS)
-      </div>
-
       <div
-        id="box2"
-        class="box exclude"
-        style="background-color: seagreen; opacity: 0.8"
-        data-mirage-filter="end exclude-tree"
+        style="
+          display: flex;
+          gap: 20px;
+          background: lightcoral;
+          padding: 20px;
+          border-radius: 10px;
+        "
+        data-mirage-filter="include-tree"
       >
-        Box 2 (반투명)
+        <div id="box1" class="box" style="background-color: steelblue">
+          Box 1 (2초 뒤 색상 변경 - CSS)
+        </div>
+
         <div
-          id="box2-child"
-          style="background-color: white; height: 20px; margin: 5px"
+          id="box2"
+          class="box exclude"
+          style="background-color: seagreen; opacity: 0.8"
         >
-          Child box
+          Box 2 (반투명)
+          <div id="box2-child" style="background-color: white; height: 20px">
+            Child box
+          </div>
         </div>
       </div>
 
