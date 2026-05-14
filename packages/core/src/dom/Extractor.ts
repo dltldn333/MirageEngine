@@ -62,7 +62,6 @@ export function extractSceneGraph(
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {
     const textNode = sourceNode as Text;
-
     // empthy text check
     if (!textNode.textContent || !textNode.textContent.trim()) return null;
     const normalizedText = textNode.textContent.replace(/\s+/g, " ").trim();
@@ -106,14 +105,12 @@ export function extractSceneGraph(
   }
 
   const element = sourceNode as HTMLElement;
-
   // [[Filter]] data attribute based filtering
   const filterData = element.dataset.mirageFilter;
   let visibleFlow = inheritedFlow;
   let visibleFlag = inheritedFlow;
   if (filterData) {
     const filterSet = new Set(filterData.split(/\s+/));
-
     // error check
     for (const token of filterSet) {
       if (!ALLOWED_FILTERS.includes(token)) {
