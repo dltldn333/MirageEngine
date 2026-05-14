@@ -8,10 +8,11 @@ export const DIRTY_CONTENT = 1 << 4; // 16: text content changed (00010000)
 
 // Filtering Flag
 export const EXCLUDED = 0;
-export const INCLUDED = 1;
+export const SYSTEM = 29;
+export const INCLUDED = 30;
 
 // 다른 파일에서 파라미터 타입 지정용으로 사용
-export type Visibility = typeof EXCLUDED | typeof INCLUDED;
+export type Visibility = typeof EXCLUDED | typeof SYSTEM | typeof INCLUDED;
 
 export const ALLOWED_FILTERS = [
   "include-tree",

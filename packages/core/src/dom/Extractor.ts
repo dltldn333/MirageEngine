@@ -122,7 +122,10 @@ export function extractSceneGraph(
         );
       }
     }
+    
     if (filterSet.has("end")) return null;
+
+    // error check
     if (filterSet.has("include-tree") && filterSet.has("exclude-tree")) {
       throw new Error(
         `[MirageEngine] Conflicting filters: 'include-tree' and 'exclude-tree' cannot be used together on the same element.`,
