@@ -321,6 +321,24 @@ export class Renderer {
     if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) mesh.layers.enable(29);
   }
 
+  private createTravelerBackgroud(
+    travelerCamera: THREE.Camera,
+    traveler: THREE.Mesh,
+  ) {
+    this.renderer.setRenderTarget(this.renderTarget);
+    this.renderer.clear();
+    this.renderer.render(this.scene, travelerCamera);
+
+    this.renderer.setRenderTarget(null);
+
+    if (this.renderTarget != null) {
+      traveler.material = new THREE.MeshBasicMaterial({
+        map: this.renderTarget.texture,
+        color: 0xffffff,
+      });
+    }
+  }
+
   public render() {
     this.renderer.render(this.scene, this.camera);
   }
