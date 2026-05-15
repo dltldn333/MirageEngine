@@ -56,7 +56,7 @@ export class Renderer {
       1000,
     );
     this.camera.position.z = 100;
-    this.camera.layers.set(0);
+    this.camera.layers.set(28);
 
     // [new]
     // THREE.ColorManagement.enabled = false;
@@ -200,16 +200,20 @@ export class Renderer {
     let mesh = this.meshMap.get(node.element);
     if (!mesh) {
       const geometry = new THREE.PlaneGeometry(1, 1);
-      const material = Painter.create(
-        "BOX",
-        node.styles,
-        "",
-        node.rect.width,
-        node.rect.height,
-      );
-
+      let material: THREE.MeshBasicMaterial | THREE.Material;
+      if (node.isTraveler) {
+        material = this.createTravelerMaterial();
+      } else {
+        material = Painter.create(
+          "BOX",
+          node.styles,
+          "",
+          node.rect.width,
+          node.rect.height,
+        );
+      }
       mesh = new THREE.Mesh(geometry, material);
-
+      // [debuging]
       if (node.type === "TEXT") mesh.name = "BG_MESH";
       this.scene.add(mesh);
       this.meshMap.set(node.element, mesh);
@@ -219,6 +223,10 @@ export class Renderer {
 
     this.updateMeshProperties(mesh, node);
     this.updateMeshLayers(mesh, node);
+    if (node.isTraveler) {
+      mesh.layers.enable(28);
+      console.log(mesh.layers);
+    }
 
     if (node.type === "BOX") {
       for (const child of node.children) {
@@ -283,6 +291,10 @@ export class Renderer {
   }
 
   private updateMeshProperties(mesh: THREE.Mesh, node: SceneNode) {
+    if (mesh.material instanceof THREE.MeshBasicMaterial) {
+      return;
+    }
+
     const { rect, styles } = node;
 
     const pixelRatio = this.renderer.getPixelRatio();
@@ -305,14 +317,16 @@ export class Renderer {
       -localY + canvasHeight / 2 - rect.height / 2,
       styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     );
-    Painter.update(
-      mesh.material as THREE.Material,
-      "BOX",
-      node.styles,
-      "",
-      node.rect.width,
-      node.rect.height,
-    );
+    if (!node.isTraveler) {
+      Painter.update(
+        mesh.material as THREE.Material,
+        "BOX",
+        node.styles,
+        "",
+        node.rect.width,
+        node.rect.height,
+      );
+    }
   }
 
   private updateMeshLayers(mesh: THREE.Mesh, node: SceneNode) {
@@ -321,25 +335,72 @@ export class Renderer {
     if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) mesh.layers.enable(29);
   }
 
-  private createTravelerBackgroud(
-    travelerCamera: THREE.Camera,
-    traveler: THREE.Mesh,
-  ) {
-    this.renderer.setRenderTarget(this.renderTarget);
-    this.renderer.clear();
-    this.renderer.render(this.scene, travelerCamera);
+  // private createTravelerBackgroud() {
+  //   this.renderer.setRenderTarget(this.renderTarget);
+  //   this.renderer.clear();
+  //   this.camera.layers.set(29);
+  //   this.renderer.render(this.scene, this.camera);
 
-    this.renderer.setRenderTarget(null);
+  //   this.renderer.setRenderTarget(null);
+  //   this.camera.layers.set(28);
 
-    if (this.renderTarget != null) {
-      traveler.material = new THREE.MeshBasicMaterial({
-        map: this.renderTarget.texture,
-        color: 0xffffff,
-      });
-    }
+  //   const material = new THREE.MeshBasicMaterial({
+  //     map: this.renderTarget!.texture,
+  //     color: 0xffffff,
+  //   });
+
+  //   return material;
+  // }
+
+  private createTravelerMaterial(): THREE.ShaderMaterial {
+    const backgroundTexture = this.renderTarget
+      ? this.renderTarget.texture
+      : null;
+
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        uBackground: { value: backgroundTexture },
+        uSize: { value: new THREE.Vector2(0, 0) },
+        uOpacity: { value: 1.0 },
+      },
+      vertexShader: /* glsl */ `
+      varying vec2 vUv;
+      varying vec4 vScreenPos;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vScreenPos = gl_Position;
+      }
+    `,
+      fragmentShader: /* glsl */ `
+      uniform sampler2D uBackground;
+      varying vec2 vUv;
+      varying vec4 vScreenPos;
+
+      void main() {
+        vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
+        vec4 bgColor = texture2D(uBackground, screenUv);
+        gl_FragColor = bgColor;
+
+        #include <colorspace_fragment>
+      }
+    `,
+      transparent: true,
+    });
+
+    return material;
   }
 
   public render() {
+    if (this.renderTarget) {
+      this.renderer.setRenderTarget(this.renderTarget);
+      this.renderer.clear();
+      this.camera.layers.set(29);
+      this.renderer.render(this.scene, this.camera);
+      this.renderer.setRenderTarget(null);
+    }
+
+    this.camera.layers.set(28);
     this.renderer.render(this.scene, this.camera);
   }
 }

@@ -100,19 +100,15 @@
         >
           (exclude-self)
         </div>
-        <div
-          id="box1"
-          class="box"
-          style="background-color: steelblue"
-          data-mirage-travel="traveler"
-        >
+        <div id="box1" class="box" style="background-color: steelblue">
           Box 1 (2초 뒤 색상 변경 - CSS)
         </div>
 
         <div
           id="box2"
           class="box"
-          style="background-color: seagreen; opacity: 0.8"
+          style="background-color: seagreen; opacity: 0.8; position: relative; left: - 500px;"
+          data-mirage-travel="traveler"
         >
           Box 2 (반투명)
           <div id="box2-child" style="background-color: white; height: 20px">

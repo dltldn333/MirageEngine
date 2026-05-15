@@ -25,7 +25,8 @@ export interface SceneNode {
   // TODO: SceneNode의 sort 로직 추가(아마도)
 
   visibility: Visibility;
-  
+  isTraveler: boolean;
+
   children: SceneNode[];
 }
 

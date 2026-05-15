@@ -100,6 +100,7 @@ export function extractSceneGraph(
       textStyles: extractTextStyles(computed),
       dirtyMask: initialMask,
       visibility: inheritedFlow,
+      isTraveler: false,
       children: [],
     };
   }
@@ -138,7 +139,7 @@ export function extractSceneGraph(
     if (filterSet.has("include-tree")) {
       visibleFlow = (visibleFlow | USER_LAYER) as Visibility;
     } else if (filterSet.has("exclude-tree")) {
-      visibleFlow = (visibleFlow & ~ USER_LAYER) as Visibility;
+      visibleFlow = (visibleFlow & ~USER_LAYER) as Visibility;
     }
 
     visibleFlag = visibleFlow;
@@ -146,7 +147,7 @@ export function extractSceneGraph(
     if (filterSet.has("include-self")) {
       visibleFlag = (visibleFlag | USER_LAYER) as Visibility;
     } else if (filterSet.has("exclude-self")) {
-      visibleFlag = (visibleFlag & ~ USER_LAYER) as Visibility;
+      visibleFlag = (visibleFlag & ~USER_LAYER) as Visibility;
     }
   }
 
@@ -162,10 +163,13 @@ export function extractSceneGraph(
   visibleFlag = (visibleFlag | (inheritedFlow & SYSTEM_LAYER)) as Visibility;
 
   const travelData = element.dataset.mirageTravel;
+  let isTraveler = false;
   if (travelData) {
     const travelSet = new Set(travelData.split(/\s+/));
     if (travelSet.has("traveler")) {
       visibleFlag = (visibleFlag & ~SYSTEM_LAYER) as Visibility;
+      visibleFlow = (visibleFlow & ~SYSTEM_LAYER) as Visibility;
+      isTraveler = true;
     }
   }
 
@@ -226,6 +230,7 @@ export function extractSceneGraph(
     textStyles,
     dirtyMask: initialMask,
     visibility: visibleFlag,
+    isTraveler: isTraveler,
     children,
   };
 }
