@@ -142,12 +142,10 @@ export class Renderer {
 
   public setSize(width: number, height: number) {
     this.renderer.setSize(width, height);
-
     this.camera.left = width / -2;
     this.camera.right = width / 2;
     this.camera.top = height / 2;
     this.camera.bottom = height / -2;
-
     this.camera.updateProjectionMatrix();
   }
 
@@ -165,13 +163,7 @@ export class Renderer {
 
     if (isResized) {
       this.targetRect = newRect;
-      this.renderer.setSize(this.targetRect.width, this.targetRect.height);
-
-      this.camera.left = this.targetRect.width / -2;
-      this.camera.right = this.targetRect.width / 2;
-      this.camera.top = this.targetRect.height / 2;
-      this.camera.bottom = this.targetRect.height / -2;
-      this.camera.updateProjectionMatrix();
+      this.setSize(this.targetRect.width, this.targetRect.height);
 
       this.updateCanvasLayout();
     } else if (isMoved) {
