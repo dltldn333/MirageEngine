@@ -15,6 +15,7 @@ export class Renderer {
   private readonly scene: THREE.Scene;
   private readonly camera: THREE.OrthographicCamera;
   private readonly renderer: THREE.WebGLRenderer;
+  private renderTarget: THREE.WebGLRenderTarget | null = null;
   private renderOrder: number = 0;
   private textQualityFactor: number = 2;
   private mode: MirageMode = "overlay";
@@ -68,10 +69,21 @@ export class Renderer {
       // premultipliedAlpha: true
     });
 
+
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(width, height);
 
     this.applyTextQuality(config.textQuality ?? "medium");
+  }
+  public createRenderTarget() {
+    this.renderTarget = new THREE.WebGLRenderTarget(this.targetRect.width, this.targetRect.height, {
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+      format: THREE.RGBAFormat,
+      stencilBuffer: false,
+      depthBuffer: true,
+      // type: THREE.UnsignedByteType,
+    });
   }
 
   private applyTextQuality(quality: TextQuality) {
@@ -181,7 +193,6 @@ export class Renderer {
       }
     }
   }
-
 
   private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
     activeElements.add(node.element);

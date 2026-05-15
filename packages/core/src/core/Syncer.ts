@@ -20,6 +20,7 @@ export class Syncer {
 
   private isDomDirty: boolean = false;
   private isRunning: boolean = false;
+  private isTravelEnabled: boolean = false;
 
   private pendingMask: number = DIRTY_NONE;
 
@@ -133,12 +134,19 @@ export class Syncer {
 
   private forceUpdateScene() {
     this.isDomDirty = false;
+
     const discoveredTraveler =
       document.querySelector("[data-mirage-travel='traveler']") !== null;
+    if (discoveredTraveler && !this.isTravelEnabled) {
+      this.isTravelEnabled = true;
+    }
+
     const sceneGraph = extractSceneGraph(
       this.target,
       this.pendingMask,
-      (discoveredTraveler ? USER_LAYER | SYSTEM_LAYER : USER_LAYER) as Visibility,
+      (discoveredTraveler
+        ? USER_LAYER | SYSTEM_LAYER
+        : USER_LAYER) as Visibility,
       this.filter,
     );
 
