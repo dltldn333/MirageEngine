@@ -142,6 +142,10 @@ export class Renderer {
 
   public setSize(width: number, height: number) {
     this.renderer.setSize(width, height);
+    if (this.renderTarget) {
+      // [todo ]provide Downsampling api
+      this.renderTarget.setSize(width, height);
+    }
     this.camera.left = width / -2;
     this.camera.right = width / 2;
     this.camera.top = height / 2;
