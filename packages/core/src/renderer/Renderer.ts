@@ -17,7 +17,7 @@ export class Renderer {
   private readonly renderer: THREE.WebGLRenderer;
   private renderTarget: THREE.WebGLRenderTarget | null = null;
   private renderOrder: number = 0;
-  private textQualityFactor: number = 2;
+  private qualityFactor: number = 2;
   private mode: MirageMode = "overlay";
 
   private target: HTMLElement;
@@ -76,8 +76,8 @@ export class Renderer {
   }
   public createRenderTarget() {
     this.renderTarget = new THREE.WebGLRenderTarget(
-      this.targetRect.width,
-      this.targetRect.height,
+      this.targetRect.width * this.qualityFactor,
+      this.targetRect.height * this.qualityFactor,
       {
         minFilter: THREE.LinearFilter,
         magFilter: THREE.LinearFilter,
@@ -92,19 +92,19 @@ export class Renderer {
 
   private applyTextQuality(quality: TextQuality) {
     if (typeof quality === "number") {
-      this.textQualityFactor = Math.max(0.1, quality);
+      this.qualityFactor = Math.max(0.1, quality);
       return;
     }
     switch (quality) {
       case "low":
-        this.textQualityFactor = 1;
+        this.qualityFactor = 1;
         break;
       case "high":
-        this.textQualityFactor = 4;
+        this.qualityFactor = 4;
         break;
       case "medium":
       default:
-        this.textQualityFactor = 2;
+        this.qualityFactor = 2;
         break;
     }
   }
@@ -262,7 +262,7 @@ export class Renderer {
         node.textContent || "",
         node.rect.width,
         node.rect.height,
-        this.textQualityFactor,
+        this.qualityFactor,
       );
 
       const geometry = new THREE.PlaneGeometry(1, 1);
@@ -335,23 +335,6 @@ export class Renderer {
     if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) mesh.layers.enable(29);
   }
 
-  // private createTravelerBackgroud() {
-  //   this.renderer.setRenderTarget(this.renderTarget);
-  //   this.renderer.clear();
-  //   this.camera.layers.set(29);
-  //   this.renderer.render(this.scene, this.camera);
-
-  //   this.renderer.setRenderTarget(null);
-  //   this.camera.layers.set(28);
-
-  //   const material = new THREE.MeshBasicMaterial({
-  //     map: this.renderTarget!.texture,
-  //     color: 0xffffff,
-  //   });
-
-  //   return material;
-  // }
-
   private createTravelerMaterial(): THREE.ShaderMaterial {
     const backgroundTexture = this.renderTarget
       ? this.renderTarget.texture
@@ -391,15 +374,16 @@ export class Renderer {
     return material;
   }
 
-  public render() {
-    if (this.renderTarget) {
-      this.renderer.setRenderTarget(this.renderTarget);
-      this.renderer.clear();
-      this.camera.layers.set(29);
-      this.renderer.render(this.scene, this.camera);
-      this.renderer.setRenderTarget(null);
-    }
+  private captureRenderTarget() {
+    this.renderer.setRenderTarget(this.renderTarget);
+    this.renderer.clear();
+    this.camera.layers.set(29);
+    this.renderer.render(this.scene, this.camera);
+    this.renderer.setRenderTarget(null);
+  }
 
+  public render() {
+    if (this.renderTarget) this.captureRenderTarget();
     this.camera.layers.set(28);
     this.renderer.render(this.scene, this.camera);
   }
