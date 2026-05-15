@@ -139,6 +139,7 @@ export class Syncer {
       document.querySelector("[data-mirage-travel='traveler']") !== null;
     if (discoveredTraveler && !this.isTravelEnabled) {
       this.isTravelEnabled = true;
+      this.renderer.createRenderTarget();
     }
 
     const sceneGraph = extractSceneGraph(

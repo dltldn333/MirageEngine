@@ -69,21 +69,25 @@ export class Renderer {
       // premultipliedAlpha: true
     });
 
-
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(width, height);
 
     this.applyTextQuality(config.textQuality ?? "medium");
   }
   public createRenderTarget() {
-    this.renderTarget = new THREE.WebGLRenderTarget(this.targetRect.width, this.targetRect.height, {
-      minFilter: THREE.LinearFilter,
-      magFilter: THREE.LinearFilter,
-      format: THREE.RGBAFormat,
-      stencilBuffer: false,
-      depthBuffer: true,
-      // type: THREE.UnsignedByteType,
-    });
+    this.renderTarget = new THREE.WebGLRenderTarget(
+      this.targetRect.width,
+      this.targetRect.height,
+      {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.LinearFilter,
+        format: THREE.RGBAFormat,
+        stencilBuffer: false,
+        depthBuffer: true,
+        // type: THREE.UnsignedByteType,
+      },
+    );
+    console.log(this.renderTarget);
   }
 
   private applyTextQuality(quality: TextQuality) {
