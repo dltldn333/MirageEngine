@@ -5,7 +5,6 @@ import {
   TextQuality,
   CoreConfig,
   MirageMode,
-  Visibility,
   USER_LAYER,
   SYSTEM_LAYER,
 } from "../types";
@@ -56,6 +55,7 @@ export class Renderer {
       1000,
     );
     this.camera.position.z = 100;
+    this.camera.layers.set(0);
 
     // [new]
     // THREE.ColorManagement.enabled = false;
@@ -155,7 +155,6 @@ export class Renderer {
       this.camera.right = this.targetRect.width / 2;
       this.camera.top = this.targetRect.height / 2;
       this.camera.bottom = this.targetRect.height / -2;
-      this.camera.layers.set(29);
       this.camera.updateProjectionMatrix();
 
       this.updateCanvasLayout();
@@ -183,13 +182,6 @@ export class Renderer {
     }
   }
 
-  private updateMeshLayers(node: SceneNode, mesh: THREE.Mesh) {
-    const layerNum = (1 - (node.visibility & USER_LAYER)) * 30;
-    mesh.layers.set(layerNum);
-    if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) {
-      mesh.layers.enable(29);
-    }
-  }
 
   private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
     activeElements.add(node.element);
@@ -215,7 +207,7 @@ export class Renderer {
     mesh.userData.domRect = node.rect;
 
     this.updateMeshProperties(mesh, node);
-    this.updateMeshLayers(node, mesh);
+    this.updateMeshLayers(mesh, node);
 
     if (node.type === "BOX") {
       for (const child of node.children) {
@@ -259,7 +251,7 @@ export class Renderer {
 
       textMesh.name = "TEXT_CHILD";
       textMesh.userData = { styleHash: currentStyleHash };
-      this.updateMeshLayers(node, textMesh);
+      this.updateMeshLayers(textMesh, node);
       textMesh.position.z = 0.005;
       parentMesh.add(textMesh);
     }
@@ -310,6 +302,12 @@ export class Renderer {
       node.rect.width,
       node.rect.height,
     );
+  }
+
+  private updateMeshLayers(mesh: THREE.Mesh, node: SceneNode) {
+    const layerNum = (1 - (node.visibility & USER_LAYER)) * 30;
+    mesh.layers.set(layerNum);
+    if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) mesh.layers.enable(29);
   }
 
   public render() {

@@ -133,12 +133,12 @@ export class Syncer {
 
   private forceUpdateScene() {
     this.isDomDirty = false;
-    const enabledTraveler =
+    const discoveredTraveler =
       document.querySelector("[data-mirage-travel='traveler']") !== null;
     const sceneGraph = extractSceneGraph(
       this.target,
       this.pendingMask,
-      (enabledTraveler ? USER_LAYER | SYSTEM_LAYER : USER_LAYER) as Visibility,
+      (discoveredTraveler ? USER_LAYER | SYSTEM_LAYER : USER_LAYER) as Visibility,
       this.filter,
     );
 

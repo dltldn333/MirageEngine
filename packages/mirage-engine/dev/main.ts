@@ -13,7 +13,7 @@ const mirageConifg: MirageConfig = {
   // },
 };
 const mirage = new Mirage(target, mirageConifg);
-console.log(mirageConifg.filter);
+// console.log(mirageConifg.filter);
 
 mirage.start();
 // while (true) {
