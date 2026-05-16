@@ -287,10 +287,6 @@ export class Renderer {
   }
 
   private updateMeshProperties(mesh: THREE.Mesh, node: SceneNode) {
-    if (mesh.material instanceof THREE.MeshBasicMaterial) {
-      return;
-    }
-
     const { rect, styles } = node;
 
     const pixelRatio = this.renderer.getPixelRatio();
@@ -314,7 +310,10 @@ export class Renderer {
       styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     );
     //[TODO] isTraveler branching
-    if (!node.isTraveler) {
+    if (node.isTraveler) {
+      (mesh.material as THREE.ShaderMaterial).uniforms.uBackground.value =
+        this.renderTarget!.texture;
+    } else {
       Painter.update(
         mesh.material as THREE.Material,
         "BOX",
@@ -377,11 +376,11 @@ export class Renderer {
     this.camera.layers.set(29);
     this.renderer.render(this.scene, this.camera);
     this.renderer.setRenderTarget(null);
+    this.camera.layers.set(28);
   }
 
   public render() {
     if (this.renderTarget) this.captureRenderTarget();
-    this.camera.layers.set(28);
     this.renderer.render(this.scene, this.camera);
   }
 }
