@@ -213,7 +213,6 @@ export class Renderer {
         );
       }
       mesh = new THREE.Mesh(geometry, material);
-      // [debuging]
       if (node.type === "TEXT") mesh.name = "BG_MESH";
       this.scene.add(mesh);
       this.meshMap.set(node.element, mesh);
@@ -223,10 +222,7 @@ export class Renderer {
 
     this.updateMeshProperties(mesh, node);
     this.updateMeshLayers(mesh, node);
-    if (node.isTraveler) {
-      mesh.layers.enable(28);
-      console.log(mesh.layers);
-    }
+    if (node.isTraveler) mesh.layers.enable(28);
 
     if (node.type === "BOX") {
       for (const child of node.children) {
@@ -317,6 +313,7 @@ export class Renderer {
       -localY + canvasHeight / 2 - rect.height / 2,
       styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     );
+    //[TODO] isTraveler branching
     if (!node.isTraveler) {
       Painter.update(
         mesh.material as THREE.Material,
