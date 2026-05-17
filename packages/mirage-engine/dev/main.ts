@@ -6,8 +6,8 @@ const container = document.querySelector("#space") as HTMLElement;
 
 const mirageConifg: MirageConfig = {
   textQuality: "high",
-  mode: "duplicate",
-  container: container,
+  mode: "overlay",
+  // container: container,
   // filter: {
   //   excludeTree: ["exclude"],
   // },
@@ -30,10 +30,10 @@ mirage.start();
 //   mirage.stop();
 // }
 
-const testId = document.querySelector("#box2") as HTMLElement;
+// const testId = document.querySelector("#box2") as HTMLElement;
 
-// data attribute filtering test
-setTimeout(() => {
-  testId.style.backgroundColor = "purple";
-  testId.dataset.mirageFilter = "";
-} , 3000);
+// // data attribute filtering test
+// setTimeout(() => {
+//   testId.style.backgroundColor = "purple";
+//   testId.dataset.mirageFilter = "";
+// } , 3000);

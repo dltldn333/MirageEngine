@@ -56,7 +56,7 @@ export class Renderer {
       1000,
     );
     this.camera.position.z = 100;
-    this.camera.layers.set(28);
+    this.camera.layers.set(0);
 
     // [new]
     // THREE.ColorManagement.enabled = false;
@@ -358,9 +358,27 @@ export class Renderer {
 
       void main() {
         vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
-        vec4 bgColor = texture2D(uBackground, screenUv);
-        gl_FragColor = bgColor;
 
+
+        //=====develop======//
+        float distortionX = sin(vUv.y * 30.0) * 0.01; 
+        float distortionY = cos(vUv.x * 30.0) * 0.01;
+        vec2 distortedUv = screenUv + vec2(distortionX, distortionY);
+        //=====develop======//
+
+
+        // vec4 bgColor = texture2D(uBackground, screenUv);
+        vec4 bgColor = texture2D(uBackground, distortedUv);
+
+
+        //=====develop======//
+        vec3 glassColor = vec3(0.4, 0.6, 0.9);
+        bgColor.rgb = mix(bgColor.rgb, glassColor, 0.15);
+        //=====develop======//
+
+        // gl_FragColor = bgColor;
+        gl_FragColor = bgColor;
+        
         #include <colorspace_fragment>
       }
     `,
