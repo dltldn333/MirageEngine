@@ -62,9 +62,6 @@ const fragmentShader = /* glsl */ `
     // 1px blur for anti-aliasing
     float aa = 1.0; 
 
-    // x == 0~aa -> 1
-    // x < 0 -> 0 
-    // x > aa -> 1
     float bgMask = 1.0 - smoothstep(0.0, aa, d);
 
     // v valley

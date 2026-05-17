@@ -222,7 +222,7 @@ export class Renderer {
 
     this.updateMeshProperties(mesh, node);
     this.updateMeshLayers(mesh, node);
-    if (node.isTraveler) mesh.layers.enable(28);
+    // if (node.isTraveler) mesh.layers.enable(28);
 
     if (node.type === "BOX") {
       for (const child of node.children) {
@@ -309,7 +309,6 @@ export class Renderer {
       -localY + canvasHeight / 2 - rect.height / 2,
       styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     );
-    //[TODO] isTraveler branching
     if (node.isTraveler) {
       (mesh.material as THREE.ShaderMaterial).uniforms.uBackground.value =
         this.renderTarget!.texture;
@@ -365,18 +364,18 @@ export class Renderer {
         float distortionY = cos(vUv.x * 30.0) * 0.01;
         vec2 distortedUv = screenUv + vec2(distortionX, distortionY);
         //=====develop======//
-
-
-        // vec4 bgColor = texture2D(uBackground, screenUv);
-        vec4 bgColor = texture2D(uBackground, distortedUv);
+        // screednUv 분기 처리
+        // vec2 resultUv = screenUv;
+        vec2 resultUv = distortedUv;
+        
+        vec4 bgColor = texture2D(uBackground, resultUv);
 
 
         //=====develop======//
-        vec3 glassColor = vec3(0.4, 0.6, 0.9);
-        bgColor.rgb = mix(bgColor.rgb, glassColor, 0.15);
+        // vec3 glassColor = vec3(0.4, 0.6, 0.9);
+        // bgColor.rgb = mix(bgColor.rgb, glassColor, 0.15);
         //=====develop======//
 
-        // gl_FragColor = bgColor;
         gl_FragColor = bgColor;
         
         #include <colorspace_fragment>
@@ -394,7 +393,7 @@ export class Renderer {
     this.camera.layers.set(29);
     this.renderer.render(this.scene, this.camera);
     this.renderer.setRenderTarget(null);
-    this.camera.layers.set(28);
+    this.camera.layers.set(0);
   }
 
   public render() {
