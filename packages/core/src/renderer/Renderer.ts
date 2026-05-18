@@ -224,7 +224,7 @@ export class Renderer {
 
     this.updateMeshProperties(mesh, node);
     this.updateMeshLayers(mesh, node);
-    // if (node.isTraveler) mesh.layers.enable(28);
+    if (node.isTraveler) mesh.layers.enable(28);
 
     if (node.type === "BOX") {
       for (const child of node.children) {
@@ -332,60 +332,62 @@ export class Renderer {
     if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) mesh.layers.enable(29);
   }
 
-  private createTravelerMaterial(): THREE.ShaderMaterial {
-    const backgroundTexture = this.renderTarget
-      ? this.renderTarget.texture
-      : null;
+  // [TODO] migration to painter
 
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        uBackground: { value: backgroundTexture },
-        uSize: { value: new THREE.Vector2(0, 0) },
-        uOpacity: { value: 1.0 },
-      },
-      vertexShader: /* glsl */ `
-      varying vec2 vUv;
-      varying vec4 vScreenPos;
-      void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        vScreenPos = gl_Position;
-      }
-    `,
-      fragmentShader: /* glsl */ `
-      uniform sampler2D uBackground;
-      varying vec2 vUv;
-      varying vec4 vScreenPos;
+  // private createTravelerMaterial(): THREE.ShaderMaterial {
+  //   const backgroundTexture = this.renderTarget
+  //     ? this.renderTarget.texture
+  //     : null;
 
-      void main() {
-        vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
-        vec2 resultUv = screenUv;
+  //   const material = new THREE.ShaderMaterial({
+  //     uniforms: {
+  //       uBackground: { value: backgroundTexture },
+  //       uSize: { value: new THREE.Vector2(0, 0) },
+  //       uOpacity: { value: 1.0 },
+  //     },
+  //     vertexShader: /* glsl */ `
+  //     varying vec2 vUv;
+  //     varying vec4 vScreenPos;
+  //     void main() {
+  //       vUv = uv;
+  //       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  //       vScreenPos = gl_Position;
+  //     }
+  //   `,
+  //     fragmentShader: /* glsl */ `
+  //     uniform sampler2D uBackground;
+  //     varying vec2 vUv;
+  //     varying vec4 vScreenPos;
+
+  //     void main() {
+  //       vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
+  //       vec2 resultUv = screenUv;
+
+  //       //=====develop======//
+  //       // float distortionX = sin(vUv.y * 30.0) * 0.01; 
+  //       // float distortionY = cos(vUv.x * 30.0) * 0.01;
+  //       // vec2 distortedUv = screenUv + vec2(distortionX, distortionY);
+  //       // vec2 resultUv = distortedUv;
+  //       //=====develop======//
         
-        //=====develop======//
-        // float distortionX = sin(vUv.y * 30.0) * 0.01; 
-        // float distortionY = cos(vUv.x * 30.0) * 0.01;
-        // vec2 distortedUv = screenUv + vec2(distortionX, distortionY);
-        // vec2 resultUv = distortedUv;
-        //=====develop======//
+  //       vec4 bgColor = texture2D(uBackground, resultUv);
+
+
+  //       //=====develop======//
+  //       // vec3 glassColor = vec3(0.4, 0.6, 0.9);
+  //       // bgColor.rgb = mix(bgColor.rgb, glassColor, 0.15);
+  //       //=====develop======//
+
+  //       gl_FragColor = bgColor;
         
-        vec4 bgColor = texture2D(uBackground, resultUv);
+  //       #include <colorspace_fragment>
+  //     }
+  //   `,
+  //     transparent: true,
+  //   });
 
-
-        //=====develop======//
-        // vec3 glassColor = vec3(0.4, 0.6, 0.9);
-        // bgColor.rgb = mix(bgColor.rgb, glassColor, 0.15);
-        //=====develop======//
-
-        gl_FragColor = bgColor;
-        
-        #include <colorspace_fragment>
-      }
-    `,
-      transparent: true,
-    });
-
-    return material;
-  }
+  //   return material;
+  // }
 
   private captureRenderTarget() {
     this.renderer.setRenderTarget(this.renderTarget);
@@ -393,7 +395,7 @@ export class Renderer {
     this.camera.layers.set(29);
     this.renderer.render(this.scene, this.camera);
     this.renderer.setRenderTarget(null);
-    this.camera.layers.set(0);
+    this.camera.layers.set(28);
   }
 
   public render() {
