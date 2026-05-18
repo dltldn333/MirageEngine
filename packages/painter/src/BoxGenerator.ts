@@ -57,27 +57,29 @@ const fragmentShaderTemplate = /* glsl */ `
 
     #INJECT_UV_MODIFIER
     
+    // color decision pipeline
     vec4 baseColor = vec4(uBgColor, uBgOpacity);
 
     #INJECT_BASE_COLOR
 
+    // sdf shape pipeline
     vec2 xRadii = mix(uBorderRadius.xw, uBorderRadius.yz, step(0.0, p.x));
     float r = mix(xRadii.y, xRadii.x, step(0.0, p.y));
     float d = sdRoundedBox(p, halfSize, r);
 
     float aa = 1.0; 
-
     float bgMask = 1.0 - smoothstep(0.0, aa, d);
 
     float halfBorder = uBorderWidth * 0.5;
     float borderD = abs(d + halfBorder) - halfBorder;
-
     float borderAlpha = (1.0 - smoothstep(0.0, aa, borderD)) * uBorderOpacity; 
 
+    // [TODO] fix branching to math
     if (uBorderWidth <= 0.01) {
       borderAlpha = 0.0;
     }
 
+    // final blending (border + background)
     float aFront = borderAlpha;
     float aBack = uBgOpacity;
     float aOut = aFront + aBack * (1.0 - aFront);
