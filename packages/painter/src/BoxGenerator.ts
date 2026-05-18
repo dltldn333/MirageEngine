@@ -130,6 +130,9 @@ export function createBoxMaterial(
   texture: THREE.Texture | null = null,
 ): THREE.ShaderMaterial {
 
+  const isTraveler = texture !== null;
+  
+
 
   const fragmentShader = fragmentShaderTemplate;
 
