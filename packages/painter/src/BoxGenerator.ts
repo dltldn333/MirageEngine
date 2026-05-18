@@ -179,7 +179,7 @@ export function createBoxMaterial(
   setBorderRadius(uniforms.uBorderRadius.value, styles.borderRadius);
 
   if (hasTexture) {
-    uniforms.uTexture = { value: texture };
+    uniforms.uTexture.value = texture;
   }
 
   const material = new THREE.ShaderMaterial({
