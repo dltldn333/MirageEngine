@@ -81,7 +81,7 @@ const fragmentShaderTemplate = /* glsl */ `
 
     // final blending (border + background)
     float aFront = borderAlpha;
-    float aBack = uBgOpacity;
+    float aBack = baseColor.a;;
     float aOut = aFront + aBack * (1.0 - aFront);
 
     float safeAlpha = max(aOut, 0.0001);
@@ -92,11 +92,11 @@ const fragmentShaderTemplate = /* glsl */ `
     // final color control (Tint, Noise)
     #INJECT_COLOR_MODIFIER
 
-    float finalOpacity = aOut * bgMask * uOpacity;
+    float finalOpacity = finalColor.a * bgMask * uOpacity;
     // [TODO] fix: branching to math
     if (finalOpacity < 0.001) discard;
 
-    gl_FragColor = vec4(cOut, finalOpacity);
+    gl_FragColor = vec4(finalColor.rgb, finalOpacity);
 
     #include <colorspace_fragment>
   }
@@ -131,10 +131,11 @@ export function createBoxMaterial(
   hooks?: { uvModifier?: string; colorModifier?: string },
 ): THREE.ShaderMaterial {
   const hasTexture = texture !== null;
+  // if (hasTexture) console.log(texture);
 
   const declChunk = hasTexture
     ? /* glsl */ `
-    uniform sampler2D uBackground;
+    uniform sampler2D uTexture;
     varying vec4 vScreenPos;
   `
     : "";
@@ -149,7 +150,7 @@ export function createBoxMaterial(
 
   const baseColorChunk = hasTexture
     ? /* glsl */ `
-    baseColor = texture2D(uBackground, resultUv);
+    baseColor = texture2D(uTexture, resultUv);
   `
     : "";
 

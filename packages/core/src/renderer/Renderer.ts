@@ -211,7 +211,7 @@ export class Renderer {
         node.rect.width,
         node.rect.height,
         this.qualityFactor,
-        this.renderTarget?.texture,
+        node.isTraveler ? this.renderTarget?.texture : undefined,
       );
       // }
       mesh = new THREE.Mesh(geometry, material);
@@ -364,14 +364,13 @@ export class Renderer {
   //       vec2 resultUv = screenUv;
 
   //       //=====develop======//
-  //       // float distortionX = sin(vUv.y * 30.0) * 0.01; 
+  //       // float distortionX = sin(vUv.y * 30.0) * 0.01;
   //       // float distortionY = cos(vUv.x * 30.0) * 0.01;
   //       // vec2 distortedUv = screenUv + vec2(distortionX, distortionY);
   //       // vec2 resultUv = distortedUv;
   //       //=====develop======//
-        
-  //       vec4 bgColor = texture2D(uBackground, resultUv);
 
+  //       vec4 bgColor = texture2D(uBackground, resultUv);
 
   //       //=====develop======//
   //       // vec3 glassColor = vec3(0.4, 0.6, 0.9);
@@ -379,7 +378,7 @@ export class Renderer {
   //       //=====develop======//
 
   //       gl_FragColor = bgColor;
-        
+
   //       #include <colorspace_fragment>
   //     }
   //   `,
