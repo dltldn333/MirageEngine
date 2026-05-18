@@ -128,13 +128,38 @@ export function createBoxMaterial(
   width: number,
   height: number,
   texture: THREE.Texture | null = null,
+  hooks?: { uvModifier?: string; colorModifier?: string },
 ): THREE.ShaderMaterial {
+  const hasTexture = texture !== null;
 
-  const isTraveler = texture !== null;
-  
+  const declChunk = hasTexture
+    ? /* glsl */ `
+    uniform sampler2D uBackground;
+    varying vec4 vScreenPos;
+  `
+    : "";
 
+  const uvChunk = hasTexture
+    ? /* glsl */ `
+    vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
+    vec2 resultUv = screenUv;
+    ${hooks?.uvModifier || ""}
+  `
+    : "";
 
-  const fragmentShader = fragmentShaderTemplate;
+  const baseColorChunk = hasTexture
+    ? /* glsl */ `
+    baseColor = texture2D(uBackground, resultUv);
+  `
+    : "";
+
+  const colorModChunk = hooks?.colorModifier || "";
+
+  const fragmentShader = fragmentShaderTemplate
+    .replace("#INJECT_DECLARATIONS", declChunk)
+    .replace("#INJECT_UV_MODIFIER", uvChunk)
+    .replace("#INJECT_BASE_COLOR", baseColorChunk)
+    .replace("#INJECT_COLOR_MODIFIER", colorModChunk);
 
   // uniform setting
   const parsedBg = parseColor(styles.backgroundColor);
@@ -148,10 +173,14 @@ export function createBoxMaterial(
     uOpacity: { value: styles.opacity ?? 1.0 },
     uBgOpacity: { value: parsedBg.alpha },
     uBorderOpacity: { value: parsedBorder.alpha },
-    uTexture: { value: texture },
+    uTexture: { value: null as THREE.Texture | null },
   };
   // border radius value initialize
   setBorderRadius(uniforms.uBorderRadius.value, styles.borderRadius);
+
+  if (hasTexture) {
+    uniforms.uTexture = { value: texture };
+  }
 
   const material = new THREE.ShaderMaterial({
     uniforms: uniforms,
