@@ -1,7 +1,7 @@
 import { TextStyles, BoxStyles } from "@mirage-engine/painter";
 import { Visibility } from "./flags";
 
-export type NodeType = "BOX" | "TEXT"
+export type NodeType = "BOX" | "TEXT";
 
 export interface NodeRect {
   x: number;
@@ -14,7 +14,7 @@ export interface SceneNode {
   id: string;
   type: NodeType;
   element: HTMLElement;
-  
+
   rect: NodeRect;
   styles: BoxStyles;
 
@@ -29,4 +29,3 @@ export interface SceneNode {
 
   children: SceneNode[];
 }
-

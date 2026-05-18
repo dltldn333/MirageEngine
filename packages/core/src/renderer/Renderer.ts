@@ -201,17 +201,19 @@ export class Renderer {
     if (!mesh) {
       const geometry = new THREE.PlaneGeometry(1, 1);
       let material: THREE.MeshBasicMaterial | THREE.Material;
-      if (node.isTraveler) {
-        material = this.createTravelerMaterial();
-      } else {
-        material = Painter.create(
-          "BOX",
-          node.styles,
-          "",
-          node.rect.width,
-          node.rect.height,
-        );
-      }
+      // if (node.isTraveler) {
+      //   material = this.createTravelerMaterial();
+      // } else {
+      material = Painter.create(
+        "BOX",
+        node.styles,
+        "",
+        node.rect.width,
+        node.rect.height,
+        this.qualityFactor,
+        this.renderTarget?.texture,
+      );
+      // }
       mesh = new THREE.Mesh(geometry, material);
       if (node.type === "TEXT") mesh.name = "BG_MESH";
       this.scene.add(mesh);
@@ -309,19 +311,19 @@ export class Renderer {
       -localY + canvasHeight / 2 - rect.height / 2,
       styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     );
-    if (node.isTraveler) {
-      (mesh.material as THREE.ShaderMaterial).uniforms.uBackground.value =
-        this.renderTarget!.texture;
-    } else {
-      Painter.update(
-        mesh.material as THREE.Material,
-        "BOX",
-        node.styles,
-        "",
-        node.rect.width,
-        node.rect.height,
-      );
-    }
+    // if (node.isTraveler) {
+    //   (mesh.material as THREE.ShaderMaterial).uniforms.uBackground.value =
+    //     this.renderTarget!.texture;
+    // } else {
+    Painter.update(
+      mesh.material as THREE.Material,
+      "BOX",
+      node.styles,
+      "",
+      node.rect.width,
+      node.rect.height,
+    );
+    // }
   }
 
   private updateMeshLayers(mesh: THREE.Mesh, node: SceneNode) {
@@ -357,16 +359,14 @@ export class Renderer {
 
       void main() {
         vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
-
-
+        vec2 resultUv = screenUv;
+        
         //=====develop======//
-        float distortionX = sin(vUv.y * 30.0) * 0.01; 
-        float distortionY = cos(vUv.x * 30.0) * 0.01;
-        vec2 distortedUv = screenUv + vec2(distortionX, distortionY);
+        // float distortionX = sin(vUv.y * 30.0) * 0.01; 
+        // float distortionY = cos(vUv.x * 30.0) * 0.01;
+        // vec2 distortedUv = screenUv + vec2(distortionX, distortionY);
+        // vec2 resultUv = distortedUv;
         //=====develop======//
-        // screednUv 분기 처리
-        // vec2 resultUv = screenUv;
-        vec2 resultUv = distortedUv;
         
         vec4 bgColor = texture2D(uBackground, resultUv);
 

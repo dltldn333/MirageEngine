@@ -22,18 +22,20 @@ function setBorderRadius(target: THREE.Vector4, radius: string) {
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
+  varying vec4 vScreenPos;
   void main() {
     vUv = uv;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vScreenPos = gl_Position;
   }
 `;
 
-const fragmentShader = /* glsl */ `
+const fragmentShaderTemplate = /* glsl */ `
 
   varying vec2 vUv;
   
   uniform vec2 uSize;
-  uniform vec4 uRadius;
+  uniform vec4 uBorderRadius;
   uniform float uBorderWidth;
   uniform vec3 uBgColor;
   uniform vec3 uBorderColor;
@@ -41,43 +43,35 @@ const fragmentShader = /* glsl */ `
   uniform float uBgOpacity;
   uniform float uBorderOpacity;
 
-  // SDF box
+  #INJECT_DECLARATIONS
+
   float sdRoundedBox(vec2 p, vec2 b, float r) {
     vec2 q = abs(p) - b + r;
-    // return length(max(q, 0.0)) - r;
+
     return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
   }
 
   void main() {
-    // uVu: (0.0, 0.0) ~ (1.0, 1.0) / center: (0.5, 0.5)
-    // p: (-1.0, -1.0) ~ (1.0, 1.0) / center: (0.0, 0.0)
     vec2 p = (vUv - 0.5) * uSize;
     vec2 halfSize = uSize * 0.5;
+
+    #INJECT_UV_MODIFIER
     
-    // # border-radius
-    vec2 xRadii = mix(uRadius.xw, uRadius.yz, step(0.0, p.x));
+    vec4 baseColor = vec4(uBgColor, uBgOpacity);
+
+    #INJECT_BASE_COLOR
+
+    vec2 xRadii = mix(uBorderRadius.xw, uBorderRadius.yz, step(0.0, p.x));
     float r = mix(xRadii.y, xRadii.x, step(0.0, p.y));
     float d = sdRoundedBox(p, halfSize, r);
 
-    // 1px blur for anti-aliasing
     float aa = 1.0; 
 
     float bgMask = 1.0 - smoothstep(0.0, aa, d);
 
-    // v valley
-    // 10px -> 5
     float halfBorder = uBorderWidth * 0.5;
-    // 10px :
-    // 0 -> 0
-    // -10 -> 0
-    // -5 -> -5
     float borderD = abs(d + halfBorder) - halfBorder;
-    // ^ border 내부는 음수/외부는 양수
 
-    // [!] 내부가 음수인 곳에서 시작점이 0이면 내부는 안티 얼리어싱 되지 않음.
-    // 1에서 빼든 그대로든 상관없이 경계선 밖 1px
-
-    // 최종 alpha를 위해 border 부분에 해당하는 픽셀 만 1로 반환.
     float borderAlpha = (1.0 - smoothstep(0.0, aa, borderD)) * uBorderOpacity; 
 
     if (uBorderWidth <= 0.01) {
@@ -126,23 +120,28 @@ export function createBoxMaterial(
   styles: BoxStyles,
   width: number,
   height: number,
+  texture: THREE.Texture | null = null,
 ): THREE.ShaderMaterial {
+
+
+  const fragmentShader = fragmentShaderTemplate;
+
+  // uniform setting
   const parsedBg = parseColor(styles.backgroundColor);
   const parsedBorder = parseColor(styles.borderColor);
-
   const uniforms = {
     uSize: { value: new THREE.Vector2(width, height) },
-    uRadius: { value: new THREE.Vector4(0, 0, 0, 0) },
+    uBorderRadius: { value: new THREE.Vector4(0, 0, 0, 0) },
     uBorderWidth: { value: parsePixelValue(styles.borderWidth) },
     uBgColor: { value: parsedBg.color },
     uBorderColor: { value: parsedBorder.color },
     uOpacity: { value: styles.opacity ?? 1.0 },
     uBgOpacity: { value: parsedBg.alpha },
     uBorderOpacity: { value: parsedBorder.alpha },
+    uTexture: { value: texture },
   };
-
   // border radius value initialize
-  setBorderRadius(uniforms.uRadius.value, styles.borderRadius);
+  setBorderRadius(uniforms.uBorderRadius.value, styles.borderRadius);
 
   const material = new THREE.ShaderMaterial({
     uniforms: uniforms,
@@ -166,8 +165,8 @@ export function updateBoxMaterial(
 
   material.uniforms.uSize.value.set(width, height);
 
-  // material.uniforms.uRadius.value = parsePixelValue(styles.borderRadius);
-  setBorderRadius(material.uniforms.uRadius.value, styles.borderRadius);
+  // material.uniforms.uBorderRadius.value = parsePixelValue(styles.borderRadius);
+  setBorderRadius(material.uniforms.uBorderRadius.value, styles.borderRadius);
   material.uniforms.uBorderWidth.value = parsePixelValue(styles.borderWidth);
 
   material.uniforms.uBgColor.value.copy(parsedBg.color);
