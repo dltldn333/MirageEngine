@@ -130,8 +130,6 @@ export function createBoxMaterial(
   hooks?: { uvModifier?: string; colorModifier?: string },
 ): THREE.ShaderMaterial {
   const hasTexture = texture !== null;
-  // if (hasTexture) console.log(texture);
-  // console.log(hasTexture)
 
   const declChunk = hasTexture
     ? /* glsl */ `
@@ -161,8 +159,6 @@ export function createBoxMaterial(
     .replace("#INJECT_UV_MODIFIER", uvChunk)
     .replace("#INJECT_BASE_COLOR", baseColorChunk)
     .replace("#INJECT_COLOR_MODIFIER", colorModChunk);
-
-  if (hasTexture) console.log(fragmentShader);
 
   // uniform setting
   const parsedBg = parseColor(styles.backgroundColor);
