@@ -85,8 +85,7 @@ const fragmentShaderTemplate = /* glsl */ `
     float aOut = aFront + aBack * (1.0 - aFront);
 
     float safeAlpha = max(aOut, 0.0001);
-    vec3 cOut = (uBorderColor * aFront + uBgColor * aBack * (1.0 - aFront)) / safeAlpha;
-
+    vec3 cOut = (uBorderColor * aFront + baseColor.rgb * aBack * (1.0 - aFront)) / safeAlpha;
     vec4 finalColor = vec4(cOut, aOut);
 
     // final color control (Tint, Noise)
@@ -162,6 +161,8 @@ export function createBoxMaterial(
     .replace("#INJECT_UV_MODIFIER", uvChunk)
     .replace("#INJECT_BASE_COLOR", baseColorChunk)
     .replace("#INJECT_COLOR_MODIFIER", colorModChunk);
+
+  if (hasTexture) console.log(fragmentShader);
 
   // uniform setting
   const parsedBg = parseColor(styles.backgroundColor);
