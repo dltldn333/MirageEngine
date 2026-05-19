@@ -132,6 +132,7 @@ export function createBoxMaterial(
 ): THREE.ShaderMaterial {
   const hasTexture = texture !== null;
   // if (hasTexture) console.log(texture);
+  // console.log(hasTexture)
 
   const declChunk = hasTexture
     ? /* glsl */ `
