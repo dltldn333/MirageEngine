@@ -81,7 +81,7 @@ const fragmentShaderTemplate = /* glsl */ `
 
     // final blending (border + background)
     float aFront = borderAlpha;
-    float aBack = baseColor.a;;
+    float aBack = baseColor.a;
     float aOut = aFront + aBack * (1.0 - aFront);
 
     float safeAlpha = max(aOut, 0.0001);
