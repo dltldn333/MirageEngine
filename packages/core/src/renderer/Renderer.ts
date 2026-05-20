@@ -332,62 +332,6 @@ export class Renderer {
     if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) mesh.layers.enable(29);
   }
 
-  // [TODO] migration to painter
-
-  // private createTravelerMaterial(): THREE.ShaderMaterial {
-  //   const backgroundTexture = this.renderTarget
-  //     ? this.renderTarget.texture
-  //     : null;
-
-  //   const material = new THREE.ShaderMaterial({
-  //     uniforms: {
-  //       uBackground: { value: backgroundTexture },
-  //       uSize: { value: new THREE.Vector2(0, 0) },
-  //       uOpacity: { value: 1.0 },
-  //     },
-  //     vertexShader: /* glsl */ `
-  //     varying vec2 vUv;
-  //     varying vec4 vScreenPos;
-  //     void main() {
-  //       vUv = uv;
-  //       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  //       vScreenPos = gl_Position;
-  //     }
-  //   `,
-  //     fragmentShader: /* glsl */ `
-  //     uniform sampler2D uBackground;
-  //     varying vec2 vUv;
-  //     varying vec4 vScreenPos;
-
-  //     void main() {
-  //       vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
-  //       vec2 resultUv = screenUv;
-
-  //       //=====develop======//
-  //       // float distortionX = sin(vUv.y * 30.0) * 0.01;
-  //       // float distortionY = cos(vUv.x * 30.0) * 0.01;
-  //       // vec2 distortedUv = screenUv + vec2(distortionX, distortionY);
-  //       // vec2 resultUv = distortedUv;
-  //       //=====develop======//
-
-  //       vec4 bgColor = texture2D(uBackground, resultUv);
-
-  //       //=====develop======//
-  //       // vec3 glassColor = vec3(0.4, 0.6, 0.9);
-  //       // bgColor.rgb = mix(bgColor.rgb, glassColor, 0.15);
-  //       //=====develop======//
-
-  //       gl_FragColor = bgColor;
-
-  //       #include <colorspace_fragment>
-  //     }
-  //   `,
-  //     transparent: true,
-  //   });
-
-  //   return material;
-  // }
-
   private captureRenderTarget() {
     this.renderer.setRenderTarget(this.renderTarget);
     this.renderer.clear();
