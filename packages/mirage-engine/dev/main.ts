@@ -5,7 +5,7 @@ const target = document.querySelector("#root") as HTMLElement;
 const container = document.querySelector("#space") as HTMLElement;
 
 const mirageConifg: MirageConfig = {
-  textQuality: "high",
+  quality: "high",
   mode: "duplicate",
   container: container,
   // filter: {

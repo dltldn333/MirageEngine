@@ -72,7 +72,7 @@ export class Renderer {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(width, height);
 
-    this.applyTextQuality(config.textQuality ?? "medium");
+    this.applyTextQuality(config.quality ?? "medium");
   }
   public createRenderTarget() {
     this.renderTarget = new THREE.WebGLRenderTarget(
@@ -315,7 +315,7 @@ export class Renderer {
       node.rect.width,
       node.rect.height,
       this.qualityFactor,
-      node.isTraveler ? this.renderTarget?.texture : undefined
+      node.isTraveler ? this.renderTarget?.texture : undefined,
     );
   }
 
