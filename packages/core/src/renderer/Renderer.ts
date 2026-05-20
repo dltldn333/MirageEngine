@@ -363,12 +363,16 @@ export class Renderer {
       // const localBottom = (rect.y + rect.height) - targetY;
       // const localY = targetH - localBottom;
 
-      const scissorX = localX * this.qualityFactor;
-      const scissorY = localY * this.qualityFactor;
-      // const scissorX = targetX;
-      // const scissorY = targetY;
-      const scissorW = rect.width * this.qualityFactor;
-      const scissorH = rect.height * this.qualityFactor;
+      const scissorX = localX * this.qualityFactor/2;
+      const scissorY = localY * this.qualityFactor/2;
+      // const scissorX = 0;
+      // const scissorY = 0;
+      // const scissorX = localX;
+      // const scissorY = localY;
+      const scissorW = rect.width * this.qualityFactor /2;
+      const scissorH = rect.height * this.qualityFactor /2;
+      // const scissorW = rect.width;
+      // const scissorH = rect.height;
 
       this.renderer.setScissor(scissorX, scissorY, scissorW, scissorH);
       this.renderer.render(this.scene, this.camera);
@@ -389,15 +393,15 @@ export class Renderer {
     if (!this.renderTarget) return;
 
     // 원래 크기의 절반 사이즈로 축소
-    const w = this.targetRect.width ;
-    const h = this.targetRect.height ;
+    const w = this.targetRect.width;
+    const h = this.targetRect.height;
 
     const geometry = new THREE.PlaneGeometry(w, h);
     const material = new THREE.MeshBasicMaterial({
       map: this.renderTarget.texture,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.8
+      opacity: 0.8,
     });
 
     const debugMesh = new THREE.Mesh(geometry, material);
