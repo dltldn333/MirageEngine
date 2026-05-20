@@ -201,9 +201,6 @@ export class Renderer {
     if (!mesh) {
       const geometry = new THREE.PlaneGeometry(1, 1);
       let material: THREE.MeshBasicMaterial | THREE.Material;
-      // if (node.isTraveler) {
-      //   material = this.createTravelerMaterial();
-      // } else {
       material = Painter.create(
         "BOX",
         node.styles,
@@ -213,7 +210,6 @@ export class Renderer {
         this.qualityFactor,
         node.isTraveler ? this.renderTarget?.texture : undefined,
       );
-      // }
       mesh = new THREE.Mesh(geometry, material);
       if (node.type === "TEXT") mesh.name = "BG_MESH";
       this.scene.add(mesh);
@@ -311,10 +307,6 @@ export class Renderer {
       -localY + canvasHeight / 2 - rect.height / 2,
       styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     );
-    // if (node.isTraveler) {
-    //   (mesh.material as THREE.ShaderMaterial).uniforms.uBackground.value =
-    //     this.renderTarget!.texture;
-    // } else {
     Painter.update(
       mesh.material as THREE.Material,
       "BOX",
@@ -323,7 +315,6 @@ export class Renderer {
       node.rect.width,
       node.rect.height,
     );
-    // }
   }
 
   private updateMeshLayers(mesh: THREE.Mesh, node: SceneNode) {
