@@ -43,6 +43,7 @@ export const Painter = {
     width: number,
     height: number,
     quality: number = 2,
+    texture?: THREE.Texture | null
   ) {
     if (type === "BOX") {
       updateBoxMaterial(
@@ -50,6 +51,7 @@ export const Painter = {
         styles as BoxStyles,
         width,
         height,
+        texture
       );
     } else if (type === "TEXT") {
       const basicMat = material as THREE.MeshBasicMaterial;

@@ -194,6 +194,7 @@ export function updateBoxMaterial(
   styles: BoxStyles,
   width: number,
   height: number,
+  texture?: THREE.Texture | null
 ) {
   const parsedBg = parseColor(styles.backgroundColor);
   const parsedBorder = parseColor(styles.borderColor);
@@ -210,4 +211,7 @@ export function updateBoxMaterial(
   material.uniforms.uOpacity.value = styles.opacity ?? 1.0;
   material.uniforms.uBgOpacity.value = parsedBg.alpha;
   material.uniforms.uBorderOpacity.value = parsedBorder.alpha;
+  if (material.uniforms.uTexture && texture !== undefined) {
+    material.uniforms.uTexture.value = texture;
+  }
 }

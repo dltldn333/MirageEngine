@@ -314,6 +314,8 @@ export class Renderer {
       "",
       node.rect.width,
       node.rect.height,
+      this.qualityFactor,
+      node.isTraveler ? this.renderTarget?.texture : undefined
     );
   }
 
