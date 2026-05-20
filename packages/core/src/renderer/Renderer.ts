@@ -355,15 +355,18 @@ export class Renderer {
     for (const traveler of travelers) {
       const rect = traveler.userData.domRect as DOMRect;
 
-      // const localX = rect.left - targetX;
-      // const localBottom = rect.bottom - targetY;
+      const localX = rect.left - targetX;
+      const localBottom = rect.bottom - targetY;
+      const localY = targetH - localBottom;
+
+      // const localX = rect.x - targetX;
+      // const localBottom = (rect.y + rect.height) - targetY;
       // const localY = targetH - localBottom;
 
-
-      // const scissorX = localX * this.qualityFactor;
-      // const scissorY = localY * this.qualityFactor;
-      const scissorX = targetX;
-      const scissorY = targetY;
+      const scissorX = localX * this.qualityFactor;
+      const scissorY = localY * this.qualityFactor;
+      // const scissorX = targetX;
+      // const scissorY = targetY;
       const scissorW = rect.width * this.qualityFactor;
       const scissorH = rect.height * this.qualityFactor;
 
@@ -386,19 +389,21 @@ export class Renderer {
     if (!this.renderTarget) return;
 
     // 원래 크기의 절반 사이즈로 축소
-    const w = this.targetRect.width / 2;
-    const h = this.targetRect.height / 2;
+    const w = this.targetRect.width ;
+    const h = this.targetRect.height ;
 
     const geometry = new THREE.PlaneGeometry(w, h);
     const material = new THREE.MeshBasicMaterial({
       map: this.renderTarget.texture,
       side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.8
     });
 
     const debugMesh = new THREE.Mesh(geometry, material);
 
     // 우측 상단에 배치, 카메라 앞(z: 90)
-    debugMesh.position.set(w / 2, h / 2, 90);
+    debugMesh.position.set(0, 0, 90);
     // 최종 출력 카메라 채널인 28번에 할당
     debugMesh.layers.set(28);
 
