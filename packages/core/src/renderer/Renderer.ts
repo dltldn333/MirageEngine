@@ -87,7 +87,6 @@ export class Renderer {
         samples: 4,
       },
     );
-    console.log(this.renderTarget);
   }
 
   private applyTextQuality(quality: TextQuality) {
@@ -328,16 +327,81 @@ export class Renderer {
   }
 
   private captureRenderTarget() {
+    const travelers: THREE.Mesh[] = [];
+    for (const mesh of this.meshMap.values()) {
+      if ((mesh.layers.mask & (1 << 28)) !== 0) {
+        travelers.push(mesh);
+      }
+    }
+    if (travelers.length === 0) return;
+
+    const oldClearColor = new THREE.Color();
+    const oldClearAlpha = this.renderer.getClearAlpha();
+    this.renderer.getClearColor(oldClearColor);
+
+    this.renderer.setClearColor(0x000000, 0);
     this.renderer.setRenderTarget(this.renderTarget);
+
     this.renderer.clear();
-    this.camera.layers.set(29);
-    this.renderer.render(this.scene, this.camera);
+
+    this.renderer.autoClear = false;
+    this.renderer.setScissorTest(true);
+    this.camera.layers.set(30);
+
+    const targetX = this.targetRect.left;
+    const targetY = this.targetRect.top;
+    const targetH = this.targetRect.height;
+
+    for (const traveler of travelers) {
+      const rect = traveler.userData.domRect as DOMRect;
+
+      // const localX = rect.left - targetX;
+      // const localBottom = rect.bottom - targetY;
+      // const localY = targetH - localBottom;
+
+
+      // const scissorX = localX * this.qualityFactor;
+      // const scissorY = localY * this.qualityFactor;
+      const scissorX = targetX;
+      const scissorY = targetY;
+      const scissorW = rect.width * this.qualityFactor;
+      const scissorH = rect.height * this.qualityFactor;
+
+      this.renderer.setScissor(scissorX, scissorY, scissorW, scissorH);
+      this.renderer.render(this.scene, this.camera);
+    }
+    this.renderer.setScissorTest(false);
+    this.renderer.autoClear = true;
     this.renderer.setRenderTarget(null);
     this.camera.layers.set(28);
+    this.renderer.setClearColor(oldClearColor, oldClearAlpha);
   }
 
   public render() {
     if (this.renderTarget) this.captureRenderTarget();
     this.renderer.render(this.scene, this.camera);
+  }
+
+  public showDebugPlane() {
+    if (!this.renderTarget) return;
+
+    // 원래 크기의 절반 사이즈로 축소
+    const w = this.targetRect.width / 2;
+    const h = this.targetRect.height / 2;
+
+    const geometry = new THREE.PlaneGeometry(w, h);
+    const material = new THREE.MeshBasicMaterial({
+      map: this.renderTarget.texture,
+      side: THREE.DoubleSide,
+    });
+
+    const debugMesh = new THREE.Mesh(geometry, material);
+
+    // 우측 상단에 배치, 카메라 앞(z: 90)
+    debugMesh.position.set(w / 2, h / 2, 90);
+    // 최종 출력 카메라 채널인 28번에 할당
+    debugMesh.layers.set(28);
+
+    this.scene.add(debugMesh);
   }
 }

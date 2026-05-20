@@ -88,6 +88,7 @@ export class Syncer {
 
     this.forceUpdateScene();
     this.renderLoop();
+    this.renderer.showDebugPlane();
   }
 
   public stop() {
