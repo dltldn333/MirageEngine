@@ -73,8 +73,6 @@ const fragmentShaderTemplate = /* glsl */ `
     float halfBorder = uBorderWidth * 0.5;
     float borderD = abs(d + halfBorder) - halfBorder;
     float borderAlpha = (1.0 - smoothstep(0.0, aa, borderD)) * uBorderOpacity; 
-
-    // [TODO] fix: branching to math
     if (uBorderWidth <= 0.01) {
       borderAlpha = 0.0;
     }
@@ -92,7 +90,6 @@ const fragmentShaderTemplate = /* glsl */ `
     #INJECT_COLOR_MODIFIER
 
     float finalOpacity = finalColor.a * bgMask * uOpacity;
-    // [TODO] fix: branching to math
     if (finalOpacity < 0.001) discard;
 
     gl_FragColor = vec4(finalColor.rgb, finalOpacity);
