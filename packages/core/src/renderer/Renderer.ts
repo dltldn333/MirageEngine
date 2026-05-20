@@ -84,7 +84,7 @@ export class Renderer {
         format: THREE.RGBAFormat,
         stencilBuffer: false,
         depthBuffer: true,
-        // type: THREE.UnsignedByteType,
+        samples: 4,
       },
     );
     console.log(this.renderTarget);
@@ -143,8 +143,10 @@ export class Renderer {
   public setSize(width: number, height: number) {
     this.renderer.setSize(width, height);
     if (this.renderTarget) {
-      // [todo ]provide Downsampling api
-      this.renderTarget.setSize(width, height);
+      this.renderTarget.setSize(
+        width * this.qualityFactor,
+        height * this.qualityFactor,
+      );
     }
     this.camera.left = width / -2;
     this.camera.right = width / 2;
