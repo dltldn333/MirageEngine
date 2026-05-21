@@ -346,33 +346,16 @@ export class Renderer {
 
     this.renderer.autoClear = false;
     this.renderer.setScissorTest(true);
-    this.camera.layers.set(30);
-
-    const targetX = this.targetRect.left;
-    const targetY = this.targetRect.top;
-    const targetH = this.targetRect.height;
+    this.camera.layers.set(29);
+    
+    const vector = new THREE.Vector3();
+    const canvasWidth = this.targetRect.width;
+    const canvasHeight = this.targetRect.height;
 
     for (const traveler of travelers) {
-      const rect = traveler.userData.domRect as DOMRect;
+      vector.setFromMatrixPosition(traveler.matrixWorld);
+      vector.project(this.camera);
 
-      const localX = rect.left - targetX;
-      const localBottom = rect.bottom - targetY;
-      const localY = targetH - localBottom;
-
-      // const localX = rect.x - targetX;
-      // const localBottom = (rect.y + rect.height) - targetY;
-      // const localY = targetH - localBottom;
-
-      const scissorX = localX * this.qualityFactor/2;
-      const scissorY = localY * this.qualityFactor/2;
-      // const scissorX = 0;
-      // const scissorY = 0;
-      // const scissorX = localX;
-      // const scissorY = localY;
-      const scissorW = rect.width * this.qualityFactor /2;
-      const scissorH = rect.height * this.qualityFactor /2;
-      // const scissorW = rect.width;
-      // const scissorH = rect.height;
 
       this.renderer.setScissor(scissorX, scissorY, scissorW, scissorH);
       this.renderer.render(this.scene, this.camera);
