@@ -29,8 +29,9 @@
       }
 
       .box {
-        color: blue;
-        font-family: "Times New Roman", Times, serif;
+        color: black;
+        /* This font has problems with mirage-engine"
+        /* font-family: "Times New Roman", Times, serif; */
         width: 100%;
         height: 60px;
         box-sizing: border-box;
@@ -86,6 +87,7 @@
           background: lightcoral;
           padding: 20px;
           border-radius: 10px;
+          position: relative;
         "
         data-mirage-filter="include-tree"
       >
@@ -100,19 +102,36 @@
         >
           (exclude-self)
         </div>
-        <div id="box1" class="box" style="background-color: steelblue">
-          Box 1 (2초 뒤 색상 변경 - CSS)
+        <div
+          id="box1"
+          class="box"
+          style="
+            background-color: steelblue;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "
+        >
+          <span>test, test, test</span>
         </div>
 
         <div
           id="box2"
           class="box"
-          style="background-color: seagreen; opacity: 0.8"
+          style="
+            opacity: 1;
+            position: absolute;
+            right: 100px;
+            width: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: black solid 1px;
+            background-color: red;
+          "
+          data-mirage-travel="traveler"
         >
-          Box 2 (반투명)
-          <div id="box2-child" style="background-color: white; height: 20px">
-            Child box
-          </div>
+          <div id="box2-child" style="height: 20px; text-align: center"></div>
         </div>
       </div>
 

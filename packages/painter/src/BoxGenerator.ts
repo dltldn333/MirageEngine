@@ -22,18 +22,20 @@ function setBorderRadius(target: THREE.Vector4, radius: string) {
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
+  varying vec4 vScreenPos;
   void main() {
     vUv = uv;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vScreenPos = gl_Position;
   }
 `;
 
-const fragmentShader = /* glsl */ `
+const fragmentShaderTemplate = /* glsl */ `
 
   varying vec2 vUv;
   
   uniform vec2 uSize;
-  uniform vec4 uRadius;
+  uniform vec4 uBorderRadius;
   uniform float uBorderWidth;
   uniform vec3 uBgColor;
   uniform vec3 uBorderColor;
@@ -41,64 +43,56 @@ const fragmentShader = /* glsl */ `
   uniform float uBgOpacity;
   uniform float uBorderOpacity;
 
-  // SDF box
+  #INJECT_DECLARATIONS
+
   float sdRoundedBox(vec2 p, vec2 b, float r) {
     vec2 q = abs(p) - b + r;
-    // return length(max(q, 0.0)) - r;
+
     return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
   }
 
   void main() {
-    // uVu: (0.0, 0.0) ~ (1.0, 1.0) / center: (0.5, 0.5)
-    // p: (-1.0, -1.0) ~ (1.0, 1.0) / center: (0.0, 0.0)
     vec2 p = (vUv - 0.5) * uSize;
     vec2 halfSize = uSize * 0.5;
+
+    #INJECT_UV_MODIFIER
     
-    // # border-radius
-    vec2 xRadii = mix(uRadius.xw, uRadius.yz, step(0.0, p.x));
+    // color decision pipeline
+    vec4 baseColor = vec4(uBgColor, uBgOpacity);
+
+    #INJECT_BASE_COLOR
+
+    // sdf shape pipeline
+    vec2 xRadii = mix(uBorderRadius.xw, uBorderRadius.yz, step(0.0, p.x));
     float r = mix(xRadii.y, xRadii.x, step(0.0, p.y));
     float d = sdRoundedBox(p, halfSize, r);
 
-    // 1px blur for anti-aliasing
     float aa = 1.0; 
-
-    // x == 0~aa -> 1
-    // x < 0 -> 0 
-    // x > aa -> 1
     float bgMask = 1.0 - smoothstep(0.0, aa, d);
 
-    // v valley
-    // 10px -> 5
     float halfBorder = uBorderWidth * 0.5;
-    // 10px :
-    // 0 -> 0
-    // -10 -> 0
-    // -5 -> -5
     float borderD = abs(d + halfBorder) - halfBorder;
-    // ^ border 내부는 음수/외부는 양수
-
-    // [!] 내부가 음수인 곳에서 시작점이 0이면 내부는 안티 얼리어싱 되지 않음.
-    // 1에서 빼든 그대로든 상관없이 경계선 밖 1px
-
-    // 최종 alpha를 위해 border 부분에 해당하는 픽셀 만 1로 반환.
     float borderAlpha = (1.0 - smoothstep(0.0, aa, borderD)) * uBorderOpacity; 
-
     if (uBorderWidth <= 0.01) {
       borderAlpha = 0.0;
     }
 
+    // final blending (border + background)
     float aFront = borderAlpha;
-    float aBack = uBgOpacity;
+    float aBack = baseColor.a;
     float aOut = aFront + aBack * (1.0 - aFront);
 
     float safeAlpha = max(aOut, 0.0001);
-    vec3 cOut = (uBorderColor * aFront + uBgColor * aBack * (1.0 - aFront)) / safeAlpha;
+    vec3 cOut = (uBorderColor * aFront + baseColor.rgb * aBack * (1.0 - aFront)) / safeAlpha;
+    vec4 finalColor = vec4(cOut, aOut);
 
-    float finalOpacity = aOut * bgMask * uOpacity;
+    // final color control (Tint, Noise)
+    #INJECT_COLOR_MODIFIER
 
+    float finalOpacity = finalColor.a * bgMask * uOpacity;
     if (finalOpacity < 0.001) discard;
 
-    gl_FragColor = vec4(cOut, finalOpacity);
+    gl_FragColor = vec4(finalColor.rgb, finalOpacity);
 
     #include <colorspace_fragment>
   }
@@ -129,23 +123,60 @@ export function createBoxMaterial(
   styles: BoxStyles,
   width: number,
   height: number,
+  texture: THREE.Texture | null = null,
+  hooks?: { uvModifier?: string; colorModifier?: string },
 ): THREE.ShaderMaterial {
+  const hasTexture = texture !== null;
+
+  const declChunk = hasTexture
+    ? /* glsl */ `
+    uniform sampler2D uTexture;
+    varying vec4 vScreenPos;
+  `
+    : "";
+
+  const uvChunk = hasTexture
+    ? /* glsl */ `
+    vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
+    vec2 resultUv = screenUv;
+    ${hooks?.uvModifier || ""}
+  `
+    : "";
+
+  const baseColorChunk = hasTexture
+    ? /* glsl */ `
+    baseColor = texture2D(uTexture, resultUv);
+  `
+    : "";
+
+  const colorModChunk = hooks?.colorModifier || "";
+
+  const fragmentShader = fragmentShaderTemplate
+    .replace("#INJECT_DECLARATIONS", declChunk)
+    .replace("#INJECT_UV_MODIFIER", uvChunk)
+    .replace("#INJECT_BASE_COLOR", baseColorChunk)
+    .replace("#INJECT_COLOR_MODIFIER", colorModChunk);
+
+  // uniform setting
   const parsedBg = parseColor(styles.backgroundColor);
   const parsedBorder = parseColor(styles.borderColor);
-
   const uniforms = {
     uSize: { value: new THREE.Vector2(width, height) },
-    uRadius: { value: new THREE.Vector4(0, 0, 0, 0) },
+    uBorderRadius: { value: new THREE.Vector4(0, 0, 0, 0) },
     uBorderWidth: { value: parsePixelValue(styles.borderWidth) },
     uBgColor: { value: parsedBg.color },
     uBorderColor: { value: parsedBorder.color },
     uOpacity: { value: styles.opacity ?? 1.0 },
     uBgOpacity: { value: parsedBg.alpha },
     uBorderOpacity: { value: parsedBorder.alpha },
+    uTexture: { value: null as THREE.Texture | null },
   };
-
   // border radius value initialize
-  setBorderRadius(uniforms.uRadius.value, styles.borderRadius);
+  setBorderRadius(uniforms.uBorderRadius.value, styles.borderRadius);
+
+  if (hasTexture) {
+    uniforms.uTexture.value = texture;
+  }
 
   const material = new THREE.ShaderMaterial({
     uniforms: uniforms,
@@ -163,14 +194,15 @@ export function updateBoxMaterial(
   styles: BoxStyles,
   width: number,
   height: number,
+  texture?: THREE.Texture | null
 ) {
   const parsedBg = parseColor(styles.backgroundColor);
   const parsedBorder = parseColor(styles.borderColor);
 
   material.uniforms.uSize.value.set(width, height);
 
-  // material.uniforms.uRadius.value = parsePixelValue(styles.borderRadius);
-  setBorderRadius(material.uniforms.uRadius.value, styles.borderRadius);
+  // material.uniforms.uBorderRadius.value = parsePixelValue(styles.borderRadius);
+  setBorderRadius(material.uniforms.uBorderRadius.value, styles.borderRadius);
   material.uniforms.uBorderWidth.value = parsePixelValue(styles.borderWidth);
 
   material.uniforms.uBgColor.value.copy(parsedBg.color);
@@ -179,4 +211,7 @@ export function updateBoxMaterial(
   material.uniforms.uOpacity.value = styles.opacity ?? 1.0;
   material.uniforms.uBgOpacity.value = parsedBg.alpha;
   material.uniforms.uBorderOpacity.value = parsedBorder.alpha;
+  if (material.uniforms.uTexture && texture !== undefined) {
+    material.uniforms.uTexture.value = texture;
+  }
 }

@@ -11,7 +11,7 @@ export interface FilterConfig {
 
 interface BaseConfig {
   debug?: boolean;
-  textQuality?: TextQuality;
+  quality?: TextQuality;
   style?: {
     zIndex?: string;
   };

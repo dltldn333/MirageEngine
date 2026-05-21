@@ -6,7 +6,9 @@ import {
   DIRTY_RECT,
   DIRTY_STRUCTURE,
   DIRTY_STYLE,
-  INCLUDED
+  USER_LAYER,
+  SYSTEM_LAYER,
+  Visibility,
 } from "../types";
 
 export class Syncer {
@@ -18,6 +20,7 @@ export class Syncer {
 
   private isDomDirty: boolean = false;
   private isRunning: boolean = false;
+  private isTravelEnabled: boolean = false;
 
   private pendingMask: number = DIRTY_NONE;
 
@@ -85,6 +88,8 @@ export class Syncer {
 
     this.forceUpdateScene();
     this.renderLoop();
+    // for debugging
+    // this.renderer.showScissoredRenderTarget();
   }
 
   public stop() {
@@ -131,7 +136,22 @@ export class Syncer {
 
   private forceUpdateScene() {
     this.isDomDirty = false;
-    const sceneGraph = extractSceneGraph(this.target, this.pendingMask, INCLUDED, this.filter);
+
+    const discoveredTraveler =
+      document.querySelector("[data-mirage-travel='traveler']") !== null;
+    if (discoveredTraveler && !this.isTravelEnabled) {
+      this.isTravelEnabled = true;
+      this.renderer.createRenderTarget();
+    }
+
+    const sceneGraph = extractSceneGraph(
+      this.target,
+      this.pendingMask,
+      (discoveredTraveler
+        ? USER_LAYER | SYSTEM_LAYER
+        : USER_LAYER) as Visibility,
+      this.filter,
+    );
 
     if (sceneGraph) {
       this.renderer.syncScene(sceneGraph);

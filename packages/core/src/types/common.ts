@@ -1,7 +1,7 @@
 import { TextStyles, BoxStyles } from "@mirage-engine/painter";
 import { Visibility } from "./flags";
 
-export type NodeType = "BOX" | "TEXT"
+export type NodeType = "BOX" | "TEXT";
 
 export interface NodeRect {
   x: number;
@@ -14,7 +14,7 @@ export interface SceneNode {
   id: string;
   type: NodeType;
   element: HTMLElement;
-  
+
   rect: NodeRect;
   styles: BoxStyles;
 
@@ -25,7 +25,7 @@ export interface SceneNode {
   // TODO: SceneNode의 sort 로직 추가(아마도)
 
   visibility: Visibility;
-  
+  isTraveler: boolean;
+
   children: SceneNode[];
 }
-
