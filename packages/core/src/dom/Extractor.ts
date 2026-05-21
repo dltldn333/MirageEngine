@@ -6,8 +6,8 @@ import {
   DIRTY_STRUCTURE,
   SceneNode,
   Visibility,
-  EXCLUDED,
-  INCLUDED,
+  USER_LAYER,
+  SYSTEM_LAYER,
   ALLOWED_FILTERS,
 } from "../types";
 
@@ -100,6 +100,7 @@ export function extractSceneGraph(
       textStyles: extractTextStyles(computed),
       dirtyMask: initialMask,
       visibility: inheritedFlow,
+      isTraveler: false,
       children: [],
     };
   }
@@ -136,27 +137,40 @@ export function extractSceneGraph(
     }
 
     if (filterSet.has("include-tree")) {
-      visibleFlow = INCLUDED;
+      visibleFlow = (visibleFlow | USER_LAYER) as Visibility;
     } else if (filterSet.has("exclude-tree")) {
-      visibleFlow = EXCLUDED;
+      visibleFlow = (visibleFlow & ~USER_LAYER) as Visibility;
     }
 
     visibleFlag = visibleFlow;
 
     if (filterSet.has("include-self")) {
-      visibleFlag = INCLUDED;
+      visibleFlag = (visibleFlag | USER_LAYER) as Visibility;
     } else if (filterSet.has("exclude-self")) {
-      visibleFlag = EXCLUDED;
+      visibleFlag = (visibleFlag & ~USER_LAYER) as Visibility;
     }
   }
 
   // [[filter]] class based filtering
   // [Filter] end
-  if (filterConfig && filterConfig.end && filterConfig.end.length > 0) {
-    const isEnd = filterConfig.end.some((cls) =>
-      element.classList.contains(cls),
-    );
-    if (isEnd) return null;
+  // if (filterConfig && filterConfig.end && filterConfig.end.length > 0) {
+  //   const isEnd = filterConfig.end.some((cls) =>
+  //     element.classList.contains(cls),
+  //   );
+  //   if (isEnd) return null;
+  // }
+
+  visibleFlag = (visibleFlag | (inheritedFlow & SYSTEM_LAYER)) as Visibility;
+
+  const travelData = element.dataset.mirageTravel;
+  let isTraveler = false;
+  if (travelData) {
+    const travelSet = new Set(travelData.split(/\s+/));
+    if (travelSet.has("traveler")) {
+      visibleFlag = (visibleFlag & ~SYSTEM_LAYER) as Visibility;
+      visibleFlow = (visibleFlow & ~SYSTEM_LAYER) as Visibility;
+      isTraveler = true;
+    }
   }
 
   const rect = element.getBoundingClientRect();
@@ -216,6 +230,7 @@ export function extractSceneGraph(
     textStyles,
     dirtyMask: initialMask,
     visibility: visibleFlag,
+    isTraveler: isTraveler,
     children,
   };
 }

@@ -7,12 +7,11 @@ export const DIRTY_STRUCTURE = 1 << 3; // 8: childNode add / delete (00001000)
 export const DIRTY_CONTENT = 1 << 4; // 16: text content changed (00010000)
 
 // Filtering Flag
-export const INCLUDED = 0;
-export const SYSTEM = 29;
-export const EXCLUDED = 30;
+export const USER_LAYER = 1 << 0;
+export const SYSTEM_LAYER = 1 << 1;
+export const EXCLUDED = 0;
 
-// 다른 파일에서 파라미터 타입 지정용으로 사용
-export type Visibility = typeof EXCLUDED | typeof SYSTEM | typeof INCLUDED;
+export type Visibility = 0 | 1 | 2 | 3;
 
 export const ALLOWED_FILTERS = [
   "include-tree",
