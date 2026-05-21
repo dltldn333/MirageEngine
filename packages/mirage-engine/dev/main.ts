@@ -6,8 +6,9 @@ const container = document.querySelector("#space") as HTMLElement;
 
 const mirageConifg: MirageConfig = {
   quality: "high",
-  mode: "duplicate",
-  container: container,
+  // mode: "duplicate",
+  mode: "overlay",
+  // container: container,
   // filter: {
   //   excludeTree: ["exclude"],
   // },

@@ -347,23 +347,30 @@ export class Renderer {
     this.renderer.autoClear = false;
     this.renderer.setScissorTest(true);
     this.camera.layers.set(29);
-    
+
     const vector = new THREE.Vector3();
     const canvasWidth = this.targetRect.width;
     const canvasHeight = this.targetRect.height;
+
+    const pixelRatio = this.renderer.getPixelRatio();
 
     for (const traveler of travelers) {
       vector.setFromMatrixPosition(traveler.matrixWorld);
       vector.project(this.camera);
 
-      const centerX = (vector.x + 1) / 2 * canvasWidth;
-      const centerY = (vector.y + 1) / 2 * canvasHeight;
+      const centerX = ((vector.x + 1) / 2) * canvasWidth;
+      const centerY = ((vector.y + 1) / 2) * canvasHeight;
 
       const width = traveler.scale.x;
       const height = traveler.scale.y;
 
-      const localX = centerX - (width / 2);
-      const localY = centerY - (height / 2);
+      const localX = centerX - width / 2;
+      const localY = centerY - height / 2;
+
+      const scissorX = (localX * this.qualityFactor) / pixelRatio;
+      const scissorY = (localY * this.qualityFactor) / pixelRatio;
+      const scissorW = (width * this.qualityFactor) / pixelRatio;
+      const scissorH = (height * this.qualityFactor) / pixelRatio;
 
       this.renderer.setScissor(scissorX, scissorY, scissorW, scissorH);
       this.renderer.render(this.scene, this.camera);
@@ -380,10 +387,10 @@ export class Renderer {
     this.renderer.render(this.scene, this.camera);
   }
 
-  public showDebugPlane() {
+  // for debugging
+  public showScissoredRenderTarget() {
     if (!this.renderTarget) return;
 
-    // 원래 크기의 절반 사이즈로 축소
     const w = this.targetRect.width;
     const h = this.targetRect.height;
 
@@ -397,9 +404,7 @@ export class Renderer {
 
     const debugMesh = new THREE.Mesh(geometry, material);
 
-    // 우측 상단에 배치, 카메라 앞(z: 90)
     debugMesh.position.set(0, 0, 90);
-    // 최종 출력 카메라 채널인 28번에 할당
     debugMesh.layers.set(28);
 
     this.scene.add(debugMesh);
