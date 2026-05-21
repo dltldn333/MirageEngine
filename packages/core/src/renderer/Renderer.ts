@@ -356,6 +356,14 @@ export class Renderer {
       vector.setFromMatrixPosition(traveler.matrixWorld);
       vector.project(this.camera);
 
+      const centerX = (vector.x + 1) / 2 * canvasWidth;
+      const centerY = (vector.y + 1) / 2 * canvasHeight;
+
+      const width = traveler.scale.x;
+      const height = traveler.scale.y;
+
+      const localX = centerX - (width / 2);
+      const localY = centerY - (height / 2);
 
       this.renderer.setScissor(scissorX, scissorY, scissorW, scissorH);
       this.renderer.render(this.scene, this.camera);
