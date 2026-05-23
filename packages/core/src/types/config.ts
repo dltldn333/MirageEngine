@@ -1,6 +1,5 @@
 export type Quality = "low" | "medium" | "high" | number;
 export type MirageMode = "overlay" | "duplicate";
-export type ResizeStrategy = "debounce" | "instant";
 export interface FilterConfig {
   includeTree?: string[];
   excludeTree?: string[];
@@ -16,7 +15,7 @@ interface BaseConfig {
     zIndex?: string;
   };
   filter?: FilterConfig;
-  resizeStrategy?: ResizeStrategy;
+  resizeDebounce?: false;
 }
 
 export interface OverlayConfig extends BaseConfig {

@@ -129,8 +129,6 @@ export class Syncer {
     }, 50);
   };
 
-  // private resizeTimer: number | null = null;
-
   // private onWindowResize = () => {
   //   this.renderer.setSize(window.innerWidth, window.innerHeight);
   //   if (this.resizeTimer) clearTimeout(this.resizeTimer);
@@ -139,9 +137,9 @@ export class Syncer {
   //   }, 150);
   // };
 
+  private resizeTimer: number | null = null;
   private onWindowResize = () => {
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.isDomDirty = true;
+
   };
 
   private forceUpdateScene() {
