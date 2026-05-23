@@ -27,7 +27,7 @@ export class Engine {
 
     this.renderer.mount();
 
-    this.syncer = new Syncer(this.target, this.renderer, config.filter);
+    this.syncer = new Syncer(this.target, this.renderer, config);
   }
 
   public start() {
