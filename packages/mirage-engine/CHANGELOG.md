@@ -1,5 +1,14 @@
 # mirage-engine
 
+## 0.2.16
+
+### Patch Changes
+
+- e4efe5c: travel api
+- Updated dependencies [e4efe5c]
+  - @mirage-engine/painter@0.3.0
+  - @mirage-engine/core@0.2.0
+
 ## 0.2.15
 
 ### Patch Changes
