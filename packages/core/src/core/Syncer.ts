@@ -11,11 +11,17 @@ import {
   Visibility,
 } from "../types";
 
+interface InternalResizeConfig {
+  enabled: boolean;
+  delay: number;
+  onStart?: () => void;
+  onEnd?: () => void;
+}
+
 export class Syncer {
   private target: HTMLElement;
   private renderer: Renderer;
   private filter: CoreConfig["filter"];
-  private resizeDebounce: CoreConfig["resizeDebounce"];
 
   private observer: MutationObserver;
 
@@ -28,11 +34,29 @@ export class Syncer {
   private mutationTimer: number | null = null;
   private cssTimer: number | null = null;
 
+  private resizeConfig: InternalResizeConfig;
+  private resizeTimer: number | null = null;
+  private isResizing: boolean = false;
+
   constructor(target: HTMLElement, renderer: Renderer, config: CoreConfig) {
     this.target = target;
     this.renderer = renderer;
     this.filter = config.filter;
-    this.resizeDebounce = config.resizeDebounce ?? true;
+
+    // Resize Debounce Configuration
+    const debounceOpt = config.resizeDebounce ?? true;
+    if (debounceOpt === false) {
+      this.resizeConfig = { enabled: false, delay: 0 };
+    } else if (debounceOpt === true) {
+      this.resizeConfig = { enabled: true, delay: 150 };
+    } else {
+      this.resizeConfig = {
+        enabled: true,
+        delay: debounceOpt.delay ?? 150,
+        onStart: debounceOpt.onStart,
+        onEnd: debounceOpt.onEnd,
+      };
+    }
 
     this.observer = new MutationObserver((mutations) => {
       let currentMask = DIRTY_NONE;
@@ -131,24 +155,26 @@ export class Syncer {
     }, 50);
   };
 
-  // private onWindowResize = () => {
-  //   this.renderer.setSize(window.innerWidth, window.innerHeight);
-  //   if (this.resizeTimer) clearTimeout(this.resizeTimer);
-  //   this.resizeTimer = window.setTimeout(() => {
-  //     this.isDomDirty = true;
-  //   }, 150);
-  // };
-
-  private resizeTimer: number | null = null;
   private onWindowResize = () => {
-    if (this.resizeDebounce === true) {
-      if (this.resizeTimer) clearTimeout(this.resizeTimer);
-      this.resizeTimer = window.setTimeout(() => {
-        this.isDomDirty = true;
-      }, 150);
-    } else {
+    if (!this.resizeConfig.enabled) {
       this.isDomDirty = true;
+      return;
     }
+
+    if (!this.isResizing) {
+      this.isResizing = true;
+      if (this.resizeConfig.onStart) this.resizeConfig.onStart();
+    }
+
+    if (this.resizeTimer) clearTimeout(this.resizeTimer);
+
+    this.resizeTimer = window.setTimeout(() => {
+      this.isDomDirty = true;
+
+      if (this.resizeConfig.onEnd) this.resizeConfig.onEnd();
+      this.isResizing = false;
+      this.resizeTimer = null;
+    }, this.resizeConfig.delay);
   };
 
   private forceUpdateScene() {

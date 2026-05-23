@@ -68,6 +68,24 @@
   </head>
   <body>
     <!-- <div id="root" class="exclude"> -->
+    <div
+      id="loading"
+      style="
+        position: absolute;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: white;
+        z-index: 1000;
+        font-size: 24px;
+        color: #666;
+        display: none;
+      "
+    >
+      loading...
+    </div>
     <div id="root" data-mirage-filter="exclude-tree">
       <div id="css-test">
         <span>TEST</span>
@@ -119,7 +137,7 @@
             right: 100px;
             bottom: 10px;
             width: 200px;
-             background-color: lightcoral;
+            background-color: lightcoral;
           "
           data-mirage-travel="traveler"
         >
