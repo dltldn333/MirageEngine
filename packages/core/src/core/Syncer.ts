@@ -1,4 +1,4 @@
-import { FilterConfig } from "../types/config";
+import { CoreConfig } from "../types/config";
 import { Renderer } from "../renderer/Renderer";
 import { extractSceneGraph } from "../dom/Extractor";
 import {
@@ -14,7 +14,7 @@ import {
 export class Syncer {
   private target: HTMLElement;
   private renderer: Renderer;
-  private filter?: FilterConfig;
+  private config: CoreConfig;
 
   private observer: MutationObserver;
 
@@ -27,10 +27,10 @@ export class Syncer {
   private mutationTimer: number | null = null;
   private cssTimer: number | null = null;
 
-  constructor(target: HTMLElement, renderer: Renderer, filter?: FilterConfig) {
+  constructor(target: HTMLElement, renderer: Renderer, config: CoreConfig) {
     this.target = target;
     this.renderer = renderer;
-    this.filter = filter;
+    this.config = config;
 
     this.observer = new MutationObserver((mutations) => {
       let currentMask = DIRTY_NONE;
@@ -132,16 +132,15 @@ export class Syncer {
   // private resizeTimer: number | null = null;
 
   // private onWindowResize = () => {
+  //   this.renderer.setSize(window.innerWidth, window.innerHeight);
   //   if (this.resizeTimer) clearTimeout(this.resizeTimer);
-  //   // 리사이즈 드래그가 '멈추고' 0.15초 뒤에 딱 한 번만 더티 플래그를 켬
   //   this.resizeTimer = window.setTimeout(() => {
   //     this.isDomDirty = true;
-  //   }, 150); 
+  //   }, 150);
   // };
 
-
-
   private onWindowResize = () => {
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.isDomDirty = true;
   };
 
@@ -161,7 +160,7 @@ export class Syncer {
       (discoveredTraveler
         ? USER_LAYER | SYSTEM_LAYER
         : USER_LAYER) as Visibility,
-      this.filter,
+      this.config.filter,
     );
 
     if (sceneGraph) {
