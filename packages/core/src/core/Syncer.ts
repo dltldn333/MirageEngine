@@ -14,7 +14,8 @@ import {
 export class Syncer {
   private target: HTMLElement;
   private renderer: Renderer;
-  private config: CoreConfig;
+  private filter: CoreConfig["filter"];
+  private resizeDebounce: CoreConfig["resizeDebounce"];
 
   private observer: MutationObserver;
 
@@ -30,7 +31,8 @@ export class Syncer {
   constructor(target: HTMLElement, renderer: Renderer, config: CoreConfig) {
     this.target = target;
     this.renderer = renderer;
-    this.config = config;
+    this.filter = config.filter;
+    this.resizeDebounce = config.resizeDebounce ?? false;
 
     this.observer = new MutationObserver((mutations) => {
       let currentMask = DIRTY_NONE;
@@ -139,7 +141,14 @@ export class Syncer {
 
   private resizeTimer: number | null = null;
   private onWindowResize = () => {
-
+    if (this.resizeDebounce === true) {
+      if (this.resizeTimer) clearTimeout(this.resizeTimer);
+      this.resizeTimer = window.setTimeout(() => {
+        this.isDomDirty = true;
+      }, 150);
+    } else {
+      this.isDomDirty = true;
+    }
   };
 
   private forceUpdateScene() {
@@ -158,7 +167,7 @@ export class Syncer {
       (discoveredTraveler
         ? USER_LAYER | SYSTEM_LAYER
         : USER_LAYER) as Visibility,
-      this.config.filter,
+      this.filter,
     );
 
     if (sceneGraph) {

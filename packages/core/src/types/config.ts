@@ -15,7 +15,7 @@ interface BaseConfig {
     zIndex?: string;
   };
   filter?: FilterConfig;
-  resizeDebounce?: false;
+  resizeDebounce?: boolean;
 }
 
 export interface OverlayConfig extends BaseConfig {
