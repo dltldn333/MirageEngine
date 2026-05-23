@@ -8,6 +8,12 @@ export interface FilterConfig {
   end?: string[];
 }
 
+export interface ResizeConfig {
+  delay?: number;
+  onStart?: () => void;
+  onEnd?: () => void;
+}
+
 interface BaseConfig {
   debug?: boolean;
   quality?: Quality;
@@ -15,7 +21,7 @@ interface BaseConfig {
     zIndex?: string;
   };
   filter?: FilterConfig;
-  resizeDebounce?: boolean;
+  resizeDebounce?: boolean | ResizeConfig;
 }
 
 export interface OverlayConfig extends BaseConfig {

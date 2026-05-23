@@ -8,6 +8,7 @@ const mirageConifg: MirageConfig = {
   quality: "high",
   // mode: "duplicate",
   mode: "overlay",
+  resizeDebounce: false,
   // container: container,
   // filter: {
   //   excludeTree: ["exclude"],

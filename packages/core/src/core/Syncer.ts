@@ -32,7 +32,7 @@ export class Syncer {
     this.target = target;
     this.renderer = renderer;
     this.filter = config.filter;
-    this.resizeDebounce = config.resizeDebounce ?? false;
+    this.resizeDebounce = config.resizeDebounce ?? true;
 
     this.observer = new MutationObserver((mutations) => {
       let currentMask = DIRTY_NONE;
