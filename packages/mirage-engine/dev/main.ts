@@ -2,7 +2,7 @@ import { Mirage } from "@/index";
 import { MirageConfig } from "@/types";
 
 const target = document.querySelector("#root") as HTMLElement;
-const container = document.querySelector("#space") as HTMLElement;
+// const container = document.querySelector("#space") as HTMLElement;
 
 const mirageConifg: MirageConfig = {
   quality: "high",

@@ -129,8 +129,19 @@ export class Syncer {
     }, 50);
   };
 
+  // private resizeTimer: number | null = null;
+
+  // private onWindowResize = () => {
+  //   if (this.resizeTimer) clearTimeout(this.resizeTimer);
+  //   // 리사이즈 드래그가 '멈추고' 0.15초 뒤에 딱 한 번만 더티 플래그를 켬
+  //   this.resizeTimer = window.setTimeout(() => {
+  //     this.isDomDirty = true;
+  //   }, 150); 
+  // };
+
+
+
   private onWindowResize = () => {
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.isDomDirty = true;
   };
 
