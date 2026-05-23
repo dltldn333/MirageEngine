@@ -2,7 +2,7 @@ import * as THREE from "three";
 import {
   SceneNode,
   DIRTY_CONTENT,
-  TextQuality,
+  Quality,
   CoreConfig,
   MirageMode,
   USER_LAYER,
@@ -89,7 +89,7 @@ export class Renderer {
     );
   }
 
-  private applyTextQuality(quality: TextQuality) {
+  private applyTextQuality(quality: Quality) {
     if (typeof quality === "number") {
       this.qualityFactor = Math.max(0.1, quality);
       return;
