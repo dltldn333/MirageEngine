@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 0.3.0
+
+### Minor Changes
+
+- e4efe5c: travel api
+
 ## 0.2.3
 
 ### Patch Changes
