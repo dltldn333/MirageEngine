@@ -1,6 +1,5 @@
-export type TextQuality = "low" | "medium" | "high" | number;
+export type Quality = "low" | "medium" | "high" | number;
 export type MirageMode = "overlay" | "duplicate";
-
 export interface FilterConfig {
   includeTree?: string[];
   excludeTree?: string[];
@@ -9,13 +8,20 @@ export interface FilterConfig {
   end?: string[];
 }
 
+export interface ResizeConfig {
+  delay?: number;
+  onStart?: () => void;
+  onEnd?: () => void;
+}
+
 interface BaseConfig {
   debug?: boolean;
-  quality?: TextQuality;
+  quality?: Quality;
   style?: {
     zIndex?: string;
   };
   filter?: FilterConfig;
+  resizeDebounce?: boolean | ResizeConfig;
 }
 
 export interface OverlayConfig extends BaseConfig {

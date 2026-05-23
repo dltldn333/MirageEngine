@@ -37,6 +37,9 @@
         box-sizing: border-box;
         transition: all 0.5s ease;
         border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       canvas {
@@ -65,26 +68,40 @@
   </head>
   <body>
     <!-- <div id="root" class="exclude"> -->
+    <div
+      id="loading"
+      style="
+        position: absolute;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: white;
+        z-index: 1000;
+        font-size: 24px;
+        color: #666;
+        display: none;
+      "
+    >
+      loading...
+    </div>
     <div id="root" data-mirage-filter="exclude-tree">
       <div id="css-test">
         <span>TEST</span>
       </div>
       <h1 data-mirage-filter="include-self">
-        mirage-engine 테스트 환경
+        mirage-engine Test Environment
         <span style="color: darkorange">(not-included)</span>
       </h1>
-      <button id="test-btn" onclick="alert('test')">테스트 버튼</button>
-      <p>
-        2초: 파란박스 색 변경 (CSS Transition) <br />
-        4초: 노란박스 추가 (DOM 추가) <br />
-        <b>6초: 보라색 박스 GSAP 이동 (JS 애니메이션)</b>
-      </p>
+      <button id="test-btn" onclick="alert('test')">Test Button</button>
+      <h3>BOX test</h3>
 
       <div
         style="
           display: flex;
           gap: 20px;
-          background: lightcoral;
+          background: lightgrey;
           padding: 20px;
           border-radius: 10px;
           position: relative;
@@ -93,11 +110,7 @@
       >
         <div
           class="box"
-          style="
-            background-color: lightseagreen;
-            color: white;
-            text-align: center;
-          "
+          style="background-color: darkorchid; color: white; text-align: center"
           data-mirage-filter="exclude-self"
         >
           (exclude-self)
@@ -106,7 +119,7 @@
           id="box1"
           class="box"
           style="
-            background-color: steelblue;
+            background-color: lightcyan;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -122,12 +135,9 @@
             opacity: 1;
             position: absolute;
             right: 100px;
+            bottom: 10px;
             width: 200px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: black solid 1px;
-            background-color: red;
+            background-color: lightcoral;
           "
           data-mirage-travel="traveler"
         >
@@ -138,9 +148,15 @@
       <div
         id="box-gsap"
         class="box"
-        style="background-color: rebeccapurple; width: 150px; margin-left: 0"
+        style="
+          background-color: rebeccapurple;
+          width: 150px;
+          margin-left: 0;
+          margin-top: 20px;
+          color: white;
+        "
       >
-        GSAP Target (6초 뒤 이동)
+        GSAP Target
       </div>
     </div>
     <div id="space"></div>
