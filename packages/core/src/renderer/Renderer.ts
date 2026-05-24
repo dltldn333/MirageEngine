@@ -373,8 +373,8 @@ export class Renderer {
         clipDiff = parseFloat(this.clipArea);
       }
 
-      const width = traveler.scale.x * clipRadito;
-      const height = traveler.scale.y * clipRadito;
+      const width = traveler.scale.x * clipRadito + 1;
+      const height = traveler.scale.y * clipRadito + 1;
 
       const localX = centerX - width / 2;
       const localY = centerY - height / 2;
