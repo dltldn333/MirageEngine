@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import { BoxStyles } from "./types";
+// [for dev]
+import { glassHooks, isTraveler } from "./dev/devShader";
 
 function parsePixelValue(value: string | number): number {
   if (typeof value === "number") return value;
@@ -128,6 +130,9 @@ export function createBoxMaterial(
 ): THREE.ShaderMaterial {
   const hasTexture = texture !== null;
 
+  // [for dev]
+  const activeHooks = isTraveler ? glassHooks : hooks;
+
   const declChunk = hasTexture
     ? /* glsl */ `
     uniform sampler2D uTexture;
@@ -149,7 +154,13 @@ export function createBoxMaterial(
   `
     : "";
 
-  const colorModChunk = hooks?.colorModifier || "";
+  // [un dev]
+  // const colorModChunk = hooks?.colorModifier || "";
+
+  // [for dev]
+  const colorModChunk = hasTexture
+    ? activeHooks?.colorModifier || ""
+    : hooks?.colorModifier || "";
 
   const fragmentShader = fragmentShaderTemplate
     .replace("#INJECT_DECLARATIONS", declChunk)
@@ -194,7 +205,7 @@ export function updateBoxMaterial(
   styles: BoxStyles,
   width: number,
   height: number,
-  texture?: THREE.Texture | null
+  texture?: THREE.Texture | null,
 ) {
   const parsedBg = parseColor(styles.backgroundColor);
   const parsedBorder = parseColor(styles.borderColor);
