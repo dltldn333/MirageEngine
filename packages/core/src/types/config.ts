@@ -1,5 +1,7 @@
 export type Quality = "low" | "medium" | "high" | number;
 export type MirageMode = "overlay" | "duplicate";
+export type PxUnit = `${number}px` | `+${number}px` | `-${number}px`;
+export type PercentUnit = `${number}%`;
 export interface FilterConfig {
   includeTree?: string[];
   excludeTree?: string[];
@@ -22,6 +24,7 @@ interface BaseConfig {
   };
   filter?: FilterConfig;
   resizeDebounce?: boolean | ResizeConfig;
+  travelerClipArea? : PxUnit | PercentUnit;
 }
 
 export interface OverlayConfig extends BaseConfig {
