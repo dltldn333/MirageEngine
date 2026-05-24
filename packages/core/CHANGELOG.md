@@ -1,5 +1,16 @@
 # @mirage-engine/core
 
+## 0.2.0
+
+### Minor Changes
+
+- e4efe5c: travel api
+
+### Patch Changes
+
+- Updated dependencies [e4efe5c]
+  - @mirage-engine/painter@0.3.0
+
 ## 0.1.0
 
 ### Minor Changes
