@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { BoxStyles } from "./types";
 // [for dev]
-import { glassHooks, isTraveler } from "./dev/devShader";
+import { glassHooks } from "./dev/devShader";
 
 function parsePixelValue(value: string | number): number {
   if (typeof value === "number") return value;
@@ -131,7 +131,7 @@ export function createBoxMaterial(
   const hasTexture = texture !== null;
 
   // [for dev]
-  const activeHooks = isTraveler ? glassHooks : hooks;
+  const activeHooks = texture!=null ? glassHooks : hooks;
 
   const declChunk = hasTexture
     ? /* glsl */ `
@@ -140,11 +140,22 @@ export function createBoxMaterial(
   `
     : "";
 
+  // [un dev]
+  // const uvChunk = hasTexture
+  //   ? /* glsl */ `
+  //   vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
+  //   vec2 resultUv = screenUv;
+  //   ${hooks?.uvModifier || ""}
+  // `
+  //   : "";
+
+
+  // [for dev]
   const uvChunk = hasTexture
     ? /* glsl */ `
     vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
     vec2 resultUv = screenUv;
-    ${hooks?.uvModifier || ""}
+    ${activeHooks?.uvModifier || ""}
   `
     : "";
 
