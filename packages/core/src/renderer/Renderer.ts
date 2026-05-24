@@ -7,6 +7,7 @@ import {
   MirageMode,
   USER_LAYER,
   SYSTEM_LAYER,
+  travelerClipArea,
 } from "../types";
 import { Painter } from "@mirage-engine/painter";
 
@@ -19,6 +20,7 @@ export class Renderer {
   private renderOrder: number = 0;
   private qualityFactor: number = 2;
   private mode: MirageMode = "overlay";
+  private clipArea: travelerClipArea = 1;
 
   private target: HTMLElement;
   private mountContainer: HTMLElement;
@@ -35,7 +37,7 @@ export class Renderer {
     this.mountContainer = mountContainer;
 
     this.mode = config.mode ?? "overlay";
-
+    this.clipArea = config.travelerClipArea ?? 1;
     this.canvas = document.createElement("canvas");
     this.scene = new THREE.Scene();
 
@@ -364,13 +366,22 @@ export class Renderer {
       const width = traveler.scale.x;
       const height = traveler.scale.y;
 
+      let clipValue = 0;
+      if (typeof this.clipArea === "number") {
+        clipValue = this.clipArea;
+      } else if (this.clipArea.endsWith("%")) {
+        clipValue = width * (parseFloat(this.clipArea) / 100);
+      } else if (this.clipArea.endsWith("px")) {
+        clipValue = parseFloat(this.clipArea);
+      }
+
       const localX = centerX - width / 2;
       const localY = centerY - height / 2;
 
-      const scissorX = (localX * this.qualityFactor) / pixelRatio;
-      const scissorY = (localY * this.qualityFactor) / pixelRatio;
-      const scissorW = (width * this.qualityFactor) / pixelRatio;
-      const scissorH = (height * this.qualityFactor) / pixelRatio;
+      const scissorX = (localX * this.qualityFactor + clipValue) / pixelRatio;
+      const scissorY = (localY * this.qualityFactor + clipValue) / pixelRatio;
+      const scissorW = (width * this.qualityFactor - clipValue * 2) / pixelRatio;
+      const scissorH = (height * this.qualityFactor - clipValue * 2) / pixelRatio;
 
       this.renderer.setScissor(scissorX, scissorY, scissorW, scissorH);
       this.renderer.render(this.scene, this.camera);

@@ -8,6 +8,7 @@ const mirageConifg: MirageConfig = {
   quality: "high",
   // mode: "duplicate",
   mode: "overlay",
+  travelerClipArea: "10%",
   resizeDebounce: {
     delay: 200,
     onStart: () => {
