@@ -363,25 +363,27 @@ export class Renderer {
       const centerX = ((vector.x + 1) / 2) * canvasWidth;
       const centerY = ((vector.y + 1) / 2) * canvasHeight;
 
-      const width = traveler.scale.x;
-      const height = traveler.scale.y;
-
-      let clipValue = 0;
+      let clipDiff = 0;
+      let clipRadito = 1;
       if (typeof this.clipArea === "number") {
-        clipValue = this.clipArea;
+        clipRadito = this.clipArea;
       } else if (this.clipArea.endsWith("%")) {
-        clipValue = width * (parseFloat(this.clipArea) / 100);
+        clipRadito = parseFloat(this.clipArea) / 100;
       } else if (this.clipArea.endsWith("px")) {
-        clipValue = parseFloat(this.clipArea);
+        clipDiff = parseFloat(this.clipArea);
       }
+
+      const width = traveler.scale.x * clipRadito;
+      const height = traveler.scale.y * clipRadito;
 
       const localX = centerX - width / 2;
       const localY = centerY - height / 2;
 
-      const scissorX = (localX * this.qualityFactor + clipValue) / pixelRatio;
-      const scissorY = (localY * this.qualityFactor + clipValue) / pixelRatio;
-      const scissorW = (width * this.qualityFactor - clipValue * 2) / pixelRatio;
-      const scissorH = (height * this.qualityFactor - clipValue * 2) / pixelRatio;
+      const scissorX = (localX * this.qualityFactor - clipDiff) / pixelRatio;
+      const scissorY = (localY * this.qualityFactor - clipDiff) / pixelRatio;
+      const scissorW = (width * this.qualityFactor + clipDiff * 2) / pixelRatio;
+      const scissorH =
+        (height * this.qualityFactor + clipDiff * 2) / pixelRatio;
 
       this.renderer.setScissor(scissorX, scissorY, scissorW, scissorH);
       this.renderer.render(this.scene, this.camera);
