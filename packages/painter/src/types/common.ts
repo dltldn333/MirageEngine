@@ -18,3 +18,9 @@ export interface BoxStyles {
   borderColor: string;
   borderWidth: string;
 }
+
+export interface ShaderHooks {
+  uvModifier?: string; 
+  colorModifier?: string; 
+}
+

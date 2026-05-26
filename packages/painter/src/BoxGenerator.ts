@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { BoxStyles } from "./types";
+import { BoxStyles, ShaderHooks } from "./types";
 // [for dev]
 // import { glassHooks } from "./dev/devShader";
 
@@ -126,7 +126,7 @@ export function createBoxMaterial(
   width: number,
   height: number,
   texture: THREE.Texture | null = null,
-  hooks?: { uvModifier?: string; colorModifier?: string },
+  hooks?: ShaderHooks,
 ): THREE.ShaderMaterial {
   const hasTexture = texture !== null;
 
