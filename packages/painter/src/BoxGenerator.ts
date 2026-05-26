@@ -131,7 +131,7 @@ export function createBoxMaterial(
   const hasTexture = texture !== null;
 
   // [for dev]
-  // const activeHooks = texture!=null ? glassHooks : hooks;
+  // const activeHooks = hasTexture ? glassHooks : hooks;
 
   const declChunk = hasTexture
     ? /* glsl */ `

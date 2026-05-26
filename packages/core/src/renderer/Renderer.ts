@@ -9,7 +9,7 @@ import {
   SYSTEM_LAYER,
   travelerClipArea,
 } from "../types";
-import { Painter } from "@mirage-engine/painter";
+import { Painter, ShaderHooks } from "@mirage-engine/painter";
 
 export class Renderer {
   public readonly canvas: HTMLCanvasElement;
@@ -212,6 +212,7 @@ export class Renderer {
         node.rect.height,
         this.qualityFactor,
         node.isTraveler ? this.renderTarget?.texture : undefined,
+        node.shaderHooks
       );
       mesh = new THREE.Mesh(geometry, material);
       if (node.type === "TEXT") mesh.name = "BG_MESH";
