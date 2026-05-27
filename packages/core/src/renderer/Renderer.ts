@@ -9,7 +9,7 @@ import {
   SYSTEM_LAYER,
   travelerClipArea,
 } from "../types";
-import { Painter, ShaderHooks } from "@mirage-engine/painter";
+import { Painter } from "@mirage-engine/painter";
 
 export class Renderer {
   public readonly canvas: HTMLCanvasElement;
