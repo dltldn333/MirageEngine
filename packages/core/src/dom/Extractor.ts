@@ -173,6 +173,12 @@ export function extractSceneGraph(
     }
   }
 
+  const shaderData = element.dataset.mirageShader;
+  if (shaderData) {
+
+    
+  }
+
   const rect = element.getBoundingClientRect();
   const computed = window.getComputedStyle(element);
 
