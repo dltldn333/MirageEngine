@@ -188,6 +188,7 @@ export function extractSceneGraph(
     return null;
   }
 
+  // [TODO] dataset 방식으로 변경
   let id = element.getAttribute("data-mid");
   if (!id) {
     id = Math.random().toString(36).substring(2, 11);
