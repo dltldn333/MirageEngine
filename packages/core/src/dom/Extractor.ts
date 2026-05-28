@@ -174,11 +174,11 @@ export function extractSceneGraph(
   }
 
   const shaderData = element.dataset.mirageShader;
+  let shaderHooks: ShaderHooks | undefined;
   if (shaderData) {
-    const shaderHooks = JSON.parse(shaderData) as ShaderHooks;
+    shaderHooks = JSON.parse(shaderData) as ShaderHooks;
     // [TODO] object 형태로 shader hooks 받기
     // [TODO] 변수형태로 저장해서 return scene node에 넣어주기
-
   }
 
   const rect = element.getBoundingClientRect();
@@ -241,5 +241,6 @@ export function extractSceneGraph(
     visibility: visibleFlag,
     isTraveler: isTraveler,
     children,
+    shaderHooks,
   };
 }

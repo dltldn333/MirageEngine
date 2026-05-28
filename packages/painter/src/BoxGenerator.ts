@@ -114,10 +114,8 @@ function parseColor(colorStr: string) {
     const g = parseInt(rgbaMatch[2], 10);
     const b = parseInt(rgbaMatch[3], 10);
     const a = rgbaMatch[4] !== undefined ? parseFloat(rgbaMatch[4]) : 1.0;
-
     return { color: new THREE.Color(`rgb(${r}, ${g}, ${b})`), alpha: a };
   }
-
   return { color: new THREE.Color(colorStr), alpha: 1.0 };
 }
 
@@ -129,7 +127,6 @@ export function createBoxMaterial(
   hooks?: ShaderHooks,
 ): THREE.ShaderMaterial {
   const hasTexture = texture !== null;
-
   // [for dev]
   // const activeHooks = hasTexture ? glassHooks : hooks;
 
