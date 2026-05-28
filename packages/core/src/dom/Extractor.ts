@@ -11,7 +11,7 @@ import {
   ALLOWED_FILTERS,
 } from "../types";
 
-import { BoxStyles, TextStyles } from "@mirage-engine/painter";
+import { BoxStyles, TextStyles, ShaderHooks } from "@mirage-engine/painter";
 import { FilterConfig } from "../types/config";
 
 // Helper function: getTextNodeRect, isValidTextNode, isLeafTextElement, extractTextStyles
@@ -175,6 +175,7 @@ export function extractSceneGraph(
 
   const shaderData = element.dataset.mirageShader;
   if (shaderData) {
+    const shaderHooks = JSON.parse(shaderData) as ShaderHooks;
     // [TODO] object 형태로 shader hooks 받기
     // [TODO] 변수형태로 저장해서 return scene node에 넣어주기
 
