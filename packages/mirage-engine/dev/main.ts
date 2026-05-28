@@ -3,12 +3,10 @@ import { MirageConfig } from "@/types";
 
 const shader = {
   uvModifier: /* glsl */ `
-   // 1. 로컬 SDF 계산
     vec2 xRadii_uv = mix(uBorderRadius.xw, uBorderRadius.yz, step(0.0, p.x));
     float r_uv = mix(xRadii_uv.y, xRadii_uv.x, step(0.0, p.y));
     float d_uv = sdRoundedBox(p, halfSize, r_uv);
 
-    // 2. 표면 기울기(Gradient) 도출: 바깥 테두리를 향하는 방향 벡터
     float dx_uv = dFdx(d_uv);
     float dy_uv = dFdy(d_uv);
     if (abs(dx_uv) < 0.001 && abs(dy_uv) < 0.001) {
@@ -17,29 +15,51 @@ const shader = {
     }
     vec2 grad = normalize(vec2(dx_uv, dy_uv)); 
 
-    // 안쪽으로 들어간 픽셀 거리 (0: 테두리 끝, 양수: 박스 안쪽)
     float edgeDist = max(-d_uv, 0.0);
+    
+    float bevelWidth = 7.0; // 만나는 지점
+    float maxDepth = 15.0;  // 끝 지점
 
-    // 3. 분석하신 '내부 전반사' 구간 매핑 (0 ~ 15px 구간)
-    float reflectMask = step(0.0, edgeDist) * step(edgeDist, 5.0);
+    // ==========================================================
+    // 1. [붙여지는 부분: 0 ~ 7] 거울처럼 뒤집힌 반사 (곡선 적용)
+    // ==========================================================
+    float mask1 = step(0.0, edgeDist) * step(edgeDist, bevelWidth);
+    float t1 = edgeDist / bevelWidth; // 0.0(끝점) ~ 1.0(만나는 지점)
 
-    // x가 0일 때 35를, x가 15일 때 15를 바라보게 만드는 1차 방정식 (뒤집힌 반사)
-    float targetDist = 15.0 - (10.0 / 5.0) * edgeDist;
+    // [핵심] 비율을 곱하는 대신 3차 곡선(pow 3)을 사용합니다.
+    // 끝점(0)에서는 변화율이 0이 되어 텍스처가 아주 넓게 펴지고, 
+    // 만나는 지점(1)으로 갈수록 급격히 좁아집니다.
+    float curve1 = 1.0 - pow(t1, 3.0); 
 
-    // 현재 위치(edgeDist)에서 목표 위치(targetDist)까지 더 안쪽으로 당겨와야 할 거리
-    float pushDist = (targetDist - edgeDist) * reflectMask;
+    // 곡선을 이용해 목표 위치를 15에서 7로 부드럽게 이동시킵니다.
+    float target1 = bevelWidth + (maxDepth - bevelWidth) * curve1;
+    float push1 = (target1 - edgeDist) * mask1;
+
+
+    // ==========================================================
+    // 2. [복사되는 부분: 7 ~ 15] 볼록 렌즈 굴절
+    // ==========================================================
+    float mask2 = step(bevelWidth, edgeDist) * step(edgeDist, maxDepth);
+    float t2 = (edgeDist - bevelWidth) / (maxDepth - bevelWidth); // 0.0 ~ 1.0
+
+    // 안쪽 영역도 끊기지 않게 2차 곡선으로 부드럽게 평면으로 가라앉힙니다.
+    float curve2 = pow(1.0 - t2, 2.0); 
+    
+    // 2.5는 안쪽 렌즈의 왜곡 강도입니다. (조절 가능)
+    float push2 = curve2 * 2.0 * mask2;
+
+
+    // 양쪽 영역의 왜곡을 합산
+    float pushDist = push1 + push2;
 
     vec2 pixelToUv = vec2(dFdx(screenUv.x), dFdy(screenUv.y));
     if (abs(pixelToUv.x) < 0.000001) pixelToUv.x = 1.0 / 1920.0;
     if (abs(pixelToUv.y) < 0.000001) pixelToUv.y = 1.0 / 1080.0;
 
-    // grad가 바깥을 향하므로, -grad 방향(안쪽)으로 픽셀을 당겨옴
+    // grad가 바깥쪽을 향하므로, -grad를 곱해 "안쪽"으로 픽셀을 당겨옵니다.
     vec2 distortOffset = -grad * pushDist * pixelToUv;
-
-    // 최종 UV에 적용
     resultUv = screenUv + distortOffset; 
   `,
-
   colorModifier: /* glsl */ `
       float thickness_c = 25.0;
       float dx_c = dFdx(d);
@@ -52,11 +72,14 @@ const shader = {
       float n_sin_c = sqrt(max(1.0 - n_cos_c * n_cos_c, 0.0));
       vec3 normal_c = normalize(vec3(dx_c * n_cos_c, dy_c * n_cos_c, n_sin_c));
 
-      float edgeReflection = smoothstep(-5.0, 0.0, d) * smoothstep(0.0, -5.0, d);
+      float edgeReflection = smoothstep(-1.0, 0.0, d) * smoothstep(0.0, -1.0, d);
       float fresnel = pow(1.0 - max(dot(normal_c, vec3(0.0, 0.0, 1.0)), 0.0), 3.0);
-
+      finalColor.rgb = mix(finalColor.rgb, vec3(0.0, 0.0, 0.0), 0.2);
+      
       finalColor.rgb += vec3(1.0) * (edgeReflection * 0.4 + fresnel * 0.5);
-      finalColor.rgb = mix(finalColor.rgb, vec3(1.0, 1.0, 1.0), 0.2);
+
+      // 텍스쳐의 투명도(0.0)와 유리의 투명도(1.0) 중 큰 값을 취해 빈 공간을 어두운 유리로 채웁니다.
+
   `,
 };
 
