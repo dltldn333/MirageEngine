@@ -14,11 +14,12 @@ export class MeshRegistry {
     return this.store.get(element);
   }
 
-  public remove(element: HTMLElement): void {
-    this.store.delete(element);
-  }
-
   public has(element: HTMLElement): boolean {
     return this.store.has(element);
+  }
+
+  // Optional
+  public remove(element: HTMLElement): void {
+    this.store.delete(element);
   }
 }

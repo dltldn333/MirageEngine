@@ -10,6 +10,7 @@ import {
   travelerClipArea,
 } from "../types";
 import { Painter } from "@mirage-engine/painter";
+import { MeshRegistry } from "src/animation/MeshRegistry";
 
 export class Renderer {
   public readonly canvas: HTMLCanvasElement;
@@ -32,10 +33,10 @@ export class Renderer {
     target: HTMLElement,
     config: CoreConfig,
     mountContainer: HTMLElement,
+    registry: MeshRegistry
   ) {
     this.target = target;
     this.mountContainer = mountContainer;
-
     this.mode = config.mode ?? "overlay";
     this.clipArea = config.travelerClipArea ?? 1;
     this.canvas = document.createElement("canvas");
