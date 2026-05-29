@@ -1,5 +1,14 @@
 # mirage-engine
 
+## 0.2.17
+
+### Patch Changes
+
+- 4b9e1b0: shader hooks pipeline
+- Updated dependencies [4b9e1b0]
+  - @mirage-engine/painter@0.4.0
+  - @mirage-engine/core@0.2.1
+
 ## 0.2.16
 
 ### Patch Changes
