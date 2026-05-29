@@ -64,7 +64,7 @@ const shader = {
 
       float edgeReflection = smoothstep(-1.5, 0.0, d) * smoothstep(0.0, -1.5, d);
       float fresnel = pow(1.0 - max(dot(normal_c, vec3(0.0, 0.0, 1.0)), 0.0), 3.0);
-      finalColor.rgb = mix(finalColor.rgb, vec3(1.0, 1.0, 1.0), 0.5);
+      finalColor.rgb = mix(finalColor.rgb, vec3(1.0, 1.0, 1.0), 0.0);
       
       finalColor.rgb += vec3(1.0) * (edgeReflection * 0.4 + fresnel * 0.5);
 
