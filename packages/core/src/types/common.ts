@@ -1,4 +1,4 @@
-import { TextStyles, BoxStyles } from "@mirage-engine/painter";
+import { TextStyles, BoxStyles, ShaderHooks } from "@mirage-engine/painter";
 import { Visibility } from "./flags";
 
 export type NodeType = "BOX" | "TEXT";
@@ -26,6 +26,7 @@ export interface SceneNode {
 
   visibility: Visibility;
   isTraveler: boolean;
+  shaderHooks?: ShaderHooks;
 
   children: SceneNode[];
 }

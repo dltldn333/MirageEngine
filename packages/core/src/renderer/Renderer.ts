@@ -212,6 +212,7 @@ export class Renderer {
         node.rect.height,
         this.qualityFactor,
         node.isTraveler ? this.renderTarget?.texture : undefined,
+        node.shaderHooks
       );
       mesh = new THREE.Mesh(geometry, material);
       if (node.type === "TEXT") mesh.name = "BG_MESH";

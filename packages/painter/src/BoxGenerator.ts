@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { BoxStyles } from "./types";
+import { BoxStyles, ShaderHooks } from "./types";
 // [for dev]
-import { glassHooks } from "./dev/devShader";
+// import { glassHooks } from "./dev/devShader";
 
 function parsePixelValue(value: string | number): number {
   if (typeof value === "number") return value;
@@ -114,10 +114,8 @@ function parseColor(colorStr: string) {
     const g = parseInt(rgbaMatch[2], 10);
     const b = parseInt(rgbaMatch[3], 10);
     const a = rgbaMatch[4] !== undefined ? parseFloat(rgbaMatch[4]) : 1.0;
-
     return { color: new THREE.Color(`rgb(${r}, ${g}, ${b})`), alpha: a };
   }
-
   return { color: new THREE.Color(colorStr), alpha: 1.0 };
 }
 
@@ -126,12 +124,11 @@ export function createBoxMaterial(
   width: number,
   height: number,
   texture: THREE.Texture | null = null,
-  hooks?: { uvModifier?: string; colorModifier?: string },
+  hooks?: ShaderHooks,
 ): THREE.ShaderMaterial {
   const hasTexture = texture !== null;
-
   // [for dev]
-  const activeHooks = texture!=null ? glassHooks : hooks;
+  // const activeHooks = hasTexture ? glassHooks : hooks;
 
   const declChunk = hasTexture
     ? /* glsl */ `
@@ -141,23 +138,23 @@ export function createBoxMaterial(
     : "";
 
   // [un dev]
-  // const uvChunk = hasTexture
-  //   ? /* glsl */ `
-  //   vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
-  //   vec2 resultUv = screenUv;
-  //   ${hooks?.uvModifier || ""}
-  // `
-  //   : "";
-
-
-  // [for dev]
   const uvChunk = hasTexture
     ? /* glsl */ `
     vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
     vec2 resultUv = screenUv;
-    ${activeHooks?.uvModifier || ""}
+    ${hooks?.uvModifier || ""}
   `
     : "";
+
+
+  // [for dev]
+  // const uvChunk = hasTexture
+  //   ? /* glsl */ `
+  //   vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
+  //   vec2 resultUv = screenUv;
+  //   ${activeHooks?.uvModifier || ""}
+  // `
+  //   : "";
 
   const baseColorChunk = hasTexture
     ? /* glsl */ `
@@ -166,12 +163,12 @@ export function createBoxMaterial(
     : "";
 
   // [un dev]
-  // const colorModChunk = hooks?.colorModifier || "";
+  const colorModChunk = hooks?.colorModifier || "";
 
   // [for dev]
-  const colorModChunk = hasTexture
-    ? activeHooks?.colorModifier || ""
-    : hooks?.colorModifier || "";
+  // const colorModChunk = hasTexture
+  //   ? activeHooks?.colorModifier || ""
+  //   : hooks?.colorModifier || "";
 
   const fragmentShader = fragmentShaderTemplate
     .replace("#INJECT_DECLARATIONS", declChunk)

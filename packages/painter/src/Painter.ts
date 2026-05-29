@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { BoxStyles, TextStyles } from "./types";
+import { BoxStyles, TextStyles, ShaderHooks} from "./types";
 import { createBoxMaterial, updateBoxMaterial } from "./BoxGenerator";
 import { createTextTexture } from "./TextGenerator";
 
@@ -12,9 +12,10 @@ export const Painter = {
     height: number,
     quality: number = 2,
     texture: THREE.Texture | null = null,
+    shaderHooks?: ShaderHooks
   ): THREE.Material {
     if (type === "BOX") {
-      return createBoxMaterial(styles as BoxStyles, width, height, texture);
+      return createBoxMaterial(styles as BoxStyles, width, height, texture, shaderHooks);
     } else if (type === "TEXT") {
       const texture = createTextTexture(
         content || "",
