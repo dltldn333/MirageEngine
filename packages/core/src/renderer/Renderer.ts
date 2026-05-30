@@ -27,7 +27,7 @@ export class Renderer {
   private mountContainer: HTMLElement;
   private targetRect: DOMRect;
 
-  private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
+  // private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
 
   constructor(
     target: HTMLElement,
@@ -198,6 +198,10 @@ export class Renderer {
     }
   }
 
+  // 탐색 후 완성된 Scene node를 이용하여 mesh를 만들거나 조정
+  // => 이 과정에서 scene node에 있는 ele를 넣은 hash => activeElements
+  // => 이후 activeElements를 이용하여 mesh를 정리!!!+ map에서도 삭제
+
   private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
     activeElements.add(node.element);
 
@@ -221,6 +225,7 @@ export class Renderer {
       this.meshMap.set(node.element, mesh);
     }
 
+    // [Important] use whene mesh animating with js
     mesh.userData.domRect = node.rect;
 
     this.updateMeshProperties(mesh, node);
@@ -331,6 +336,8 @@ export class Renderer {
   }
 
   private captureRenderTarget() {
+    // [Problem] this method called on requestAnimationFrame
+    // => this logic travers all meshes every frame, need optimization
     const travelers: THREE.Mesh[] = [];
     for (const mesh of this.meshMap.values()) {
       if ((mesh.layers.mask & (1 << 28)) !== 0) {
