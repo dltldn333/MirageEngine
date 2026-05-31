@@ -64,6 +64,9 @@ export class Syncer {
       for (const mutation of mutations) {
         if (mutation.type === "childList") {
           currentMask |= DIRTY_STRUCTURE;
+          if (mutation.removedNodes.length > 0) {
+            
+          }
         } else if (mutation.type === "attributes") {
           if (
             mutation.attributeName === "style" ||
@@ -80,7 +83,6 @@ export class Syncer {
         // Structural Change detected
         if (currentMask & DIRTY_STRUCTURE) {
           this.clearTimers();
-          console.log("Structural Change detected");
           this.isDomDirty = true;
           return;
         }
