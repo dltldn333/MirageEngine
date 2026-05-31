@@ -24,6 +24,7 @@ export class Syncer {
   private filter: CoreConfig["filter"];
 
   private observer: MutationObserver;
+  private pendingDeletions: Set<HTMLElement> = new Set();
 
   private isDomDirty: boolean = false;
   private isRunning: boolean = false;
@@ -65,7 +66,11 @@ export class Syncer {
         if (mutation.type === "childList") {
           currentMask |= DIRTY_STRUCTURE;
           if (mutation.removedNodes.length > 0) {
-            
+            mutation.removedNodes.forEach((node) => {
+              if (node instanceof HTMLElement) {
+                this.pendingDeletions.add(node);
+              }
+            });
           }
         } else if (mutation.type === "attributes") {
           if (
