@@ -157,7 +157,7 @@ export class Renderer {
     this.camera.updateProjectionMatrix();
   }
 
-  public syncScene(graphNode: SceneNode) {
+  public syncScene(graphNode: SceneNode, pendingDeletions: Set<HTMLElement>) {
     const newRect = this.target.getBoundingClientRect();
 
     const isResized =

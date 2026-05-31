@@ -204,7 +204,9 @@ export class Syncer {
     );
 
     if (sceneGraph) {
-      this.renderer.syncScene(sceneGraph);
+      this.renderer.syncScene(sceneGraph, this.pendingDeletions);
+      this.pendingDeletions.clear();
+
     }
 
     this.pendingMask = DIRTY_NONE;
