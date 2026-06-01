@@ -26,7 +26,12 @@ export class Engine {
       throw new Error("[Mirage] Cannot find a container (parent or option).");
     }
 
-    this.renderer = new Renderer(this.target, config, mountContainer, this.registry);
+    this.renderer = new Renderer(
+      this.target,
+      config,
+      mountContainer,
+      this.registry,
+    );
     this.renderer.mount();
     this.syncer = new Syncer(this.target, this.renderer, config);
   }
@@ -41,5 +46,43 @@ export class Engine {
   public dispose() {
     this.syncer.stop();
     this.renderer.dispose();
+  }
+
+  public test() {
+    const boxMesh = this.registry.get(
+      document.querySelector("#box2") as HTMLElement,
+    );
+
+    if (!boxMesh) return;
+
+    // 1. 키 상태 저장
+    const keys: { [key: string]: boolean } = {
+      ArrowRight: false,
+      ArrowLeft: false,
+      ArrowUp: false,
+      ArrowDown: false,
+    };
+
+    // 2. 키다운/업 이벤트로 스위치만 토글
+    window.addEventListener("keydown", (e) => {
+      if (keys[e.key] !== undefined) keys[e.key] = true;
+    });
+    window.addEventListener("keyup", (e) => {
+      if (keys[e.key] !== undefined) keys[e.key] = false;
+    });
+
+    // 3. 애니메이션 루프에서 매 프레임 위치 보정
+    const moveStep = 2;
+
+    const animate = () => {
+      requestAnimationFrame(animate);
+
+      if (keys.ArrowRight) boxMesh.position.setX(boxMesh.position.x + moveStep);
+      if (keys.ArrowLeft) boxMesh.position.setX(boxMesh.position.x - moveStep);
+      if (keys.ArrowUp) boxMesh.position.setY(boxMesh.position.y + moveStep);
+      if (keys.ArrowDown) boxMesh.position.setY(boxMesh.position.y - moveStep);
+    };
+
+    animate();
   }
 }
