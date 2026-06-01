@@ -1,7 +1,7 @@
 import { CoreConfig } from "../types";
 import { Renderer } from "../renderer/Renderer";
 import { Syncer } from "./Syncer";
-import { MeshRegistry } from "src/animation/MeshRegistry";
+import { MeshRegistry } from "../animation/MeshRegistry";
 
 export class Engine {
   private renderer: Renderer;

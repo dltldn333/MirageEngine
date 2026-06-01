@@ -197,6 +197,7 @@ export class Renderer {
         const meshToDestroy = this.registry.get(el) as THREE.Mesh | undefined;
         if (meshToDestroy) {
           this.scene.remove(meshToDestroy);
+          this.travelers.delete(meshToDestroy);
           meshToDestroy.geometry.dispose();
           meshToDestroy.traverse((child) => {
             if (child instanceof THREE.Mesh) {
@@ -371,13 +372,9 @@ export class Renderer {
   private captureRenderTarget() {
     // [Problem] this method called on requestAnimationFrame
     // => this logic travers all meshes every frame, need optimization
-    const travelers: THREE.Mesh[] = [];
-    for (const mesh of this.meshMap.values()) {
-      if ((mesh.layers.mask & (1 << 28)) !== 0) {
-        travelers.push(mesh);
-      }
-    }
-    if (travelers.length === 0) return;
+
+    // if (travelers.length === 0) return;
+    if (this.travelers.size === 0) return;
 
     const oldClearColor = new THREE.Color();
     const oldClearAlpha = this.renderer.getClearAlpha();
@@ -398,7 +395,7 @@ export class Renderer {
 
     const pixelRatio = this.renderer.getPixelRatio();
 
-    for (const traveler of travelers) {
+    for (const traveler of this.travelers) {
       vector.setFromMatrixPosition(traveler.matrixWorld);
       vector.project(this.camera);
 
