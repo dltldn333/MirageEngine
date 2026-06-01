@@ -25,6 +25,7 @@ export class Renderer {
 
   private target: HTMLElement;
   private mountContainer: HTMLElement;
+  private registry: MeshRegistry;
   private targetRect: DOMRect;
 
   // private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
@@ -37,6 +38,8 @@ export class Renderer {
   ) {
     this.target = target;
     this.mountContainer = mountContainer;
+    this.registry = registry;
+
     this.mode = config.mode ?? "overlay";
     this.clipArea = config.travelerClipArea ?? 1;
     this.canvas = document.createElement("canvas");
@@ -183,29 +186,53 @@ export class Renderer {
 
     this.renderOrder = 0;
 
-    const activeElements = new Set<HTMLElement>();
+    // const activeElements = new Set<HTMLElement>();
 
-    this.reconcileNode(graphNode, activeElements);
+    // this.reconcileNode(graphNode, activeElements);
+    this.reconcileNode(graphNode);
 
-    for (const [el, mesh] of this.meshMap.entries()) {
-      if (!activeElements.has(el)) {
-        this.scene.remove(mesh);
-
-        mesh.geometry.dispose();
-        if (mesh.material instanceof THREE.Material) mesh.material.dispose();
-        this.meshMap.delete(el);
-      }
+    if (pendingDeletions.size > 0) {
+      pendingDeletions.forEach((el) => {
+        const meshToDestroy = this.registry.get(el) as THREE.Mesh | undefined;
+        if (meshToDestroy) {
+          this.scene.remove(meshToDestroy);
+          meshToDestroy.geometry.dispose();
+          meshToDestroy.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+              if(child.geometry) child.geometry.dispose();
+              if (child.material ) {
+                if(Array.isArray(child.material)){
+                  child.material.forEach((mat) => mat.dispose());
+                }else{
+                  child.material.dispose();
+                }
+              }
+            }
+          });
+          this.registry.remove(el);
+        }
+      });
     }
+
+
+
+    //     mesh.geometry.dispose();
+    //     if (mesh.material instanceof THREE.Material) mesh.material.dispose();
+    //     this.meshMap.delete(el);
+    //   }
+    // }
   }
 
   // 탐색 후 완성된 Scene node를 이용하여 mesh를 만들거나 조정
   // => 이 과정에서 scene node에 있는 ele를 넣은 hash => activeElements
   // => 이후 activeElements를 이용하여 mesh를 정리!!!+ map에서도 삭제
 
-  private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
-    activeElements.add(node.element);
+  // private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
+  private reconcileNode(node: SceneNode) {
+    // activeElements.add(node.element);
 
-    let mesh = this.meshMap.get(node.element);
+    // let mesh = this.meshMap.get(node.element);
+    let mesh = this.registry.get(node.element) as THREE.Mesh | undefined;
     if (!mesh) {
       const geometry = new THREE.PlaneGeometry(1, 1);
       let material: THREE.MeshBasicMaterial | THREE.Material;
@@ -222,7 +249,7 @@ export class Renderer {
       mesh = new THREE.Mesh(geometry, material);
       if (node.type === "TEXT") mesh.name = "BG_MESH";
       this.scene.add(mesh);
-      this.meshMap.set(node.element, mesh);
+      this.registry.register(node.element, mesh);
     }
 
     // [Important] use whene mesh animating with js
@@ -234,7 +261,8 @@ export class Renderer {
 
     if (node.type === "BOX") {
       for (const child of node.children) {
-        this.reconcileNode(child, activeElements);
+        // this.reconcileNode(child, activeElements);
+        this.reconcileNode(child);
       }
     } else if (node.type === "TEXT") {
       this.reconcileTextChild(mesh, node);
