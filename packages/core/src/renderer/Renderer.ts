@@ -28,13 +28,14 @@ export class Renderer {
   private registry: MeshRegistry;
   private targetRect: DOMRect;
 
+  private travelers: Set<THREE.Mesh> = new Set();
   // private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
 
   constructor(
     target: HTMLElement,
     config: CoreConfig,
     mountContainer: HTMLElement,
-    registry: MeshRegistry
+    registry: MeshRegistry,
   ) {
     this.target = target;
     this.mountContainer = mountContainer;
@@ -199,11 +200,11 @@ export class Renderer {
           meshToDestroy.geometry.dispose();
           meshToDestroy.traverse((child) => {
             if (child instanceof THREE.Mesh) {
-              if(child.geometry) child.geometry.dispose();
-              if (child.material ) {
-                if(Array.isArray(child.material)){
+              if (child.geometry) child.geometry.dispose();
+              if (child.material) {
+                if (Array.isArray(child.material)) {
                   child.material.forEach((mat) => mat.dispose());
-                }else{
+                } else {
                   child.material.dispose();
                 }
               }
@@ -213,8 +214,6 @@ export class Renderer {
         }
       });
     }
-
-
 
     //     mesh.geometry.dispose();
     //     if (mesh.material instanceof THREE.Material) mesh.material.dispose();
@@ -244,7 +243,7 @@ export class Renderer {
         node.rect.height,
         this.qualityFactor,
         node.isTraveler ? this.renderTarget?.texture : undefined,
-        node.shaderHooks
+        node.shaderHooks,
       );
       mesh = new THREE.Mesh(geometry, material);
       if (node.type === "TEXT") mesh.name = "BG_MESH";
@@ -257,7 +256,13 @@ export class Renderer {
 
     this.updateMeshProperties(mesh, node);
     this.updateMeshLayers(mesh, node);
-    if (node.isTraveler) mesh.layers.enable(28);
+    if (node.isTraveler) {
+      mesh.layers.enable(28);
+      this.travelers.add(mesh);
+    } else {
+      mesh.layers.disable(28);
+      this.travelers.delete(mesh);
+    }
 
     if (node.type === "BOX") {
       for (const child of node.children) {
