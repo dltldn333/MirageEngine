@@ -113,7 +113,7 @@ export class Syncer {
       attributes: true,
       characterData: true,
     });
-
+  
     this.target.addEventListener("transitionend", this.onTransitionFinished);
     this.target.addEventListener("animationend", this.onTransitionFinished);
 

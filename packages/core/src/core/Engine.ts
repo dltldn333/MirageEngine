@@ -3,6 +3,7 @@ import { Renderer } from "../renderer/Renderer";
 import { Syncer } from "./Syncer";
 import { MeshRegistry } from "../animation/MeshRegistry";
 
+
 export class Engine {
   private renderer: Renderer;
   private syncer: Syncer;
