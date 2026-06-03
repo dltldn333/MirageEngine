@@ -25,6 +25,7 @@ export class Syncer {
 
   private observer: MutationObserver;
   private pendingDeletions: Set<HTMLElement> = new Set();
+  private pendingStyles: Map<HTMLElement, MutationRecord> = new Map();
 
   private isDomDirty: boolean = false;
   private isRunning: boolean = false;
@@ -74,11 +75,17 @@ export class Syncer {
           }
         } else if (mutation.type === "attributes") {
           if (
-            mutation.attributeName === "style" ||
-            mutation.attributeName === "class"
+            mutation.attributeName === "style"
           ) {
             currentMask |= DIRTY_RECT | DIRTY_STYLE;
+
+            this.pendingStyles.set(mutation.target as HTMLElement, mutation);
+            
+          } else if (mutation.attributeName === "class") {
+            currentMask |= DIRTY_RECT | DIRTY_STYLE;
           }
+          // else if (mutation.attributeName === "data-mirage") {
+          // }
         }
       }
 

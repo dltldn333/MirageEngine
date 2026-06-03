@@ -1,4 +1,4 @@
-export function animateMeshByData(target: HTMLElement) {
+export function animateMeshByData(data: Map<string, any>) {
     
 }
 
