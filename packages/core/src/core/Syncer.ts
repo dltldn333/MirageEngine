@@ -10,6 +10,7 @@ import {
   SYSTEM_LAYER,
   Visibility,
 } from "../types";
+import { parse } from "path";
 
 interface InternalResizeConfig {
   enabled: boolean;
@@ -25,7 +26,7 @@ export class Syncer {
 
   private observer: MutationObserver;
   private pendingDeletions: Set<HTMLElement> = new Set();
-  private pendingStyles: Map<HTMLElement, MutationRecord> = new Map();
+  private pendingStyles: Map<HTMLElement, Object> = new Map();
 
   private isDomDirty: boolean = false;
   private isRunning: boolean = false;
@@ -74,13 +75,11 @@ export class Syncer {
             });
           }
         } else if (mutation.type === "attributes") {
-          if (
-            mutation.attributeName === "style"
-          ) {
+          if (mutation.attributeName === "style") {
             currentMask |= DIRTY_RECT | DIRTY_STYLE;
-
-            this.pendingStyles.set(mutation.target as HTMLElement, mutation);
-            
+            // [TODO]
+            const parsedStyle = {};
+            this.pendingStyles.set(mutation.target as HTMLElement, parsedStyle);
           } else if (mutation.attributeName === "class") {
             currentMask |= DIRTY_RECT | DIRTY_STYLE;
           }
@@ -120,7 +119,7 @@ export class Syncer {
       attributes: true,
       characterData: true,
     });
-  
+
     this.target.addEventListener("transitionend", this.onTransitionFinished);
     this.target.addEventListener("animationend", this.onTransitionFinished);
 
