@@ -20,7 +20,5 @@ export function parseStyle(styleString: string): Object {
 }
 
 // Example usage:
-const styleString = "color: red; font-size: 16px; background-color: blue;";
-const parsedStyle = parseStyle(styleString);
-console.log(parsedStyle);
+
 // Output: { color: "red", "font-size": "16px", "background-color": "blue" }

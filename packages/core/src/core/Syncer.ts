@@ -10,7 +10,7 @@ import {
   SYSTEM_LAYER,
   Visibility,
 } from "../types";
-import { parse } from "path";
+import { parseStyle } from "../animation/Animator";
 
 interface InternalResizeConfig {
   enabled: boolean;
@@ -78,8 +78,12 @@ export class Syncer {
           if (mutation.attributeName === "style") {
             currentMask |= DIRTY_RECT | DIRTY_STYLE;
             // [TODO]
-            const parsedStyle = {};
+            const styleString =
+              "color: red; font-size: 16px; background-color: blue;";
+            const parsedStyle = parseStyle(styleString);
+            // const parsedStyle = {};
             this.pendingStyles.set(mutation.target as HTMLElement, parsedStyle);
+            console.log(parsedStyle);
           } else if (mutation.attributeName === "class") {
             currentMask |= DIRTY_RECT | DIRTY_STYLE;
           }
