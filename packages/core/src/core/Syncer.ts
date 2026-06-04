@@ -1,5 +1,6 @@
 import { CoreConfig } from "../types/config";
 import { Renderer } from "../renderer/Renderer";
+import { MeshRegistry } from "../store/MeshRegistry";
 import { extractSceneGraph } from "../dom/Extractor";
 import {
   DIRTY_NONE,
@@ -10,7 +11,7 @@ import {
   SYSTEM_LAYER,
   Visibility,
 } from "../types";
-import { extractFromStyle } from "../animation/Animator";
+import { extractFromStyle, animateMeshByData } from "../animation/Animator";
 
 interface InternalResizeConfig {
   enabled: boolean;
@@ -22,6 +23,7 @@ interface InternalResizeConfig {
 export class Syncer {
   private target: HTMLElement;
   private renderer: Renderer;
+  private registry: MeshRegistry;
   private filter: CoreConfig["filter"];
 
   private observer: MutationObserver;
@@ -41,9 +43,15 @@ export class Syncer {
   private resizeTimer: number | null = null;
   private isResizing: boolean = false;
 
-  constructor(target: HTMLElement, renderer: Renderer, config: CoreConfig) {
+  constructor(
+    target: HTMLElement,
+    renderer: Renderer,
+    registry: MeshRegistry,
+    config: CoreConfig,
+  ) {
     this.target = target;
     this.renderer = renderer;
+    this.registry = registry;
     this.filter = config.filter;
 
     // Resize Debounce Configuration
@@ -79,9 +87,9 @@ export class Syncer {
             currentMask |= DIRTY_RECT | DIRTY_STYLE;
             const target = mutation.target as HTMLElement;
 
-            const extractedStyle = extractFromStyle(target.style);
-            console.log(extractedStyle);
-            // this.pendingStyles.set(target, extractedStyle);
+            const extractedStyleData = extractFromStyle(target.style);
+            // console.log(extractedStyleData);
+            this.pendingStyles.set(target, extractedStyleData);
           } else if (mutation.attributeName === "class") {
             currentMask |= DIRTY_RECT | DIRTY_STYLE;
           }
@@ -226,7 +234,15 @@ export class Syncer {
       this.forceUpdateScene();
     }
 
+    if (this.cssTimer !== null) {
+      animateMeshByData(this.registry, this.pendingStyles);
+      this.pendingStyles.clear();
+    }
+
     this.renderer.render();
     requestAnimationFrame(this.renderLoop);
   };
+
+  // [ThinkPoint] change call back pattern when after
+
 }

@@ -10,7 +10,7 @@ import {
   travelerClipArea,
 } from "../types";
 import { Painter } from "@mirage-engine/painter";
-import { MeshRegistry } from "src/animation/MeshRegistry";
+import { MeshRegistry } from "src/store/MeshRegistry";
 
 export class Renderer {
   public readonly canvas: HTMLCanvasElement;
@@ -430,7 +430,7 @@ export class Renderer {
     this.renderer.setScissorTest(false);
     this.renderer.autoClear = true;
     this.renderer.setRenderTarget(null);
-    this.camera.layers.set(28);
+    this.camera.layers.set(0);
     this.renderer.setClearColor(oldClearColor, oldClearAlpha);
   }
 

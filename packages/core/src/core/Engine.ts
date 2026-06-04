@@ -1,8 +1,7 @@
 import { CoreConfig } from "../types";
 import { Renderer } from "../renderer/Renderer";
 import { Syncer } from "./Syncer";
-import { MeshRegistry } from "../animation/MeshRegistry";
-
+import { MeshRegistry } from "../store/MeshRegistry";
 
 export class Engine {
   private renderer: Renderer;
@@ -34,7 +33,7 @@ export class Engine {
       this.registry,
     );
     this.renderer.mount();
-    this.syncer = new Syncer(this.target, this.renderer, config);
+    this.syncer = new Syncer(this.target, this.renderer, this.registry, config);
   }
 
   public start() {
@@ -56,7 +55,6 @@ export class Engine {
 
     if (!boxMesh) return;
 
-    // 1. 키 상태 저장
     const keys: { [key: string]: boolean } = {
       ArrowRight: false,
       ArrowLeft: false,
@@ -64,7 +62,6 @@ export class Engine {
       ArrowDown: false,
     };
 
-    // 2. 키다운/업 이벤트로 스위치만 토글
     window.addEventListener("keydown", (e) => {
       if (keys[e.key] !== undefined) keys[e.key] = true;
     });
@@ -72,7 +69,6 @@ export class Engine {
       if (keys[e.key] !== undefined) keys[e.key] = false;
     });
 
-    // 3. 애니메이션 루프에서 매 프레임 위치 보정
     const moveStep = 2;
 
     const animate = () => {
