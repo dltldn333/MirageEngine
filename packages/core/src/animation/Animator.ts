@@ -1,24 +1,29 @@
-export function animateMeshByData(data: Map<string, any>) {
-    
-}
+import { StyleData } from "../types";
 
-export function animateMeshByAttribute(target: HTMLElement, options: { duration: number; easing?: string }) {
+export function animateMeshByData(data: Map<string, any>) {}
 
-}
+export function animateMeshByAttribute(
+  target: HTMLElement,
+  options: { duration: number; easing?: string },
+) {}
 
+export function extractFromStyle(style: CSSStyleDeclaration): StyleData {
+  const styleObject: StyleData = {};
 
-export function parseStyle(styleString: string): Object {
-    const styleObject: { [key: string]: string } = {};
-    const stylePairs = styleString.split(";").map(pair => pair.trim()).filter(pair => pair);
-    for (const pair of stylePairs) {
-        const [key, value] = pair.split(":").map(part => part.trim());
-        if (key && value) {
-            styleObject[key] = value;
-        }
+    if (style.opacity) {
+        styleObject.opacity = parseFloat(style.opacity);
     }
-    return styleObject;
+
+    if (style.transform && style.transform !== 'none') {
+        const matrix = new DOMMatrix(style.transform);
+
+        styleObject.x = matrix.m41;
+        styleObject.y = matrix.m42;
+        styleObject.z = matrix.m43;
+        
+        // [TODO] direct matrix data pipeline to webGL
+        // styleObject.matrix = matrix.toFloat32Array(); 
+    }
+
+  return styleObject;
 }
-
-// Example usage:
-
-// Output: { color: "red", "font-size": "16px", "background-color": "blue" }
