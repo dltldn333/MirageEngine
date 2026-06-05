@@ -10,7 +10,7 @@ import {
   USER_LAYER,
   SYSTEM_LAYER,
   Visibility,
-  StyleData
+  StyleData,
 } from "../types";
 import { extractFromStyle, animateMeshByData } from "../animation/Animator";
 
@@ -235,7 +235,7 @@ export class Syncer {
       this.forceUpdateScene();
     }
 
-    if (this.cssTimer !== null) {
+    if (this.pendingStyles.size > 0) {
       animateMeshByData(this.registry, this.pendingStyles);
       this.pendingStyles.clear();
     }
@@ -245,5 +245,4 @@ export class Syncer {
   };
 
   // [ThinkPoint] change call back pattern when after
-
 }

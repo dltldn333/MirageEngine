@@ -8,10 +8,12 @@ export function animateMeshByData(
   if (data.size === 0) return;
   data.forEach((styleData, element) => {
     const mesh = registry.get(element);
-    if (mesh) {
-      mesh.position.setX(styleData.x ?? mesh.position.x);
-      mesh.position.setY(styleData.y ?? mesh.position.y);
-      mesh.position.setZ(styleData.z ?? mesh.position.z);
+
+    if (mesh && mesh.userData.basePosition) {
+      const baseX = mesh.userData.basePosition.x;
+      const baseY = mesh.userData.basePosition.y;
+      if (styleData.x !== undefined) mesh.position.setX(baseX + styleData.x);
+      if (styleData.y !== undefined) mesh.position.setY(baseY - styleData.y);
     }
   });
 }
