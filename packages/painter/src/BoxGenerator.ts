@@ -208,6 +208,34 @@ export function createBoxMaterial(
   return material;
 }
 
+// export function updateBoxMaterial(
+//   material: THREE.ShaderMaterial,
+//   styles: BoxStyles,
+//   width: number,
+//   height: number,
+//   texture?: THREE.Texture | null,
+// ) {
+//   const parsedBg = parseColor(styles.backgroundColor);
+//   const parsedBorder = parseColor(styles.borderColor);
+
+//   material.uniforms.uSize.value.set(width, height);
+
+//   // material.uniforms.uBorderRadius.value = parsePixelValue(styles.borderRadius);
+//   setBorderRadius(material.uniforms.uBorderRadius.value, styles.borderRadius);
+//   material.uniforms.uBorderWidth.value = parsePixelValue(styles.borderWidth);
+
+//   material.uniforms.uBgColor.value.copy(parsedBg.color);
+//   material.uniforms.uBorderColor.value.copy(parsedBorder.color);
+
+//   material.uniforms.uOpacity.value = styles.opacity ?? 1.0;
+//   material.uniforms.uBgOpacity.value = parsedBg.alpha;
+//   material.uniforms.uBorderOpacity.value = parsedBorder.alpha;
+//   if (material.uniforms.uTexture && texture !== undefined) {
+//     material.uniforms.uTexture.value = texture;
+//   }
+// }
+
+
 export function updateBoxMaterial(
   material: THREE.ShaderMaterial,
   styles: BoxStyles,
@@ -216,20 +244,47 @@ export function updateBoxMaterial(
   texture?: THREE.Texture | null,
 ) {
   const parsedBg = parseColor(styles.backgroundColor);
-  const parsedBorder = parseColor(styles.borderColor);
+  const parsedBorderColor = parseColor(styles.borderColor);
+  const parsedBorderWidth = parsePixelValue(styles.borderWidth);
+  setBoxUniforms(
+    material,
+    width,
+    height,
+    styles.borderRadius,
+    parsedBorderWidth,
+    parsedBg.color,
+    parsedBorderColor.color,
+    styles.opacity,
+    parsedBg.alpha,
+    parsedBorderColor.alpha,
+    texture,
+  );  
+}
 
+function setBoxUniforms(
+  material: THREE.ShaderMaterial,
+  width: number,
+  height: number,
+  borderRadius: string,
+  borderWidth: number,
+  bgColor: THREE.Color,
+  borderColor: THREE.Color,
+  opacity: number,
+  bgOpacity: number,
+  borderOpacity: number,
+  texture?: THREE.Texture | null,
+) {
   material.uniforms.uSize.value.set(width, height);
 
-  // material.uniforms.uBorderRadius.value = parsePixelValue(styles.borderRadius);
-  setBorderRadius(material.uniforms.uBorderRadius.value, styles.borderRadius);
-  material.uniforms.uBorderWidth.value = parsePixelValue(styles.borderWidth);
+  setBorderRadius(material.uniforms.uBorderRadius.value, borderRadius);
+  material.uniforms.uBorderWidth.value = borderWidth;
 
-  material.uniforms.uBgColor.value.copy(parsedBg.color);
-  material.uniforms.uBorderColor.value.copy(parsedBorder.color);
+  material.uniforms.uBgColor.value.copy(bgColor);
+  material.uniforms.uBorderColor.value.copy(borderColor);
 
-  material.uniforms.uOpacity.value = styles.opacity ?? 1.0;
-  material.uniforms.uBgOpacity.value = parsedBg.alpha;
-  material.uniforms.uBorderOpacity.value = parsedBorder.alpha;
+  material.uniforms.uOpacity.value = opacity ?? 1.0;
+  material.uniforms.uBgOpacity.value = bgOpacity;
+  material.uniforms.uBorderOpacity.value = borderOpacity;
   if (material.uniforms.uTexture && texture !== undefined) {
     material.uniforms.uTexture.value = texture;
   }

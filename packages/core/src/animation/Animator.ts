@@ -1,5 +1,7 @@
 import { StyleData } from "../types";
 import { MeshRegistry } from "../store/MeshRegistry";
+import { Painter } from "@mirage-engine/Painter";
+import * as THREE from "three";
 
 export function animateMeshByData(
   registry: MeshRegistry,
@@ -8,13 +10,24 @@ export function animateMeshByData(
   if (data.size === 0) return;
   data.forEach((styleData, element) => {
     const mesh = registry.get(element);
-
-    if (mesh && mesh.userData.basePosition) {
+    if (!mesh) return;
+    if (mesh.userData.basePosition) {
       const baseX = mesh.userData.basePosition.x;
       const baseY = mesh.userData.basePosition.y;
-      if (styleData.x !== undefined) mesh.position.setX(baseX + (styleData.x/1));
+      if (styleData.x !== undefined)
+        mesh.position.setX(baseX + styleData.x / 1);
       if (styleData.y !== undefined) mesh.position.setY(baseY - styleData.y);
     }
+    // Painter.update(
+    //   mesh.material as THREE.Material,
+    //   "BOX",
+    //   styleData.styles,
+    //   "",
+    //   node.rect.width,
+    //   node.rect.height,
+    //   this.qualityFactor,
+    //   node.isTraveler ? this.renderTarget?.texture : undefined,
+    // );
   });
 }
 
