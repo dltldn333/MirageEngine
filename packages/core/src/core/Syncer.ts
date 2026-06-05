@@ -10,6 +10,7 @@ import {
   USER_LAYER,
   SYSTEM_LAYER,
   Visibility,
+  StyleData
 } from "../types";
 import { extractFromStyle, animateMeshByData } from "../animation/Animator";
 
@@ -28,7 +29,7 @@ export class Syncer {
 
   private observer: MutationObserver;
   private pendingDeletions: Set<HTMLElement> = new Set();
-  private pendingStyles: Map<HTMLElement, Object> = new Map();
+  private pendingStyles: Map<HTMLElement, StyleData> = new Map();
 
   private isDomDirty: boolean = false;
   private isRunning: boolean = false;

@@ -3,7 +3,7 @@ import { MeshRegistry } from "../store/MeshRegistry";
 
 export function animateMeshByData(
   registry: MeshRegistry,
-  data: Map<HTMLElement, Object>,
+  data: Map<HTMLElement, StyleData>,
 ) {
   if (data.size === 0) return;
   data.forEach((styleData, element) => {
