@@ -346,11 +346,20 @@ export class Renderer {
     const localX = rect.x - targetPageX;
     const localY = rect.y - targetPageY;
 
+    const baseX = localX - canvasWidth / 2 + rect.width / 2;
+    const baseY = -localY + canvasHeight / 2 - rect.height / 2;
+
     mesh.position.set(
-      localX - canvasWidth / 2 + rect.width / 2,
-      -localY + canvasHeight / 2 - rect.height / 2,
+      baseX,
+      baseY,
       styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     );
+
+    // mesh.position.set(
+    //   localX - canvasWidth / 2 + rect.width / 2,
+    //   -localY + canvasHeight / 2 - rect.height / 2,
+    //   styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
+    // );
     Painter.update(
       mesh.material as THREE.Material,
       "BOX",
