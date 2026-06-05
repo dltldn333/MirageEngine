@@ -355,6 +355,8 @@ export class Renderer {
       styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     );
 
+    mesh.userData.basePosition = { x: baseX, y: baseY };
+
     // mesh.position.set(
     //   localX - canvasWidth / 2 + rect.width / 2,
     //   -localY + canvasHeight / 2 - rect.height / 2,
