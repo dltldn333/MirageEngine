@@ -35,7 +35,7 @@
         width: 100%;
         height: 60px;
         box-sizing: border-box;
-        transition: all 0.5s ease;
+        /* transition: all 0.5s ease; */
         border-radius: 8px;
         display: flex;
         align-items: center;
@@ -86,7 +86,7 @@
     >
       loading...
     </div>
-    <div id="root">
+    <div id="root" data-mirage-filter="exclude-self">
       <div id="css-test">
         <span>TEST</span>
       </div>
@@ -106,7 +106,7 @@
           border-radius: 10px;
           position: relative;
         "
-        data-mirage-filter="include-tree"
+        data-mirage-filter="include-tree exclude-self"
       >
         <div
           class="box"
@@ -142,7 +142,7 @@
             border-radius: 30px;
             height: 80px;
             width: 150px;
-            /* background-color: lightcoral; */
+            background-color: lightcoral;
           "
           data-mirage-travel="traveler"
         >
@@ -196,8 +196,8 @@
 
         gsap.to("#box-gsap", {
           x: 400,
-          backgroundColor: "#FF5733",
-          rotation: 360,
+          // backgroundColor: "#FF5733",
+          // rotation: 360,
           duration: 2,
           ease: "power2.inOut",
         });

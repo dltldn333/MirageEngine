@@ -170,6 +170,7 @@ export class Syncer {
     if (this.mutationTimer !== null) return;
 
     if (this.cssTimer) clearTimeout(this.cssTimer);
+    if (this.pendingStyles.size != 0) return;
 
     this.pendingMask |= DIRTY_RECT | DIRTY_STYLE;
 
@@ -238,6 +239,7 @@ export class Syncer {
     if (this.pendingStyles.size > 0) {
       animateMeshByData(this.registry, this.pendingStyles);
       this.pendingStyles.clear();
+
     }
 
     this.renderer.render();

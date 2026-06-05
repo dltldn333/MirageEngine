@@ -12,7 +12,7 @@ export function animateMeshByData(
     if (mesh && mesh.userData.basePosition) {
       const baseX = mesh.userData.basePosition.x;
       const baseY = mesh.userData.basePosition.y;
-      if (styleData.x !== undefined) mesh.position.setX(baseX + styleData.x);
+      if (styleData.x !== undefined) mesh.position.setX(baseX + (styleData.x/1));
       if (styleData.y !== undefined) mesh.position.setY(baseY - styleData.y);
     }
   });
