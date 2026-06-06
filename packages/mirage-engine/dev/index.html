@@ -86,7 +86,7 @@
     >
       loading...
     </div>
-    <div id="root" data-mirage-filter="exclude-self">
+    <div id="root" data-mirage-filter="">
       <div id="css-test">
         <span>TEST</span>
       </div>
@@ -106,7 +106,7 @@
           border-radius: 10px;
           position: relative;
         "
-        data-mirage-filter="include-tree exclude-self"
+        data-mirage-filter="include-tree"
       >
         <div
           class="box"
@@ -142,7 +142,7 @@
             border-radius: 30px;
             height: 80px;
             width: 150px;
-            background-color: lightcoral;
+            /* background-color: lightcoral; */
           "
           data-mirage-travel="traveler"
         >
@@ -171,11 +171,17 @@
     <script id="dom-manipulator-script">
       console.log("DOM 조작기: 테스트 시나리오 시작...");
 
-      setTimeout(() => {
-        console.log("TEST 1: #box1 색상 변경 (CSS Transition)");
-        const box1 = document.getElementById("box1");
-        if (box1) box1.style.backgroundColor = "crimson";
-      }, 2000);
+      //setTimeout(() => {
+      //console.log("TEST 1: #box1 색상 변경 (CSS Transition)");
+      //const box1 = document.getElementById("box1");
+      //  if (box1) box1.style.backgroundColor = "crimson";
+      //}, 2000);
+      gsap.to("#box1", {
+        backgroundColor: "crimson",
+        duration: 5,
+        delay: 1,
+        ease: "power2.inOut",
+      });
 
       setTimeout(() => {
         console.log("TEST 2: #root에 새 박스 추가");
@@ -204,7 +210,7 @@
 
         gsap.to("#box2", {
           x: -200,
-
+          width: 200,
           duration: 2,
           ease: "power2.inOut",
         });

@@ -1,6 +1,6 @@
 import { StyleData } from "../types";
 import { MeshRegistry } from "../store/MeshRegistry";
-import { Painter } from "@mirage-engine/Painter";
+import { Painter } from "@mirage-engine/painter";
 import * as THREE from "three";
 
 export function animateMeshByData(
@@ -18,16 +18,28 @@ export function animateMeshByData(
         mesh.position.setX(baseX + styleData.x / 1);
       if (styleData.y !== undefined) mesh.position.setY(baseY - styleData.y);
     }
+
     // Painter.update(
-    //   mesh.material as THREE.Material,
-    //   "BOX",
-    //   styleData.styles,
-    //   "",
-    //   node.rect.width,
-    //   node.rect.height,
-    //   this.qualityFactor,
-    //   node.isTraveler ? this.renderTarget?.texture : undefined,
-    // );
+    //       mesh.material as THREE.Material,
+    //       "BOX",
+    //       styleData,
+    //       "",
+    //       node.rect.width,
+    //       node.rect.height,
+    //       this.qualityFactor,
+    //       node.isTraveler ? this.renderTarget?.texture : undefined,
+    //     );
+    // if(element.id === "box2") console.log(styleData.width)
+    Painter.forceUpdateUniforms(
+      mesh.material as THREE.ShaderMaterial,
+      {
+        backgroundColor: styleData.backgroundColor,
+        opacity: styleData.opacity,
+        borderRadius: styleData.borderRadius,
+        width: styleData.width,
+        height: styleData.height,
+      }
+    );
   });
 }
 
@@ -43,6 +55,22 @@ export function extractFromStyle(style: CSSStyleDeclaration): StyleData {
     styleObject.opacity = parseFloat(style.opacity);
   }
 
+
+  if (style.backgroundColor && style.backgroundColor !== "rgba(0, 0, 0, 0)") {
+    const color = new THREE.Color(style.backgroundColor);
+    styleObject.backgroundColor = [color.r, color.g, color.b];
+  }
+
+
+  if (style.borderRadius) {
+    styleObject.borderRadius = parseFloat(style.borderRadius); 
+  }
+  if (style.width) {
+    styleObject.width = parseFloat(style.width);
+  }
+  if (style.height) {
+    styleObject.height = parseFloat(style.height);
+  }
   if (style.transform && style.transform !== "none") {
     const matrix = new DOMMatrix(style.transform);
 

@@ -8,11 +8,22 @@ function parsePixelValue(value: string | number): number {
   return parseFloat(value) || 0;
 }
 
-function setBorderRadius(target: THREE.Vector4, radius: string) {
-  if (!radius) {
+function setBorderRadius(target: THREE.Vector4, radius?: string | number | [number, number, number, number]) {
+  if (radius === undefined || radius === null) {
     target.set(0, 0, 0, 0);
     return;
   }
+
+  if (typeof radius === "number") {
+    target.set(radius, radius, radius, radius);
+    return;
+  }
+
+  if (Array.isArray(radius)) {
+    target.set(radius[0], radius[1], radius[2], radius[3]);
+    return;
+  }
+
   const arr = radius.split("/")[0].trim().split(/\s+/);
   const tl = parsePixelValue(arr[0]);
   const tr = parsePixelValue(arr[1] ?? arr[0]);
@@ -146,7 +157,6 @@ export function createBoxMaterial(
   `
     : "";
 
-
   // [for dev]
   // const uvChunk = hasTexture
   //   ? /* glsl */ `
@@ -208,34 +218,6 @@ export function createBoxMaterial(
   return material;
 }
 
-// export function updateBoxMaterial(
-//   material: THREE.ShaderMaterial,
-//   styles: BoxStyles,
-//   width: number,
-//   height: number,
-//   texture?: THREE.Texture | null,
-// ) {
-//   const parsedBg = parseColor(styles.backgroundColor);
-//   const parsedBorder = parseColor(styles.borderColor);
-
-//   material.uniforms.uSize.value.set(width, height);
-
-//   // material.uniforms.uBorderRadius.value = parsePixelValue(styles.borderRadius);
-//   setBorderRadius(material.uniforms.uBorderRadius.value, styles.borderRadius);
-//   material.uniforms.uBorderWidth.value = parsePixelValue(styles.borderWidth);
-
-//   material.uniforms.uBgColor.value.copy(parsedBg.color);
-//   material.uniforms.uBorderColor.value.copy(parsedBorder.color);
-
-//   material.uniforms.uOpacity.value = styles.opacity ?? 1.0;
-//   material.uniforms.uBgOpacity.value = parsedBg.alpha;
-//   material.uniforms.uBorderOpacity.value = parsedBorder.alpha;
-//   if (material.uniforms.uTexture && texture !== undefined) {
-//     material.uniforms.uTexture.value = texture;
-//   }
-// }
-
-
 export function updateBoxMaterial(
   material: THREE.ShaderMaterial,
   styles: BoxStyles,
@@ -246,46 +228,94 @@ export function updateBoxMaterial(
   const parsedBg = parseColor(styles.backgroundColor);
   const parsedBorderColor = parseColor(styles.borderColor);
   const parsedBorderWidth = parsePixelValue(styles.borderWidth);
-  setBoxUniforms(
-    material,
+  setBoxUniforms(material, {
     width,
     height,
-    styles.borderRadius,
-    parsedBorderWidth,
-    parsedBg.color,
-    parsedBorderColor.color,
-    styles.opacity,
-    parsedBg.alpha,
-    parsedBorderColor.alpha,
+    borderRadius: styles.borderRadius,
+    borderWidth: parsedBorderWidth,
+    backgroundColor: parsedBg.color,
+    borderColor: parsedBorderColor.color,
+    opacity: styles.opacity,
+    bgOpacity: parsedBg.alpha,
+    borderOpacity: parsedBorderColor.alpha,
     texture,
-  );  
+  });
 }
 
-function setBoxUniforms(
+export interface BoxUniformValues {
+  width?: number;
+  height?: number;
+  borderRadius?: string | number | [number, number, number, number];
+  borderWidth?: number;
+  backgroundColor?: THREE.Color | [number, number, number] | string;
+  borderColor?: THREE.Color | [number, number, number] | string;
+  opacity?: number;
+  bgOpacity?: number;
+  borderOpacity?: number;
+  texture?: THREE.Texture | null;
+}
+
+export function setBoxUniforms(
   material: THREE.ShaderMaterial,
-  width: number,
-  height: number,
-  borderRadius: string,
-  borderWidth: number,
-  bgColor: THREE.Color,
-  borderColor: THREE.Color,
-  opacity: number,
-  bgOpacity: number,
-  borderOpacity: number,
-  texture?: THREE.Texture | null,
+  values: BoxUniformValues,
 ) {
-  material.uniforms.uSize.value.set(width, height);
+  if (values.width !== undefined && values.height !== undefined) {
+    material.uniforms.uSize.value.set(values.width, values.height);
+  }
 
-  setBorderRadius(material.uniforms.uBorderRadius.value, borderRadius);
-  material.uniforms.uBorderWidth.value = borderWidth;
+  if (values.borderRadius !== undefined) {
+    setBorderRadius(material.uniforms.uBorderRadius.value, values.borderRadius);
+  }
 
-  material.uniforms.uBgColor.value.copy(bgColor);
-  material.uniforms.uBorderColor.value.copy(borderColor);
+  if (values.borderWidth !== undefined) {
+    material.uniforms.uBorderWidth.value = values.borderWidth;
+  }
 
-  material.uniforms.uOpacity.value = opacity ?? 1.0;
-  material.uniforms.uBgOpacity.value = bgOpacity;
-  material.uniforms.uBorderOpacity.value = borderOpacity;
-  if (material.uniforms.uTexture && texture !== undefined) {
-    material.uniforms.uTexture.value = texture;
+  if (values.backgroundColor !== undefined) {
+    if (Array.isArray(values.backgroundColor)) {
+      material.uniforms.uBgColor.value.setRGB(
+        values.backgroundColor[0],
+        values.backgroundColor[1],
+        values.backgroundColor[2],
+      );
+    } else if (typeof values.backgroundColor === "string") {
+      const parsed = parseColor(values.backgroundColor);
+      material.uniforms.uBgColor.value.copy(parsed.color);
+      material.uniforms.uBgOpacity.value = parsed.alpha;
+    } else {
+      material.uniforms.uBgColor.value.copy(values.backgroundColor);
+    }
+  }
+
+  if (values.borderColor !== undefined) {
+    if (Array.isArray(values.borderColor)) {
+      material.uniforms.uBorderColor.value.setRGB(
+        values.borderColor[0],
+        values.borderColor[1],
+        values.borderColor[2],
+      );
+    } else if (typeof values.borderColor === "string") {
+      const parsed = parseColor(values.borderColor);
+      material.uniforms.uBorderColor.value.copy(parsed.color);
+      material.uniforms.uBorderOpacity.value = parsed.alpha;
+    } else {
+      material.uniforms.uBorderColor.value.copy(values.borderColor);
+    }
+  }
+
+  if (values.opacity !== undefined) {
+    material.uniforms.uOpacity.value = values.opacity;
+  }
+
+  if (values.bgOpacity !== undefined) {
+    material.uniforms.uBgOpacity.value = values.bgOpacity;
+  }
+
+  if (values.borderOpacity !== undefined) {
+    material.uniforms.uBorderOpacity.value = values.borderOpacity;
+  }
+
+  if (material.uniforms.uTexture && values.texture !== undefined) {
+    material.uniforms.uTexture.value = values.texture;
   }
 }
