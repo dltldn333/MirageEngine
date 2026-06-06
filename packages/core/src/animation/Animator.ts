@@ -19,6 +19,12 @@ export function animateMeshByData(
       if (styleData.y !== undefined) mesh.position.setY(baseY - styleData.y);
     }
 
+    mesh.scale.set(
+      !styleData.width ? 1 : styleData.width,
+      !styleData.height ? 1 : styleData.height,
+      1,
+    );
+
     // Painter.update(
     //       mesh.material as THREE.Material,
     //       "BOX",
@@ -30,16 +36,13 @@ export function animateMeshByData(
     //       node.isTraveler ? this.renderTarget?.texture : undefined,
     //     );
     // if(element.id === "box2") console.log(styleData.width)
-    Painter.forceUpdateUniforms(
-      mesh.material as THREE.ShaderMaterial,
-      {
-        backgroundColor: styleData.backgroundColor,
-        opacity: styleData.opacity,
-        borderRadius: styleData.borderRadius,
-        width: styleData.width,
-        height: styleData.height,
-      }
-    );
+    Painter.forceUpdateUniforms(mesh.material as THREE.ShaderMaterial, {
+      backgroundColor: styleData.backgroundColor,
+      opacity: styleData.opacity,
+      borderRadius: styleData.borderRadius,
+      width: styleData.width,
+      height: styleData.height,
+    });
   });
 }
 
@@ -55,15 +58,13 @@ export function extractFromStyle(style: CSSStyleDeclaration): StyleData {
     styleObject.opacity = parseFloat(style.opacity);
   }
 
-
   if (style.backgroundColor && style.backgroundColor !== "rgba(0, 0, 0, 0)") {
     const color = new THREE.Color(style.backgroundColor);
     styleObject.backgroundColor = [color.r, color.g, color.b];
   }
 
-
   if (style.borderRadius) {
-    styleObject.borderRadius = parseFloat(style.borderRadius); 
+    styleObject.borderRadius = parseFloat(style.borderRadius);
   }
   if (style.width) {
     styleObject.width = parseFloat(style.width);
