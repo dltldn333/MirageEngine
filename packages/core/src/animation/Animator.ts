@@ -19,23 +19,12 @@ export function animateMeshByData(
       if (styleData.y !== undefined) mesh.position.setY(baseY - styleData.y);
     }
 
-    mesh.scale.set(
-      !styleData.width ? 1 : styleData.width,
-      !styleData.height ? 1 : styleData.height,
-      1,
-    );
+    // mesh.scale.set(
+    //   !styleData.width ? 1 : styleData.width,
+    //   !styleData.height ? 1 : styleData.height,
+    //   1,
+    // );
 
-    // Painter.update(
-    //       mesh.material as THREE.Material,
-    //       "BOX",
-    //       styleData,
-    //       "",
-    //       node.rect.width,
-    //       node.rect.height,
-    //       this.qualityFactor,
-    //       node.isTraveler ? this.renderTarget?.texture : undefined,
-    //     );
-    // if(element.id === "box2") console.log(styleData.width)
     Painter.forceUpdateUniforms(mesh.material as THREE.ShaderMaterial, {
       backgroundColor: styleData.backgroundColor,
       opacity: styleData.opacity,
