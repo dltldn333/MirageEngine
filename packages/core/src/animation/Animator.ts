@@ -2,7 +2,7 @@ import { StyleData } from "../types";
 import { MeshRegistry } from "../store/MeshRegistry";
 import { Painter } from "@mirage-engine/painter";
 import * as THREE from "three";
-// src/animation/Animator.ts
+
 export function animateMeshByData(
   registry: MeshRegistry,
   data: Map<HTMLElement, StyleData>,
@@ -38,15 +38,31 @@ export function animateMeshByData(
       }
     }
 
+    if (
+      styleData.height !== undefined &&
+      mesh.userData.originRatioY === undefined
+    ) {
+      if (Math.abs(heightDiff) > 0.5) {
+        const rect = element.getBoundingClientRect();
+
+        const ty = styleData.y ?? 0;
+        const pureY = rect.y - ty;
+        const deltaY = pureY - mesh.userData.baseDOM.y;
+
+        mesh.userData.originRatioY = -deltaY / heightDiff;
+      } else {
+        mesh.userData.originRatioY = 0.5;
+      }
+    }
 
     const ratioX = mesh.userData.originRatioX ?? 0.5;
-
+    const ratioY = mesh.userData.originRatioY ?? 0.5;
 
     const adjustedBaseX = baseX + widthDiff * (0.5 - ratioX);
-    const adjustedBaseY = baseY + heightDiff 
+    const adjustedBaseY = baseY + heightDiff * (0.5 - ratioY);
 
     mesh.position.setX(adjustedBaseX + (styleData.x ?? 0));
-    mesh.position.setY(baseY - (styleData.y ?? 0)); 
+    mesh.position.setY(adjustedBaseY - (styleData.y ?? 0));
     mesh.scale.set(currentW, currentH, 1);
 
     Painter.forceUpdateUniforms(mesh.material as THREE.ShaderMaterial, {
