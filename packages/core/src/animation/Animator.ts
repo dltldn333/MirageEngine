@@ -2,39 +2,62 @@ import { StyleData } from "../types";
 import { MeshRegistry } from "../store/MeshRegistry";
 import { Painter } from "@mirage-engine/painter";
 import * as THREE from "three";
-
+// src/animation/Animator.ts
 export function animateMeshByData(
   registry: MeshRegistry,
   data: Map<HTMLElement, StyleData>,
 ) {
   if (data.size === 0) return;
+
   data.forEach((styleData, element) => {
     const mesh = registry.get(element);
-    if (!mesh) return;
-    if (mesh.userData.basePosition) {
-      const baseX = mesh.userData.basePosition.x;
-      const baseY = mesh.userData.basePosition.y;
-      if (styleData.x !== undefined)
-        mesh.position.setX(baseX + styleData.x / 1);
-      if (styleData.y !== undefined) mesh.position.setY(baseY - styleData.y);
+    if (!mesh || !mesh.userData.basePosition) return;
+
+    let { x: baseX, y: baseY } = mesh.userData.basePosition;
+    const { width: baseW, height: baseH } = mesh.userData.baseSize;
+
+    const currentW = styleData.width ?? baseW;
+    const currentH = styleData.height ?? baseH;
+    const widthDiff = currentW - baseW;
+    const heightDiff = currentH - baseH;
+
+    if (
+      styleData.width !== undefined &&
+      mesh.userData.originRatioX === undefined
+    ) {
+      if (Math.abs(widthDiff) > 0.5) {
+        const rect = element.getBoundingClientRect();
+
+        const tx = styleData.x ?? 0;
+        const pureX = rect.x - tx;
+        const deltaX = pureX - mesh.userData.baseDOM.x;
+
+        mesh.userData.originRatioX = -deltaX / widthDiff;
+      } else {
+        mesh.userData.originRatioX = 0.5;
+      }
     }
 
-    // mesh.scale.set(
-    //   !styleData.width ? 1 : styleData.width,
-    //   !styleData.height ? 1 : styleData.height,
-    //   1,
-    // );
+
+    const ratioX = mesh.userData.originRatioX ?? 0.5;
+
+
+    const adjustedBaseX = baseX + widthDiff * (0.5 - ratioX);
+    const adjustedBaseY = baseY + heightDiff 
+
+    mesh.position.setX(adjustedBaseX + (styleData.x ?? 0));
+    mesh.position.setY(baseY - (styleData.y ?? 0)); 
+    mesh.scale.set(currentW, currentH, 1);
 
     Painter.forceUpdateUniforms(mesh.material as THREE.ShaderMaterial, {
       backgroundColor: styleData.backgroundColor,
       opacity: styleData.opacity,
       borderRadius: styleData.borderRadius,
-      width: styleData.width,
-      height: styleData.height,
+      width: currentW,
+      height: currentH,
     });
   });
 }
-
 export function animateMeshByAttribute(
   target: HTMLElement,
   options: { duration: number; easing?: string },

@@ -141,7 +141,7 @@
             border-radius: 30px;
             height: 80px;
             width: 150px;
-            background-color: lightcoral;
+            /* background-color: lightcoral;*/
           "
           data-mirage-travel="traveler"
         >
@@ -177,7 +177,6 @@
       //}, 2000);
       gsap.to("#box1", {
         backgroundColor: "#DC143C",
-
         duration: 2,
         delay: 2,
         ease: "power2.inOut",
@@ -210,9 +209,12 @@
 
         gsap.to("#box2", {
           x: -200,
-          // width: 200,
-          duration: 0.5,
-          ease: "back.out",
+          keyframes: [
+            { width: 80, height: 90, duration: 0.8 },
+            { width: 150, height: 80, duration: 0.2 },
+          ],
+          duration: 1,
+          ease: "power2.inOut",
         });
       }, 6000);
     </script>

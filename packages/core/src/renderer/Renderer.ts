@@ -354,9 +354,17 @@ export class Renderer {
       baseY,
       styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     );
+    const pureDOM_X = rect.x; // 트랜스폼 오염 전 순수 좌표 (가정)
+    const pureDOM_Y = rect.y;
 
     mesh.userData.basePosition = { x: baseX, y: baseY };
+    mesh.userData.baseSize = { width: rect.width, height: rect.height };
+    // ✨ 추가: 역산을 위한 순수 DOM 초기 좌표 저장
+    mesh.userData.baseDOM = { x: pureDOM_X, y: pureDOM_Y };
 
+    // ✨ 추가: 애니메이션이 끝나고 씬이 갱신되면 비율 캐시 초기화!
+    delete mesh.userData.originRatioX;
+    delete mesh.userData.originRatioY;
     // mesh.position.set(
     //   localX - canvasWidth / 2 + rect.width / 2,
     //   -localY + canvasHeight / 2 - rect.height / 2,
