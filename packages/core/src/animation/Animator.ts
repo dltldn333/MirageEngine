@@ -75,8 +75,8 @@ export function animateMeshByData(
   });
 }
 export function animateMeshByAttribute(
-  target: HTMLElement,
-  options: { duration: number; easing?: string },
+  _target: HTMLElement,
+  _options: { duration: number; easing?: string },
 ) {}
 
 export function extractFromStyle(style: CSSStyleDeclaration): StyleData {
