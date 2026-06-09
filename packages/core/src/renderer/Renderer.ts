@@ -91,7 +91,7 @@ export class Renderer {
         format: THREE.RGBAFormat,
         stencilBuffer: false,
         depthBuffer: true,
-        samples: 4,
+        // samples: 0.7,
       },
     );
   }
