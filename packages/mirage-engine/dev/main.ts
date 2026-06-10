@@ -19,7 +19,7 @@ const shader = {
     float edgeDist = max(-d_uv, 0.0);
     
     float bevelWidth = 10.0; 
-    float maxDepth = 20.0;  
+    float maxDepth = 30.0;  
 
     // ==========================================================
     // 1. [붙여지는 부분: 0 ~ 7] 거울처럼 뒤집힌 반사
@@ -69,12 +69,9 @@ const shader = {
 
       float edgeReflection = smoothstep(-1.5, 0.0, d) * smoothstep(0.0, -1.5, d);
       float fresnel = pow(1.0 - max(dot(normal_c, vec3(0.0, 0.0, 1.0)), 0.0), 3.0);
-      finalColor.rgb = mix(finalColor.rgb, vec3(0.0, 0.0, 0.0), 0.1);
-      
+
+      // 파이프라인에서 이미 합성된 색상 위에 유리 특유의 반사광과 프레넬 효과만 더해줍니다.
       finalColor.rgb += vec3(1.0) * (edgeReflection * 0.4 + fresnel * 0.5);
-
-      // 텍스쳐의 투명도(0.0)와 유리의 투명도(1.0) 중 큰 값을 취해 빈 공간을 어두운 유리로 채웁니다.
-
   `,
 };
 

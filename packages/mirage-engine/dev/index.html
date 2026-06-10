@@ -133,6 +133,7 @@
           id="box2"
           class="box"
           style="
+            position:fixed;
             opacity: 1;
             position: absolute;
             right: 100px;
@@ -142,8 +143,8 @@
             height: 80px;
             width: 150px;
             /*box-shadow:;
-            0 4px 6px -1px rgba(0, 0, 0, 0.4);
-            ackground-color: lightcoral;*/
+            0 4px 6px -1px rgba(0, 0, 0, 0.4);*/
+            background-color: rgba(255, 255, 255, 0.2);
           "
           data-mirage-travel="traveler"
         >
@@ -209,15 +210,6 @@
           ease: "power2.inOut",
         });
 
-        gsap.to("#box2", {
-          x: -200,
-          keyframes: [
-            { width: 80, height: 200, duration: 0.8 },
-            { width: 150, height: 80, duration: 0.2 },
-          ],
-          duration: 1,
-          ease: "power2.inOut",
-        });
       }, 6000);
     </script>
   </body>
