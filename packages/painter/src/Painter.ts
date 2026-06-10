@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { BoxStyles, TextStyles, ShaderHooks} from "./types";
-import { createBoxMaterial, updateBoxMaterial } from "./BoxGenerator";
+import { createBoxMaterial, updateBoxMaterial, setBoxUniforms, BoxUniformValues } from "./BoxGenerator";
 import { createTextTexture } from "./TextGenerator";
 
 export const Painter = {
@@ -73,4 +73,12 @@ export const Painter = {
       basicMat.needsUpdate = true;
     }
   },
+  
+
+  forceUpdateUniforms(
+    material: THREE.ShaderMaterial,
+    values: BoxUniformValues
+  ) {
+    setBoxUniforms(material, values);
+  }
 };

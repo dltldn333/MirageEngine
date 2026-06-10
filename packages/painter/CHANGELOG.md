@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 0.4.0
+
+### Minor Changes
+
+- 4b9e1b0: shader hooks pipeline
+
 ## 0.3.0
 
 ### Minor Changes

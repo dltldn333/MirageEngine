@@ -10,6 +10,7 @@ import {
   travelerClipArea,
 } from "../types";
 import { Painter } from "@mirage-engine/painter";
+import { MeshRegistry } from "../store/MeshRegistry";
 
 export class Renderer {
   public readonly canvas: HTMLCanvasElement;
@@ -24,17 +25,21 @@ export class Renderer {
 
   private target: HTMLElement;
   private mountContainer: HTMLElement;
+  private registry: MeshRegistry;
   private targetRect: DOMRect;
 
-  private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
+  private travelers: Set<THREE.Mesh> = new Set();
+  // private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
 
   constructor(
     target: HTMLElement,
     config: CoreConfig,
     mountContainer: HTMLElement,
+    registry: MeshRegistry,
   ) {
     this.target = target;
     this.mountContainer = mountContainer;
+    this.registry = registry;
 
     this.mode = config.mode ?? "overlay";
     this.clipArea = config.travelerClipArea ?? 1;
@@ -86,7 +91,7 @@ export class Renderer {
         format: THREE.RGBAFormat,
         stencilBuffer: false,
         depthBuffer: true,
-        samples: 4,
+        // samples: 0.7,
       },
     );
   }
@@ -156,7 +161,7 @@ export class Renderer {
     this.camera.updateProjectionMatrix();
   }
 
-  public syncScene(graphNode: SceneNode) {
+  public syncScene(graphNode: SceneNode, pendingDeletions: Set<HTMLElement>) {
     const newRect = this.target.getBoundingClientRect();
 
     const isResized =
@@ -182,25 +187,52 @@ export class Renderer {
 
     this.renderOrder = 0;
 
-    const activeElements = new Set<HTMLElement>();
+    // const activeElements = new Set<HTMLElement>();
 
-    this.reconcileNode(graphNode, activeElements);
+    // this.reconcileNode(graphNode, activeElements);
+    this.reconcileNode(graphNode);
 
-    for (const [el, mesh] of this.meshMap.entries()) {
-      if (!activeElements.has(el)) {
-        this.scene.remove(mesh);
-
-        mesh.geometry.dispose();
-        if (mesh.material instanceof THREE.Material) mesh.material.dispose();
-        this.meshMap.delete(el);
-      }
+    if (pendingDeletions.size > 0) {
+      pendingDeletions.forEach((el) => {
+        const meshToDestroy = this.registry.get(el) as THREE.Mesh | undefined;
+        if (meshToDestroy) {
+          this.scene.remove(meshToDestroy);
+          this.travelers.delete(meshToDestroy);
+          meshToDestroy.geometry.dispose();
+          meshToDestroy.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+              if (child.geometry) child.geometry.dispose();
+              if (child.material) {
+                if (Array.isArray(child.material)) {
+                  child.material.forEach((mat) => mat.dispose());
+                } else {
+                  child.material.dispose();
+                }
+              }
+            }
+          });
+          this.registry.remove(el);
+        }
+      });
     }
+
+    //     mesh.geometry.dispose();
+    //     if (mesh.material instanceof THREE.Material) mesh.material.dispose();
+    //     this.meshMap.delete(el);
+    //   }
+    // }
   }
 
-  private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
-    activeElements.add(node.element);
+  // 탐색 후 완성된 Scene node를 이용하여 mesh를 만들거나 조정
+  // => 이 과정에서 scene node에 있는 ele를 넣은 hash => activeElements
+  // => 이후 activeElements를 이용하여 mesh를 정리!!!+ map에서도 삭제
 
-    let mesh = this.meshMap.get(node.element);
+  // private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
+  private reconcileNode(node: SceneNode) {
+    // activeElements.add(node.element);
+
+    // let mesh = this.meshMap.get(node.element);
+    let mesh = this.registry.get(node.element) as THREE.Mesh | undefined;
     if (!mesh) {
       const geometry = new THREE.PlaneGeometry(1, 1);
       let material: THREE.MeshBasicMaterial | THREE.Material;
@@ -212,23 +244,31 @@ export class Renderer {
         node.rect.height,
         this.qualityFactor,
         node.isTraveler ? this.renderTarget?.texture : undefined,
-        node.shaderHooks
+        node.shaderHooks,
       );
       mesh = new THREE.Mesh(geometry, material);
       if (node.type === "TEXT") mesh.name = "BG_MESH";
       this.scene.add(mesh);
-      this.meshMap.set(node.element, mesh);
+      this.registry.register(node.element, mesh);
     }
 
+    // [Important] use whene mesh animating with js
     mesh.userData.domRect = node.rect;
 
     this.updateMeshProperties(mesh, node);
     this.updateMeshLayers(mesh, node);
-    if (node.isTraveler) mesh.layers.enable(28);
+    if (node.isTraveler) {
+      mesh.layers.enable(28);
+      this.travelers.add(mesh);
+    } else {
+      mesh.layers.disable(28);
+      this.travelers.delete(mesh);
+    }
 
     if (node.type === "BOX") {
       for (const child of node.children) {
-        this.reconcileNode(child, activeElements);
+        // this.reconcileNode(child, activeElements);
+        this.reconcileNode(child);
       }
     } else if (node.type === "TEXT") {
       this.reconcileTextChild(mesh, node);
@@ -306,11 +346,30 @@ export class Renderer {
     const localX = rect.x - targetPageX;
     const localY = rect.y - targetPageY;
 
+    const baseX = localX - canvasWidth / 2 + rect.width / 2;
+    const baseY = -localY + canvasHeight / 2 - rect.height / 2;
+
     mesh.position.set(
-      localX - canvasWidth / 2 + rect.width / 2,
-      -localY + canvasHeight / 2 - rect.height / 2,
+      baseX,
+      baseY,
       styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     );
+    const pureDOM_X = rect.x; // 트랜스폼 오염 전 순수 좌표 (가정)
+    const pureDOM_Y = rect.y;
+
+    mesh.userData.basePosition = { x: baseX, y: baseY };
+    mesh.userData.baseSize = { width: rect.width, height: rect.height };
+    // ✨ 추가: 역산을 위한 순수 DOM 초기 좌표 저장
+    mesh.userData.baseDOM = { x: pureDOM_X, y: pureDOM_Y };
+
+    // ✨ 추가: 애니메이션이 끝나고 씬이 갱신되면 비율 캐시 초기화!
+    delete mesh.userData.originRatioX;
+    delete mesh.userData.originRatioY;
+    // mesh.position.set(
+    //   localX - canvasWidth / 2 + rect.width / 2,
+    //   -localY + canvasHeight / 2 - rect.height / 2,
+    //   styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
+    // );
     Painter.update(
       mesh.material as THREE.Material,
       "BOX",
@@ -330,13 +389,11 @@ export class Renderer {
   }
 
   private captureRenderTarget() {
-    const travelers: THREE.Mesh[] = [];
-    for (const mesh of this.meshMap.values()) {
-      if ((mesh.layers.mask & (1 << 28)) !== 0) {
-        travelers.push(mesh);
-      }
-    }
-    if (travelers.length === 0) return;
+    // [Problem] this method called on requestAnimationFrame
+    // => this logic travers all meshes every frame, need optimization
+
+    // if (travelers.length === 0) return;
+    if (this.travelers.size === 0) return;
 
     const oldClearColor = new THREE.Color();
     const oldClearAlpha = this.renderer.getClearAlpha();
@@ -357,7 +414,7 @@ export class Renderer {
 
     const pixelRatio = this.renderer.getPixelRatio();
 
-    for (const traveler of travelers) {
+    for (const traveler of this.travelers) {
       vector.setFromMatrixPosition(traveler.matrixWorld);
       vector.project(this.camera);
 

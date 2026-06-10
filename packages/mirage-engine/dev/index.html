@@ -29,13 +29,12 @@
       }
 
       .box {
-        color: black;
         /* This font has problems with mirage-engine"
         /* font-family: "Times New Roman", Times, serif; */
         width: 100%;
         height: 60px;
         box-sizing: border-box;
-        transition: all 0.5s ease;
+        /* transition: all 0.5s ease; */
         border-radius: 8px;
         display: flex;
         align-items: center;
@@ -86,7 +85,7 @@
     >
       loading...
     </div>
-    <div id="root">
+    <div id="root" data-mirage-filter="">
       <div id="css-test">
         <span>TEST</span>
       </div>
@@ -139,10 +138,12 @@
             right: 100px;
             bottom: 10px;
             width: 200px;
-            border-radius: 30px;
+            border-radius: 40px;
             height: 80px;
             width: 150px;
-            /* background-color: lightcoral; */
+            /*box-shadow:;
+            0 4px 6px -1px rgba(0, 0, 0, 0.4);
+            ackground-color: lightcoral;*/
           "
           data-mirage-travel="traveler"
         >
@@ -168,14 +169,20 @@
 
     <script type="module" src="./main.ts"></script>
 
-    <!-- <script id="dom-manipulator-script">
+    <script id="dom-manipulator-script">
       console.log("DOM 조작기: 테스트 시나리오 시작...");
 
-      setTimeout(() => {
-        console.log("TEST 1: #box1 색상 변경 (CSS Transition)");
-        const box1 = document.getElementById("box1");
-        if (box1) box1.style.backgroundColor = "crimson";
-      }, 2000);
+      //setTimeout(() => {
+      //console.log("TEST 1: #box1 색상 변경 (CSS Transition)");
+      //const box1 = document.getElementById("box1");
+      //  if (box1) box1.style.backgroundColor = "crimson";
+      //}, 2000);
+      gsap.to("#box1", {
+        backgroundColor: "#DC143C",
+        duration: 2,
+        delay: 2,
+        ease: "power2.inOut",
+      });
 
       setTimeout(() => {
         console.log("TEST 2: #root에 새 박스 추가");
@@ -183,6 +190,7 @@
         const newBox = document.createElement("div");
         newBox.className = "box";
         newBox.style.backgroundColor = "goldenrod";
+        newBox.style.height = "300px";
         newBox.textContent = "New Box (DOM Added)";
         if (root) root.appendChild(newBox);
       }, 4000);
@@ -195,12 +203,22 @@
 
         gsap.to("#box-gsap", {
           x: 400,
-          backgroundColor: "#FF5733",
-          rotation: 360,
+          // backgroundColor: "#FF5733",
+          // rotation: 360,
           duration: 2,
           ease: "power2.inOut",
         });
+
+        gsap.to("#box2", {
+          x: -200,
+          keyframes: [
+            { width: 80, height: 200, duration: 0.8 },
+            { width: 150, height: 80, duration: 0.2 },
+          ],
+          duration: 1,
+          ease: "power2.inOut",
+        });
       }, 6000);
-    </script> -->
+    </script>
   </body>
 </html>
