@@ -3,6 +3,8 @@ import { MirageConfig } from "@/types";
 
 const shader = {
   uvModifier: /* glsl */ `
+    float textureZoom = 0.8;
+
     vec2 xRadii_uv = mix(uBorderRadius.xw, uBorderRadius.yz, step(0.0, p.x));
     float r_uv = mix(xRadii_uv.y, xRadii_uv.x, step(0.0, p.y));
     float d_uv = sdRoundedBox(p, halfSize, r_uv);
@@ -17,7 +19,7 @@ const shader = {
     float edgeDist = max(-d_uv, 0.0);
     
     float bevelWidth = 10.0; 
-    float maxDepth = 30.0;  
+    float maxDepth = 20.0;  
 
     // ==========================================================
     // 1. [붙여지는 부분: 0 ~ 7] 거울처럼 뒤집힌 반사
@@ -31,7 +33,7 @@ const shader = {
     float curve1 = pow(1.0 - t1, 3.0); 
 
     float target1 = bevelWidth + (maxDepth - bevelWidth) * curve1;
-    float push1 = (target1 - edgeDist) * mask1;
+    float push1 = ((target1 - edgeDist) + (t1 * 3.0)) * mask1;
 
     // ==========================================================
     // 2. [복사되는 부분: 7 ~ 15] 볼록 렌즈 굴절
@@ -47,8 +49,11 @@ const shader = {
     if (abs(pixelToUv.x) < 0.000001) pixelToUv.x = 1.0 / 1920.0;
     if (abs(pixelToUv.y) < 0.000001) pixelToUv.y = 1.0 / 1080.0;
 
+    // [Fix] 박스 중심(p=0)을 기준으로 줌 오프셋 계산
+    // 1.0/textureZoom - 1.0 은 확대될수록 음수가 되어 중심 방향으로 UV를 당겨옵니다.
+    vec2 zoomOffset = p * pixelToUv * (1.0 / textureZoom - 1.0);
     vec2 distortOffset = -grad * pushDist * pixelToUv;
-    resultUv = screenUv + distortOffset; 
+    resultUv = screenUv + zoomOffset + distortOffset; 
   `,
   colorModifier: /* glsl */ `
       float thickness_c = 30.0;
