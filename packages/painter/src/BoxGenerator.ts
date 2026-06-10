@@ -67,10 +67,8 @@ const fragmentShaderTemplate = /* glsl */ `
     return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
   }
 
-// B. 시각적 형태용 (스쿼클: 곡률이 매끄러움)
 float sdVisualBox(vec2 p, vec2 b, float r) {
   vec2 q = abs(p) - b + r;
-  // 지수(n)를 2.4로 조정하여 시각적 크기감과 부드러움의 균형을 맞춤
   float n = 2.01; 
   float d = pow(pow(max(q.x, 0.0), n) + pow(max(q.y, 0.0), n), 1.0/n) - r;
   return min(max(q.x, q.y), 0.0) + d;
