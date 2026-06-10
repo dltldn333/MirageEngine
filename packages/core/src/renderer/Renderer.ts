@@ -10,7 +10,7 @@ import {
   travelerClipArea,
 } from "../types";
 import { Painter } from "@mirage-engine/painter";
-import { MeshRegistry } from "src/store/MeshRegistry";
+import { MeshRegistry } from "../store/MeshRegistry";
 
 export class Renderer {
   public readonly canvas: HTMLCanvasElement;
