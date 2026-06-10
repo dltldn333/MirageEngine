@@ -3,7 +3,7 @@ import { MirageConfig } from "@/types";
 
 const shader = {
   uvModifier: /* glsl */ `
-    float textureZoom = 0.8;
+    float textureZoom = 1.0;
 
     vec2 xRadii_uv = mix(uBorderRadius.xw, uBorderRadius.yz, step(0.0, p.x));
     float r_uv = mix(xRadii_uv.y, xRadii_uv.x, step(0.0, p.y));
