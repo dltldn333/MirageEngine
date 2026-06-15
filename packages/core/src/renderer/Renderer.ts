@@ -267,7 +267,6 @@ export class Renderer {
 
     if (node.type === "BOX") {
       for (const child of node.children) {
-        // this.reconcileNode(child, activeElements);
         this.reconcileNode(child);
       }
     } else if (node.type === "TEXT") {
