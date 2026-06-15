@@ -197,8 +197,7 @@ export function extractSceneGraph(
   }
 
   const zIndex = parseInt(computed.zIndex);
-  console.log(computed.backgroundColor);
-  // console.log("test");
+  console.log(`${element.id}: ${computed.background}`);
   const styles: BoxStyles = {
     backgroundColor: computed.backgroundColor,
     opacity: parseFloat(computed.opacity),
