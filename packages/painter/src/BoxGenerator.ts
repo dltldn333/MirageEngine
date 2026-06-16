@@ -1,37 +1,9 @@
 import * as THREE from "three";
 import { BoxStyles, ShaderHooks } from "./types";
 import {parsePixelValue, parseColor} from "./tools/parser"
-// [for dev]
 // import { glassHooks } from "./dev/devShader";
 
 
-function setBorderRadius(
-  target: THREE.Vector4,
-  radius?: string | number | [number, number, number, number],
-) {
-  if (radius === undefined || radius === null) {
-    target.set(0, 0, 0, 0);
-    return;
-  }
-
-  if (typeof radius === "number") {
-    target.set(radius, radius, radius, radius);
-    return;
-  }
-
-  if (Array.isArray(radius)) {
-    target.set(radius[0], radius[1], radius[2], radius[3]);
-    return;
-  }
-
-  const arr = radius.split("/")[0].trim().split(/\s+/);
-  const tl = parsePixelValue(arr[0]);
-  const tr = parsePixelValue(arr[1] ?? arr[0]);
-  const br = parsePixelValue(arr[2] ?? arr[0]);
-  const bl = parsePixelValue(arr[3] ?? arr[1] ?? arr[0]);
-
-  target.set(tl, tr, br, bl);
-}
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -64,11 +36,11 @@ const fragmentShaderTemplate = /* glsl */ `
     return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
   }
 
-float sdVisualBox(vec2 p, vec2 b, float r) {
-  vec2 q = abs(p) - b + r;
-  float n = 2.01; 
-  float d = pow(pow(max(q.x, 0.0), n) + pow(max(q.y, 0.0), n), 1.0/n) - r;
-  return min(max(q.x, q.y), 0.0) + d;
+  float sdVisualBox(vec2 p, vec2 b, float r) {
+    vec2 q = abs(p) - b + r;
+    float n = 2.01; 
+    float d = pow(pow(max(q.x, 0.0), n) + pow(max(q.y, 0.0), n), 1.0/n) - r;
+    return min(max(q.x, q.y), 0.0) + d;
   }
 
   void main() {
@@ -314,4 +286,33 @@ export function setBoxUniforms(
   if (material.uniforms.uTexture && values.texture !== undefined) {
     material.uniforms.uTexture.value = values.texture;
   }
+}
+
+
+function setBorderRadius(
+  target: THREE.Vector4,
+  radius?: string | number | [number, number, number, number],
+) {
+  if (radius === undefined || radius === null) {
+    target.set(0, 0, 0, 0);
+    return;
+  }
+
+  if (typeof radius === "number") {
+    target.set(radius, radius, radius, radius);
+    return;
+  }
+
+  if (Array.isArray(radius)) {
+    target.set(radius[0], radius[1], radius[2], radius[3]);
+    return;
+  }
+
+  const arr = radius.split("/")[0].trim().split(/\s+/);
+  const tl = parsePixelValue(arr[0]);
+  const tr = parsePixelValue(arr[1] ?? arr[0]);
+  const br = parsePixelValue(arr[2] ?? arr[0]);
+  const bl = parsePixelValue(arr[3] ?? arr[1] ?? arr[0]);
+
+  target.set(tl, tr, br, bl);
 }
