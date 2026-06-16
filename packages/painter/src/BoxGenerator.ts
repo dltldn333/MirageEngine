@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { BoxStyles, ShaderHooks } from "./types";
 import { parsePixelValue, parseColor } from "./tools/parser";
-import { BoxShader } from "./shaders/index";
+import { BoxShader, BoxChunk } from "./shaders/index";
 
 export function createBoxMaterial(
   styles: BoxStyles,
@@ -12,30 +12,9 @@ export function createBoxMaterial(
 ): THREE.ShaderMaterial {
   const hasTexture = texture !== null;
 
-  const declChunk = hasTexture
-    ? /* glsl */ `
-    uniform sampler2D uTexture;
-    varying vec4 vScreenPos;
-  `
-    : "";
-
-  const uvChunk = hasTexture
-    ? /* glsl */ `
-    vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
-    vec2 resultUv = screenUv;
-    `
-    + hooks?.uvModifier || ""
-  
-    : "";
-
-  const baseColorChunk = hasTexture
-    ? /* glsl */ `
-    vec4 texColor = texture2D(uTexture, resultUv);
-    baseColor.rgb = mix(texColor.rgb, uBgColor, uBgOpacity);
-    baseColor.a = max(texColor.a, uBgOpacity);
-  `
-    : "";
-
+  const declChunk = hasTexture ? BoxChunk.declChunk : "";
+  const uvChunk = hasTexture ? (BoxChunk.uvChunk + hooks?.uvModifier || "" ): "";
+  const baseColorChunk = hasTexture ? BoxChunk.baseColorChunk : "";
   const colorModChunk = hooks?.colorModifier || "";
 
   const fragmentShader = BoxShader.fragmentShader
