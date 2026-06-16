@@ -1,9 +1,6 @@
 import * as THREE from "three";
 import { BoxStyles, ShaderHooks } from "./types";
 import {parsePixelValue, parseColor} from "./tools/parser"
-// import { glassHooks } from "./dev/devShader";
-
-
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -55,7 +52,6 @@ const fragmentShaderTemplate = /* glsl */ `
     #INJECT_BASE_COLOR
 
   // Hybrid SDF
-
     vec2 xRadii = mix(uBorderRadius.xw, uBorderRadius.yz, step(0.0, p.x));
     float r = mix(xRadii.y, xRadii.x, step(0.0, p.y));
     r = min(r, min(halfSize.x, halfSize.y));
@@ -104,8 +100,6 @@ export function createBoxMaterial(
   hooks?: ShaderHooks,
 ): THREE.ShaderMaterial {
   const hasTexture = texture !== null;
-  // [for dev]
-  // const activeHooks = hasTexture ? glassHooks : hooks;
 
   const declChunk = hasTexture
     ? /* glsl */ `
@@ -114,7 +108,6 @@ export function createBoxMaterial(
   `
     : "";
 
-  // [un dev]
   const uvChunk = hasTexture
     ? /* glsl */ `
     vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
@@ -122,15 +115,6 @@ export function createBoxMaterial(
     ${hooks?.uvModifier || ""}
   `
     : "";
-
-  // [for dev]
-  // const uvChunk = hasTexture
-  //   ? /* glsl */ `
-  //   vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;
-  //   vec2 resultUv = screenUv;
-  //   ${activeHooks?.uvModifier || ""}
-  // `
-  //   : "";
 
   const baseColorChunk = hasTexture
     ? /* glsl */ `
@@ -140,13 +124,7 @@ export function createBoxMaterial(
   `
     : "";
 
-  // [un dev]
   const colorModChunk = hooks?.colorModifier || "";
-
-  // [for dev]
-  // const colorModChunk = hasTexture
-  //   ? activeHooks?.colorModifier || ""
-  //   : hooks?.colorModifier || "";
 
   const fragmentShader = fragmentShaderTemplate
     .replace("#INJECT_DECLARATIONS", declChunk)
