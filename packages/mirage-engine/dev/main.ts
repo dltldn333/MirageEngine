@@ -86,17 +86,17 @@ const mirageConifg: MirageConfig = {
   // mode: "duplicate",
   mode: "overlay",
   travelerClipArea: "50px",
-  resizeDebounce: {
-    delay: 200,
-    onStart: () => {
-      document.querySelector("canvas")!.style.display = "none";
-      // (document.querySelector("#loading") as HTMLElement).style.display = "flex";
-    },
-    onEnd: () => {
-      document.querySelector("canvas")!.style.display = "block";
-      // (document.querySelector("#loading") as HTMLElement).style.display = "none";
-    },
-  },
+  // resizeDebounce: {
+  //   delay: 200,
+  //   onStart: () => {
+  //     document.querySelector("canvas")!.style.display = "none";
+  //     // (document.querySelector("#loading") as HTMLElement).style.display = "flex";
+  //   },
+  //   onEnd: () => {
+  //     document.querySelector("canvas")!.style.display = "block";
+  //     // (document.querySelector("#loading") as HTMLElement).style.display = "none";
+  //   },
+  // },
   // container: container,
   // filter: {
   //   excludeTree: ["exclude"],
