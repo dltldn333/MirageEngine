@@ -1,6 +1,6 @@
 import { StyleData } from "../types";
 import { MeshRegistry } from "../store/MeshRegistry";
-import { Painter } from "@mirage-engine/painter";
+import { Painter, parseColor } from "@mirage-engine/painter";
 import * as THREE from "three";
 
 export function animateMeshByData(
@@ -94,8 +94,8 @@ export function extractFromStyle(style: CSSStyleDeclaration): StyleData {
   }
 
   if (style.backgroundColor && style.backgroundColor !== "rgba(0, 0, 0, 0)") {
-    const color = new THREE.Color(style.backgroundColor);
-    styleObject.backgroundColor = [color.r, color.g, color.b];
+    const parsed = parseColor(style.backgroundColor);
+    styleObject.backgroundColor = [parsed.color.r, parsed.color.g, parsed.color.b];
   }
 
   if (style.borderRadius) {

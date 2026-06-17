@@ -124,7 +124,8 @@
             align-items: center;
             justify-content: center;
             border-radius: 30px;
-            background: linear-gradient(in oklab to right, red, blue);
+            background: linear-gradient(red, blue);
+            /* background: linear-gradient(in oklab to right, red, blue); */
           "
         >
           <span>test, test, test</span>
@@ -134,18 +135,19 @@
           id="box2"
           class="box"
           style="
-            position: fixed;
             opacity: 1;
+            /* position: fixed; */
             position: absolute;
             right: 100px;
-            bottom: 10px;
-            width: 200px;
-            border-radius: 40px;
-            height: 80px;
+            top: 10px;
+            width: 120px;
+            border-radius: 50px;
+            height: 100px;
             width: 150px;
             /*box-shadow:;
             0 4px 6px -1px rgba(0, 0, 0, 0.4);*/
-            background-color: rgba(0, 0, 0, 0.8);
+            /* background-color: rgba(0, 0, 0, 1); */
+            background: linear-gradient(rgba(0, 0, 0, 1), rgba(0, 0, 0, 0) 70%);
           "
           data-mirage-travel="traveler"
         >
@@ -189,7 +191,7 @@
         const newBox = document.createElement("div");
         newBox.className = "box";
         newBox.style.backgroundColor = "goldenrod";
-        newBox.style.height = "300px";
+        newBox.style.height = "1200px";
         newBox.textContent = "New Box (DOM Added)";
         if (root) root.appendChild(newBox);
       }, 4000);
@@ -204,10 +206,12 @@
         });
 
         gsap.to("#box2", {
-          x: -200,
+          // x: -200,
           keyframes: [
-            { width: 80, height: 200, duration: 0.8 },
-            { width: 150, height: 80, duration: 0.2 },
+            // { width: 400, height: 500, },
+            // { width: 150, height: 80, duration: 0.2 },
+            // { width: 80, height: 200, duration: 0.8 },
+            // { width: 150, height: 80, duration: 0.2 },
           ],
           duration: 1,
           ease: "power2.inOut",
