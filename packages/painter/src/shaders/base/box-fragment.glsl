@@ -2,11 +2,9 @@ varying vec2 vUv;
 uniform vec2 uSize;
 uniform vec4 uBorderRadius;
 uniform float uBorderWidth;
-uniform vec3 uBgColor;
-uniform vec3 uBorderColor;
+uniform vec4 uBgColor;
+uniform vec4 uBorderColor;
 uniform float uOpacity;
-uniform float uBgOpacity;
-uniform float uBorderOpacity;
 
 #INJECT_DECLARATIONS
 
@@ -36,7 +34,7 @@ void main() {
   #INJECT_UV_MODIFIER
 
   // color decision pipeline
-  vec4 baseColor = vec4(uBgColor, uBgOpacity);
+  vec4 baseColor = vec4(uBgColor.rgb, uBgColor.a);
 
   #INJECT_BASE_COLOR
 
@@ -55,19 +53,14 @@ void main() {
 
   float halfBorder = uBorderWidth * 0.5;
   float borderD = abs(d + halfBorder) - halfBorder;
-  float borderAlpha = (1.0 - smoothstep(0.0, 1.0, borderD)) * uBorderOpacity; 
+  float borderAlpha = (1.0 - smoothstep(0.0, 1.0, borderD)) * uBorderColor.a; 
   if (uBorderWidth <= 0.01) {
     borderAlpha = 0.0;
   }
 
-  // final blending (border + background)
-  float aFront = borderAlpha;
-  float aBack = baseColor.a;
-  float aOut = aFront + aBack * (1.0 - aFront);
-
-  float safeAlpha = max(aOut, 0.0001);
-  vec3 cOut = (uBorderColor * aFront + baseColor.rgb * aBack * (1.0 - aFront)) / safeAlpha;
-  vec4 finalColor = vec4(cOut, aOut);
+  // final blending (border + background) using blendSrcOver
+  vec4 borderLayer = vec4(uBorderColor.rgb, borderAlpha);
+  vec4 finalColor = blendSrcOver(borderLayer, baseColor);
 
   // final color control (Tint, Noise)
   #INJECT_COLOR_MODIFIER
