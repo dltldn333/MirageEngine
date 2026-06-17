@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { BoxStyles, ShaderHooks } from "./types";
-import { parsePixelValue, parseColor } from "./tools/parser";
+import { parsePixelValue, parseColor, parseLinearGradient } from "./tools/parser";
 import { BoxShader, BoxChunk } from "./shaders/index";
 
 export function createBoxMaterial(
@@ -48,6 +48,13 @@ export function createBoxMaterial(
     uBorderWidth: { value: parsePixelValue(styles.borderWidth) },
     uOpacity: { value: styles.opacity ?? 1.0 },
     uTexture: { value: null as THREE.Texture | null },
+
+    uGradientCount: { value: 0 },
+    uGradientAngle: { value: 0 },
+    uGradientColors: {
+      value: Array.from({ length: 8 }, () => new THREE.Vector4(0, 0, 0, 0)),
+    },
+    uGradientStops: { value: new Float32Array(8) },
   };
   // border radius value initialize
   setBorderRadius(uniforms.uBorderRadius.value, styles.borderRadius);
@@ -63,6 +70,11 @@ export function createBoxMaterial(
     transparent: true,
     side: THREE.FrontSide, // for better performance
   });
+
+  // Initial gradient setup
+  if (styles.backgroundImage) {
+    setBoxUniforms(material, { backgroundImage: styles.backgroundImage });
+  }
 
   return material;
 }
@@ -84,6 +96,7 @@ export function updateBoxMaterial(
     borderColor: styles.borderColor,
     opacity: styles.opacity,
     texture,
+    backgroundImage: styles.backgroundImage,
   });
 }
 
@@ -98,6 +111,7 @@ export interface BoxUniformValues {
   bgOpacity?: number;
   borderOpacity?: number;
   texture?: THREE.Texture | null;
+  backgroundImage?: string;
 }
 
 export function setBoxUniforms(
@@ -181,6 +195,31 @@ export function setBoxUniforms(
   }
   if (material.uniforms.uTexture && values.texture !== undefined) {
     material.uniforms.uTexture.value = values.texture;
+  }
+
+  if (values.backgroundImage !== undefined) {
+    const gradient = parseLinearGradient(values.backgroundImage);
+    if (gradient) {
+      material.uniforms.uGradientCount.value = gradient.stops.length;
+      material.uniforms.uGradientAngle.value = gradient.angle;
+      for (let i = 0; i < 8; i++) {
+        if (i < gradient.stops.length) {
+          const s = gradient.stops[i];
+          material.uniforms.uGradientColors.value[i].set(
+            s.color.r,
+            s.color.g,
+            s.color.b,
+            s.alpha,
+          );
+          material.uniforms.uGradientStops.value[i] = s.stop;
+        } else {
+          material.uniforms.uGradientColors.value[i].set(0, 0, 0, 0);
+          material.uniforms.uGradientStops.value[i] = 1.0;
+        }
+      }
+    } else {
+      material.uniforms.uGradientCount.value = 0;
+    }
   }
 }
 

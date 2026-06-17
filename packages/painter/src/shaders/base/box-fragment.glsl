@@ -6,6 +6,11 @@ uniform vec4 uBgColor;
 uniform vec4 uBorderColor;
 uniform float uOpacity;
 
+uniform int uGradientCount;
+uniform float uGradientAngle;
+uniform vec4 uGradientColors[8];
+uniform float uGradientStops[8];
+
 #INJECT_DECLARATIONS
 
 float sdRoundedBox(vec2 p, vec2 b, float r) {
@@ -27,6 +32,27 @@ vec4 blendSrcOver(vec4 front, vec4 back) {
   return vec4(cOut, aOut);
 }
 
+vec4 calculateGradientLayer(vec2 uv) {
+  if (uGradientCount < 2) return uGradientColors[0];
+
+  vec2 dir = vec2(sin(uGradientAngle), cos(uGradientAngle));
+  vec2 p = (uv - 0.5) * uSize;
+  float proj = dot(p, dir);
+  float L = abs(uSize.x * dir.x) + abs(uSize.y * dir.y);
+  float t = clamp((proj / L) + 0.5, 0.0, 1.0);
+  
+  vec4 color = uGradientColors[0];
+  for (int i = 1; i < 8; i++) {
+    if (i >= uGradientCount) break;
+    float prevStop = uGradientStops[i-1];
+    float currStop = uGradientStops[i];
+    
+    float factor = clamp((t - prevStop) / (currStop - prevStop + 0.00001), 0.0, 1.0);
+    color = mix(color, uGradientColors[i], factor);
+  }
+  return color;
+}
+
 void main() {
   vec2 p = (vUv - 0.5) * uSize;
   vec2 halfSize = uSize * 0.5;
@@ -35,6 +61,11 @@ void main() {
 
   // color decision pipeline
   vec4 baseColor = vec4(uBgColor.rgb, uBgColor.a);
+
+  if (uGradientCount > 0) {
+    vec4 gradColor = calculateGradientLayer(vUv);
+    baseColor = blendSrcOver(gradColor, baseColor);
+  }
 
   #INJECT_BASE_COLOR
 
