@@ -90,6 +90,7 @@ export function extractSceneGraph(
       },
       styles: {
         backgroundColor: "transparent",
+        backgroundImage: "",
         opacity: parseFloat(computed.opacity),
         zIndex: 0,
         borderRadius: "0px",
@@ -201,6 +202,7 @@ export function extractSceneGraph(
   console.log(computed.backgroundImage);
   const styles: BoxStyles = {
     backgroundColor: computed.backgroundColor,
+    backgroundImage: computed.backgroundImage,
     opacity: parseFloat(computed.opacity),
     zIndex: isNaN(zIndex) ? 0 : zIndex,
     borderRadius: computed.borderRadius,
