@@ -12,7 +12,6 @@ uniform float uBorderOpacity;
 
 float sdRoundedBox(vec2 p, vec2 b, float r) {
   vec2 q = abs(p) - b + r;
-
   return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
 }
 
@@ -21,6 +20,13 @@ float sdVisualBox(vec2 p, vec2 b, float r) {
   float n = 2.01; 
   float d = pow(pow(max(q.x, 0.0), n) + pow(max(q.y, 0.0), n), 1.0/n) - r;
   return min(max(q.x, q.y), 0.0) + d;
+}
+
+vec4 blendSrcOver(vec4 front, vec4 back) {
+  float aOut = front.a + back.a * (1.0 - front.a);
+  float safeAlpha = max(aOut, 0.0001);
+  vec3 cOut = (front.rgb * front.a + back.rgb * back.a * (1.0 - front.a)) / safeAlpha;
+  return vec4(cOut, aOut);
 }
 
 void main() {
