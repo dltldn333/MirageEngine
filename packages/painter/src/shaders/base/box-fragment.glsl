@@ -13,6 +13,13 @@ uniform float uGradientStops[8];
 
 #INJECT_DECLARATIONS
 
+vec3 linearToSrgb(vec3 linearColor) {
+    vec3 linearPart = 12.92 * linearColor;
+    vec3 curvePart = 1.055 * pow(linearColor, vec3(1.0 / 2.4)) - 0.055;
+    vec3 switchCondition = step(vec3(0.0031308), linearColor);
+    return mix(linearPart, curvePart, switchCondition);
+}
+
 float sdRoundedBox(vec2 p, vec2 b, float r) {
   vec2 q = abs(p) - b + r;
   return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
@@ -26,6 +33,8 @@ float sdVisualBox(vec2 p, vec2 b, float r) {
 }
 
 vec4 blendSrcOver(vec4 front, vec4 back) {
+  // front.rgb = linearToSrgb(front.rgb);
+  // back.rgb  = linearToSrgb(back.rgb);
   float aOut = front.a + back.a * (1.0 - front.a);
   float safeAlpha = max(aOut, 0.0001);
   vec3 cOut = (front.rgb * front.a + back.rgb * back.a * (1.0 - front.a)) / safeAlpha;
