@@ -1,6 +1,6 @@
 import { StyleData } from "../types";
 import { MeshRegistry } from "../store/MeshRegistry";
-import { Painter } from "@mirage-engine/painter";
+import { Painter, parseColor } from "@mirage-engine/painter";
 import * as THREE from "three";
 
 export function animateMeshByData(
@@ -21,54 +21,61 @@ export function animateMeshByData(
     const widthDiff = currentW - baseW;
     const heightDiff = currentH - baseH;
 
+    // --- Capture and Lock Transform Origin (Performance & Accuracy) ---
+    // We capture the origin on the very first frame of change (> 0.1px) 
+    // to ensure perfect sync from the start of the first animation.
     if (
       styleData.width !== undefined &&
-      mesh.userData.originRatioX === undefined
+      mesh.userData.originRatioX === undefined &&
+      Math.abs(widthDiff) > 0.1 
     ) {
-      if (Math.abs(widthDiff) > 0.5) {
-        const rect = element.getBoundingClientRect();
+      const rect = element.getBoundingClientRect();
+      const tx = styleData.x ?? 0;
+      const currentPageX = rect.left + window.scrollX - tx;
+      const deltaX = currentPageX - mesh.userData.baseDOM.x;
+      
+      let ratioX = -deltaX / widthDiff;
+      if (Math.abs(ratioX) < 0.05) ratioX = 0.0;
+      else if (Math.abs(ratioX - 1.0) < 0.05) ratioX = 1.0;
+      else if (Math.abs(ratioX - 0.5) < 0.05) ratioX = 0.5;
 
-        const tx = styleData.x ?? 0;
-        const pureX = rect.x - tx;
-        const deltaX = pureX - mesh.userData.baseDOM.x;
-
-        mesh.userData.originRatioX = -deltaX / widthDiff;
-      } else {
-        mesh.userData.originRatioX = 0.5;
-      }
+      mesh.userData.originRatioX = ratioX;
     }
 
     if (
       styleData.height !== undefined &&
-      mesh.userData.originRatioY === undefined
+      mesh.userData.originRatioY === undefined &&
+      Math.abs(heightDiff) > 0.1
     ) {
-      if (Math.abs(heightDiff) > 0.5) {
-        const rect = element.getBoundingClientRect();
+      const rect = element.getBoundingClientRect();
+      const ty = styleData.y ?? 0;
+      const currentPageY = rect.top + window.scrollY - ty;
+      const deltaY = currentPageY - mesh.userData.baseDOM.y;
+      
+      let ratioY = -deltaY / heightDiff;
+      if (Math.abs(ratioY) < 0.05) ratioY = 0.0;
+      else if (Math.abs(ratioY - 1.0) < 0.05) ratioY = 1.0;
+      else if (Math.abs(ratioY - 0.5) < 0.05) ratioY = 0.5;
 
-        const ty = styleData.y ?? 0;
-        const pureY = rect.y - ty;
-        const deltaY = pureY - mesh.userData.baseDOM.y;
-
-        mesh.userData.originRatioY = -deltaY / heightDiff;
-      } else {
-        mesh.userData.originRatioY = 0.5;
-      }
+      mesh.userData.originRatioY = ratioY;
     }
 
+    // --- Calculate Mesh Position using Measured Origin ---
     const ratioX = mesh.userData.originRatioX ?? 0.5;
     const ratioY = mesh.userData.originRatioY ?? 0.5;
 
-    const adjustedBaseX = baseX + widthDiff * (0.5 - ratioX);
-    const adjustedBaseY = baseY + heightDiff * (0.5 - ratioY);
+    // Since Three.js meshes expand from center, we offset the center based on the locked origin ratio
+    const moveX = widthDiff * (0.5 - ratioX);
+    const moveY = heightDiff * (0.5 - ratioY);
 
-    mesh.position.setX(adjustedBaseX + (styleData.x ?? 0));
-    mesh.position.setY(adjustedBaseY - (styleData.y ?? 0));
+    mesh.position.setX(baseX + moveX + (styleData.x ?? 0));
+    mesh.position.setY(baseY - (moveY + (styleData.y ?? 0)));
     mesh.scale.set(currentW, currentH, 1);
 
     Painter.forceUpdateUniforms(mesh.material as THREE.ShaderMaterial, {
       backgroundColor: styleData.backgroundColor,
       opacity: styleData.opacity,
-      borderRadius: styleData.borderRadius,
+      borderRadius: styleData.borderRadius ?? mesh.userData.baseStyles?.borderRadius,
       width: currentW,
       height: currentH,
     });
@@ -87,8 +94,8 @@ export function extractFromStyle(style: CSSStyleDeclaration): StyleData {
   }
 
   if (style.backgroundColor && style.backgroundColor !== "rgba(0, 0, 0, 0)") {
-    const color = new THREE.Color(style.backgroundColor);
-    styleObject.backgroundColor = [color.r, color.g, color.b];
+    const parsed = parseColor(style.backgroundColor);
+    styleObject.backgroundColor = [parsed.color.r, parsed.color.g, parsed.color.b];
   }
 
   if (style.borderRadius) {

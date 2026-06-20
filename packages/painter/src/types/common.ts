@@ -11,9 +11,9 @@ export interface TextStyles {
 
 export interface BoxStyles {
   backgroundColor: string;
+  backgroundImage: string;
   opacity: number;
   zIndex: number;
-
   borderRadius: string;
   borderColor: string;
   borderWidth: string;

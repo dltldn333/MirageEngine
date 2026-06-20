@@ -117,13 +117,16 @@
           id="box1"
           class="box"
           style="
-            background-color: black;
+            /* background-color: black; */
             color: white;
             font-weight: 900;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 30px;
+            background: linear-gradient(red, blue);
+            /* background: linear-gradient(in oklab, red, blue); */
+            /* background: linear-gradient(in srgb-linear, red, blue); */
           "
         >
           <span>test, test, test</span>
@@ -134,16 +137,22 @@
           class="box"
           style="
             opacity: 1;
+            /* position: fixed; */
             position: absolute;
             right: 100px;
-            bottom: 10px;
-            width: 200px;
-            border-radius: 40px;
-            height: 80px;
+            top: 10px;
+            width: 120px;
+            border-radius: 50px;
+            height: 100px;
             width: 150px;
             /*box-shadow:;
-            0 4px 6px -1px rgba(0, 0, 0, 0.4);
-            ackground-color: lightcoral;*/
+            0 4px 6px -1px rgba(0, 0, 0, 0.4);*/
+            /* background-color: rgba(0, 0, 0, 1); */
+            background: linear-gradient(
+              rgba(0, 0, 0, 1),
+              rgba(0, 0, 0, 0.2) 50%,
+              rgba(0, 0, 0, 0) 100%
+            );
           "
           data-mirage-travel="traveler"
         >
@@ -170,55 +179,49 @@
     <script type="module" src="./main.ts"></script>
 
     <script id="dom-manipulator-script">
-      console.log("DOM 조작기: 테스트 시나리오 시작...");
-
       //setTimeout(() => {
       //console.log("TEST 1: #box1 색상 변경 (CSS Transition)");
       //const box1 = document.getElementById("box1");
       //  if (box1) box1.style.backgroundColor = "crimson";
       //}, 2000);
-      gsap.to("#box1", {
-        backgroundColor: "#DC143C",
-        duration: 2,
-        delay: 2,
-        ease: "power2.inOut",
-      });
+      // gsap.to("#box1", {
+      // backgroundColor: "#DC143C",
+      // duration: 2,
+      // delay: 2,
+      // ease: "power2.inOut",
+      // });
 
-      setTimeout(() => {
-        console.log("TEST 2: #root에 새 박스 추가");
-        const root = document.getElementById("root");
-        const newBox = document.createElement("div");
-        newBox.className = "box";
-        newBox.style.backgroundColor = "goldenrod";
-        newBox.style.height = "300px";
-        newBox.textContent = "New Box (DOM Added)";
-        if (root) root.appendChild(newBox);
-      }, 4000);
+      // setTimeout(() => {
+      // const root = document.getElementById("root");
+      // const newBox = document.createElement("div");
+      // newBox.className = "box";
+      // newBox.style.backgroundColor = "goldenrod";
+      // newBox.style.height = "1200px";
+      // newBox.textContent = "New Box (DOM Added)";
+      // if (root) root.appendChild(newBox);
+      // }, 4000);
 
-      setTimeout(() => {
-        console.log("TEST 3: GSAP 애니메이션 시작! (2초간 지속)");
-        console.log(
-          "-> 캔버스는 움직이지 않다가, 2초 뒤 끝난 위치로 순간이동 해야 성공!",
-        );
+      // setTimeout(() => {
+      // gsap.to("#box-gsap", {
+      // x: 400,
+      // backgroundColor: "#FF5733",
+      // rotation: 360,
+      // duration: 2,
+      // ease: "power2.inOut",
+      // });
 
-        gsap.to("#box-gsap", {
-          x: 400,
-          // backgroundColor: "#FF5733",
-          // rotation: 360,
-          duration: 2,
-          ease: "power2.inOut",
-        });
-
-        gsap.to("#box2", {
-          x: -200,
-          keyframes: [
-            { width: 80, height: 200, duration: 0.8 },
-            { width: 150, height: 80, duration: 0.2 },
-          ],
-          duration: 1,
-          ease: "power2.inOut",
-        });
-      }, 6000);
+      // gsap.to("#box2", {
+      // x: -200,
+      // keyframes: [
+      // { width: 400, height: 500, },
+      // { width: 150, height: 80, duration: 0.2 },
+      // { width: 80, height: 200, duration: 0.8 },
+      // { width: 150, height: 80, duration: 0.2 },
+      // ],
+      // duration: 1,
+      // ease: "power2.inOut",
+      // });
+      // }, 6000);
     </script>
   </body>
 </html>

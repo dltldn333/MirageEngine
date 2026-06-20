@@ -20,7 +20,7 @@ build/
 # Nextra / Next.js specific
 .turbo/
 
-# Next.js 빌드 결과물 및 캐시
+# Next.js build result
 .next/
 out/
 
@@ -28,3 +28,5 @@ out/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+.VSCodeCounter/

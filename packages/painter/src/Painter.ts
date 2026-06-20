@@ -6,7 +6,7 @@ import { createTextTexture } from "./TextGenerator";
 export const Painter = {
   create(
     type: "BOX" | "TEXT",
-    styles: any,
+    styles: BoxStyles | TextStyles,
     content: string,
     width: number,
     height: number,
@@ -39,7 +39,7 @@ export const Painter = {
   update(
     material: THREE.Material,
     type: "BOX" | "TEXT",
-    styles: any,
+    styles: BoxStyles | TextStyles,
     content: string,
     width: number,
     height: number,
