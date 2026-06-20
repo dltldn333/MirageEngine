@@ -115,12 +115,16 @@ export function parseLinearGradient(value: string | null | undefined) {
   }
 
   if (stops.length > 0) {
+    for (let i = 0; i < stops.length; i++) {
+      if (stops[i].rawStop !== null) {
+        stops[i].stop = parseFloat(stops[i].rawStop!) / 100;
+      }
+    }
+
     if (stops[0].rawStop === null) stops[0].stop = 0.0;
-    else stops[0].stop = parseFloat(stops[0].rawStop!) / 100;
 
     if (stops.length > 1) {
       if (stops[stops.length - 1].rawStop === null) stops[stops.length - 1].stop = 1.0;
-      else stops[stops.length - 1].stop = parseFloat(stops[stops.length - 1].rawStop!) / 100;
     }
 
     let lastKnownIndex = 0;
