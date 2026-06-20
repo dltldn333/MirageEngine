@@ -76,6 +76,10 @@ export class Renderer {
       // premultipliedAlpha: true
     });
 
+     
+    THREE.ColorManagement.enabled = false;
+    this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(width, height);
 

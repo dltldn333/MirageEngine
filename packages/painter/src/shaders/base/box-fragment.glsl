@@ -101,5 +101,5 @@ void main() {
 
   gl_FragColor = vec4(finalColor.rgb, finalOpacity);
 
-  // #include <colorspace_fragment>
+  #include <colorspace_fragment>
 }
