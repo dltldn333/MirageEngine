@@ -65,8 +65,6 @@ export class Renderer {
     this.camera.position.z = 100;
     this.camera.layers.set(0);
 
-    // [new]
-    // THREE.ColorManagement.enabled = false;
 
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
@@ -79,6 +77,7 @@ export class Renderer {
      
     THREE.ColorManagement.enabled = false;
     this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+
 
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(width, height);

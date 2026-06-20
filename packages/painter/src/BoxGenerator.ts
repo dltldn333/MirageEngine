@@ -1,6 +1,10 @@
 import * as THREE from "three";
 import { BoxStyles, ShaderHooks } from "./types";
-import { parsePixelValue, parseColor, parseLinearGradient } from "./tools/parser";
+import {
+  parsePixelValue,
+  parseColor,
+  parseLinearGradient,
+} from "./tools/parser";
 import { BoxShader, BoxChunk } from "./shaders/index";
 
 export function createBoxMaterial(
@@ -13,7 +17,7 @@ export function createBoxMaterial(
   const hasTexture = texture !== null;
 
   const declChunk = hasTexture ? BoxChunk.declChunk : "";
-  const uvChunk = hasTexture ? (BoxChunk.uvChunk + hooks?.uvModifier || "" ): "";
+  const uvChunk = hasTexture ? BoxChunk.uvChunk + hooks?.uvModifier || "" : "";
   const baseColorChunk = hasTexture ? BoxChunk.baseColorChunk : "";
   const colorModChunk = hooks?.colorModifier || "";
 
@@ -211,6 +215,7 @@ export function setBoxUniforms(
             s.color.b,
             s.alpha,
           );
+          console.log(s.color.r, s.color.g, s.color.b);
           material.uniforms.uGradientStops.value[i] = s.stop;
         } else {
           material.uniforms.uGradientColors.value[i].set(0, 0, 0, 0);
