@@ -74,6 +74,7 @@ export function animateMeshByData(
 
     Painter.forceUpdateUniforms(mesh.material as THREE.ShaderMaterial, {
       backgroundColor: styleData.backgroundColor,
+      backgroundImage: styleData.backgroundImage,
       opacity: styleData.opacity,
       borderRadius: styleData.borderRadius ?? mesh.userData.baseStyles?.borderRadius,
       width: currentW,
@@ -115,6 +116,12 @@ export function extractFromStyle(style: CSSStyleDeclaration): StyleData {
   if (style.backgroundColor && style.backgroundColor !== "rgba(0, 0, 0, 0)") {
     const parsed = parseColor(style.backgroundColor);
     styleObject.backgroundColor = [parsed.color.r, parsed.color.g, parsed.color.b];
+  }
+
+  if (style.backgroundImage) {
+    styleObject.backgroundImage = style.backgroundImage;
+  } else if (style.background) {
+    styleObject.backgroundImage = style.background;
   }
 
   if (style.borderRadius) {

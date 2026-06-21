@@ -16,6 +16,7 @@ export interface StyleData {
     // 2. Material / Appearance
     opacity?: number;
     backgroundColor?: [number, number, number]; 
+    backgroundImage?: string;
     borderRadius?: number | [number, number, number, number]; 
 
     // 3. Layout / Depth

@@ -18,8 +18,8 @@ const shader = {
 
     float edgeDist = max(-d_uv, 0.0);
     
-    float bevelWidth = 15.0; 
-    float maxDepth = 30.0;  
+    float bevelWidth = 30.0; 
+    float maxDepth = 60.0;  
 
     // ==========================================================
     // 1. [붙여지는 부분: 0 ~ 7] 거울처럼 뒤집힌 반사
