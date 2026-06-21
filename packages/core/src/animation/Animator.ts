@@ -86,6 +86,25 @@ export function animateMeshByAttribute(
   _options: { duration: number; easing?: string },
 ) {}
 
+export function updateFixedMeshesScroll(
+  fixedMeshes: Set<THREE.Mesh>,
+  deltaX: number,
+  deltaY: number,
+) {
+  fixedMeshes.forEach((mesh) => {
+    if (mesh.userData.isFixed) {
+      if (mesh.userData.basePosition) {
+        mesh.userData.basePosition.x += deltaX;
+        mesh.userData.basePosition.y -= deltaY;
+      }
+      // If it has pending animations, the basePosition change will be used in the next frame.
+      // If not, we immediately update its current position.
+      mesh.position.x += deltaX;
+      mesh.position.y -= deltaY;
+    }
+  });
+}
+
 export function extractFromStyle(style: CSSStyleDeclaration): StyleData {
   const styleObject: StyleData = {};
 

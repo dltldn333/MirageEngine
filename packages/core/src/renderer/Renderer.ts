@@ -33,6 +33,8 @@ export class Renderer {
   private textureManager: TextureLifecycleManager;
   // private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
 
+  public readonly fixedMeshes: Set<THREE.Mesh> = new Set();
+
   constructor(
     target: HTMLElement,
     config: CoreConfig,
@@ -211,6 +213,7 @@ export class Renderer {
         if (meshToDestroy) {
           this.scene.remove(meshToDestroy);
           this.travelers.delete(meshToDestroy);
+          this.fixedMeshes.delete(meshToDestroy);
           meshToDestroy.geometry.dispose();
           meshToDestroy.traverse((child) => {
             if (child instanceof THREE.Mesh) {
@@ -279,6 +282,12 @@ export class Renderer {
     } else {
       mesh.layers.disable(28);
       this.travelers.delete(mesh);
+    }
+
+    if (node.isFixed) {
+      this.fixedMeshes.add(mesh);
+    } else {
+      this.fixedMeshes.delete(mesh);
     }
 
     if (node.styles.imageSrc) {
@@ -382,6 +391,7 @@ export class Renderer {
     mesh.userData.baseSize = { width: rect.width, height: rect.height };
     // ✨ 추가: 역산을 위한 순수 DOM 초기 좌표 저장
     mesh.userData.baseDOM = { x: pureDOM_X, y: pureDOM_Y };
+    mesh.userData.isFixed = node.isFixed;
 
     // ✨ 추가: 애니메이션이 끝나고 씬이 갱신되면 비율 캐시 초기화!
     delete mesh.userData.originRatioX;

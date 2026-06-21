@@ -12,7 +12,7 @@ import {
   Visibility,
   StyleData,
 } from "../types";
-import { extractFromStyle, animateMeshByData } from "../animation/Animator";
+import { extractFromStyle, animateMeshByData, updateFixedMeshesScroll } from "../animation/Animator";
 
 interface InternalResizeConfig {
   enabled: boolean;
@@ -43,6 +43,10 @@ export class Syncer {
   private resizeConfig: InternalResizeConfig;
   private resizeTimer: number | null = null;
   private isResizing: boolean = false;
+
+  private lastScrollX: number = 0;
+  private lastScrollY: number = 0;
+  private scrollTimer: number | null = null;
 
   constructor(
     target: HTMLElement,
@@ -162,6 +166,10 @@ export class Syncer {
       clearTimeout(this.cssTimer);
       this.cssTimer = null;
     }
+    if (this.scrollTimer) {
+      clearTimeout(this.scrollTimer);
+      this.scrollTimer = null;
+    }
   }
 
   private onTransitionFinished = (e: Event) => {
@@ -204,6 +212,9 @@ export class Syncer {
 
   private forceUpdateScene() {
     this.isDomDirty = false;
+    
+    this.lastScrollX = window.scrollX;
+    this.lastScrollY = window.scrollY;
 
     const discoveredTraveler =
       document.querySelector("[data-mirage-travel='traveler']") !== null;
@@ -236,10 +247,29 @@ export class Syncer {
       this.forceUpdateScene();
     }
 
+    const currentScrollX = window.scrollX;
+    const currentScrollY = window.scrollY;
+
+    if (currentScrollX !== this.lastScrollX || currentScrollY !== this.lastScrollY) {
+      const deltaX = currentScrollX - this.lastScrollX;
+      const deltaY = currentScrollY - this.lastScrollY;
+
+      updateFixedMeshesScroll(this.renderer.fixedMeshes, deltaX, deltaY);
+
+      this.lastScrollX = currentScrollX;
+      this.lastScrollY = currentScrollY;
+
+      if (this.scrollTimer) clearTimeout(this.scrollTimer);
+      this.scrollTimer = window.setTimeout(() => {
+        this.pendingMask |= DIRTY_RECT;
+        this.isDomDirty = true;
+        this.scrollTimer = null;
+      }, 150);
+    }
+
     if (this.pendingStyles.size > 0) {
       animateMeshByData(this.registry, this.pendingStyles);
       this.pendingStyles.clear();
-
     }
 
     this.renderer.render();

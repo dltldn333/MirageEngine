@@ -103,6 +103,7 @@ export function extractSceneGraph(
       dirtyMask: initialMask,
       visibility: inheritedFlow,
       isTraveler: false,
+      isFixed: computed.position === "fixed",
       children: [],
     };
   }
@@ -261,6 +262,7 @@ export function extractSceneGraph(
     dirtyMask: initialMask,
     visibility: visibleFlag,
     isTraveler: isTraveler,
+    isFixed: computed.position === "fixed",
     children,
     shaderHooks,
   };
