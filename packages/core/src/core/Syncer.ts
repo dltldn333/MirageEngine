@@ -251,10 +251,7 @@ export class Syncer {
     const currentScrollY = window.scrollY;
 
     if (currentScrollX !== this.lastScrollX || currentScrollY !== this.lastScrollY) {
-      const deltaX = currentScrollX - this.lastScrollX;
-      const deltaY = currentScrollY - this.lastScrollY;
-
-      updateFixedMeshesScroll(this.renderer.fixedMeshes, deltaX, deltaY);
+      updateFixedMeshesScroll(this.renderer.fixedMeshes, currentScrollX, currentScrollY);
 
       this.lastScrollX = currentScrollX;
       this.lastScrollY = currentScrollY;

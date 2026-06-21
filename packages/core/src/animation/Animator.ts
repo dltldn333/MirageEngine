@@ -88,19 +88,19 @@ export function animateMeshByAttribute(
 
 export function updateFixedMeshesScroll(
   fixedMeshes: Set<THREE.Mesh>,
-  deltaX: number,
-  deltaY: number,
+  currentScrollX: number,
+  currentScrollY: number,
 ) {
   fixedMeshes.forEach((mesh) => {
-    if (mesh.userData.isFixed) {
-      if (mesh.userData.basePosition) {
-        mesh.userData.basePosition.x += deltaX;
-        mesh.userData.basePosition.y -= deltaY;
-      }
-      // If it has pending animations, the basePosition change will be used in the next frame.
-      // If not, we immediately update its current position.
-      mesh.position.x += deltaX;
-      mesh.position.y -= deltaY;
+    if (mesh.userData.isFixed && mesh.userData.initialScroll && mesh.userData.originalBasePosition) {
+      const offsetX = currentScrollX - mesh.userData.initialScroll.x;
+      const offsetY = currentScrollY - mesh.userData.initialScroll.y;
+
+      mesh.userData.basePosition.x = mesh.userData.originalBasePosition.x + offsetX;
+      mesh.userData.basePosition.y = mesh.userData.originalBasePosition.y - offsetY;
+
+      mesh.position.x = mesh.userData.basePosition.x;
+      mesh.position.y = mesh.userData.basePosition.y;
     }
   });
 }

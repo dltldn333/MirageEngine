@@ -388,10 +388,12 @@ export class Renderer {
     const pureDOM_Y = rect.y;
 
     mesh.userData.basePosition = { x: baseX, y: baseY };
+    mesh.userData.originalBasePosition = { x: baseX, y: baseY };
     mesh.userData.baseSize = { width: rect.width, height: rect.height };
     // ✨ 추가: 역산을 위한 순수 DOM 초기 좌표 저장
     mesh.userData.baseDOM = { x: pureDOM_X, y: pureDOM_Y };
     mesh.userData.isFixed = node.isFixed;
+    mesh.userData.initialScroll = { x: window.scrollX, y: window.scrollY };
 
     // ✨ 추가: 애니메이션이 끝나고 씬이 갱신되면 비율 캐시 초기화!
     delete mesh.userData.originRatioX;
