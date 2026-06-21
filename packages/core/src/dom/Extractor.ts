@@ -96,6 +96,7 @@ export function extractSceneGraph(
         borderRadius: "0px",
         borderColor: "transparent",
         borderWidth: "0px",
+        imageSrc: undefined,
       },
       textContent: normalizedText,
       textStyles: extractTextStyles(computed),
@@ -200,6 +201,16 @@ export function extractSceneGraph(
   const zIndex = parseInt(computed.zIndex);
   // console.log(`${element.id}: ${computed.background}`);
   // console.log(computed.backgroundImage);
+  let imageSrc: string | undefined;
+  if (element.tagName === "IMG") {
+    imageSrc = (element as HTMLImageElement).src;
+  } else if (computed.backgroundImage && computed.backgroundImage !== "none") {
+    const match = computed.backgroundImage.match(/url\(['"]?(.*?)['"]?\)/);
+    if (match) {
+      imageSrc = match[1];
+    }
+  }
+
   const styles: BoxStyles = {
     backgroundColor: computed.backgroundColor,
     backgroundImage: computed.backgroundImage,
@@ -208,6 +219,8 @@ export function extractSceneGraph(
     borderRadius: computed.borderRadius,
     borderColor: computed.borderColor,
     borderWidth: computed.borderWidth,
+    imageSrc,
+    isTraveler,
   };
 
   let textContent: string | undefined;

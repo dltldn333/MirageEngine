@@ -11,6 +11,7 @@ import {
 } from "../types";
 import { Painter } from "@mirage-engine/painter";
 import { MeshRegistry } from "../store/MeshRegistry";
+import { TextureLifecycleManager } from "../store/TextureLifecycleManager";
 
 export class Renderer {
   public readonly canvas: HTMLCanvasElement;
@@ -29,6 +30,7 @@ export class Renderer {
   private targetRect: DOMRect;
 
   private travelers: Set<THREE.Mesh> = new Set();
+  private textureManager: TextureLifecycleManager;
   // private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
 
   constructor(
@@ -40,6 +42,13 @@ export class Renderer {
     this.target = target;
     this.mountContainer = mountContainer;
     this.registry = registry;
+    
+    this.textureManager = new TextureLifecycleManager((el, texture) => {
+      const mesh = this.registry.get(el);
+      if (mesh && mesh.material instanceof THREE.ShaderMaterial) {
+        Painter.forceUpdateUniforms(mesh.material, { texture: texture });
+      }
+    });
 
     this.mode = config.mode ?? "overlay";
     this.clipArea = config.travelerClipArea ?? 1;
@@ -146,6 +155,7 @@ export class Renderer {
   public dispose() {
     this.renderer.dispose();
     this.canvas.remove();
+    this.textureManager.disposeAll();
     // TODO: Scene 내부 Mesh들도 순회하며 dispose
   }
 
@@ -215,6 +225,7 @@ export class Renderer {
             }
           });
           this.registry.remove(el);
+          this.textureManager.unregister(el);
         }
       });
     }
@@ -239,6 +250,8 @@ export class Renderer {
     if (!mesh) {
       const geometry = new THREE.PlaneGeometry(1, 1);
       let material: THREE.MeshBasicMaterial | THREE.Material;
+      const initialTexture = node.isTraveler ? this.renderTarget?.texture : this.textureManager.get(node.element);
+
       material = Painter.create(
         "BOX",
         node.styles,
@@ -246,7 +259,7 @@ export class Renderer {
         node.rect.width,
         node.rect.height,
         this.qualityFactor,
-        node.isTraveler ? this.renderTarget?.texture : undefined,
+        initialTexture,
         node.shaderHooks,
       );
       mesh = new THREE.Mesh(geometry, material);
@@ -266,6 +279,12 @@ export class Renderer {
     } else {
       mesh.layers.disable(28);
       this.travelers.delete(mesh);
+    }
+
+    if (node.styles.imageSrc) {
+      this.textureManager.register(node.element, node.styles.imageSrc);
+    } else {
+      this.textureManager.unregister(node.element);
     }
 
     if (node.type === "BOX") {
@@ -380,7 +399,7 @@ export class Renderer {
       node.rect.width,
       node.rect.height,
       this.qualityFactor,
-      node.isTraveler ? this.renderTarget?.texture : undefined,
+      node.isTraveler ? this.renderTarget?.texture : this.textureManager.get(node.element),
     );
   }
 

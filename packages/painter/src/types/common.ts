@@ -12,6 +12,8 @@ export interface TextStyles {
 export interface BoxStyles {
   backgroundColor: string;
   backgroundImage: string;
+  imageSrc?: string;
+  isTraveler?: boolean;
   opacity: number;
   zIndex: number;
   borderRadius: string;

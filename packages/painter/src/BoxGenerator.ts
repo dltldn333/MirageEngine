@@ -14,10 +14,11 @@ export function createBoxMaterial(
   texture: THREE.Texture | null = null,
   hooks?: ShaderHooks,
 ): THREE.ShaderMaterial {
-  const hasTexture = texture !== null;
+  const hasTexture = texture !== null || !!styles.imageSrc;
 
   const declChunk = hasTexture ? BoxChunk.declChunk : "";
-  const uvChunk = hasTexture ? BoxChunk.uvChunk + hooks?.uvModifier || "" : "";
+  const baseUvCode = styles.isTraveler ? BoxChunk.uvChunk : "vec2 resultUv = vUv * uTextureRepeat + uTextureOffset;\n";
+  const uvChunk = hasTexture ? baseUvCode + (hooks?.uvModifier || "") : "";
   const baseColorChunk = hasTexture ? BoxChunk.baseColorChunk : "";
   const colorModChunk = hooks?.colorModifier || "";
 
@@ -52,6 +53,8 @@ export function createBoxMaterial(
     uBorderWidth: { value: parsePixelValue(styles.borderWidth) },
     uOpacity: { value: styles.opacity ?? 1.0 },
     uTexture: { value: null as THREE.Texture | null },
+    uTextureRepeat: { value: new THREE.Vector2(1.0, 1.0) },
+    uTextureOffset: { value: new THREE.Vector2(0.0, 0.0) },
 
     uGradientCount: { value: 0 },
     uGradientAngle: { value: 0 },
@@ -199,6 +202,32 @@ export function setBoxUniforms(
   }
   if (material.uniforms.uTexture && values.texture !== undefined) {
     material.uniforms.uTexture.value = values.texture;
+  }
+
+  const currentTex = values.texture !== undefined ? values.texture : material.uniforms.uTexture?.value;
+  if (currentTex && (currentTex.image instanceof ImageBitmap || currentTex.image instanceof HTMLImageElement || currentTex.image instanceof HTMLCanvasElement)) {
+    const imgWidth = currentTex.image.width;
+    const imgHeight = currentTex.image.height;
+    const domWidth = values.width ?? material.uniforms.uSize.value.x;
+    const domHeight = values.height ?? material.uniforms.uSize.value.y;
+    
+    if (imgWidth && imgHeight && domWidth && domHeight) {
+      const imageAspect = imgWidth / imgHeight;
+      const domAspect = domWidth / domHeight;
+
+      if (imageAspect > domAspect) {
+        const repeatX = domAspect / imageAspect;
+        material.uniforms.uTextureRepeat.value.set(repeatX, 1);
+        material.uniforms.uTextureOffset.value.set((1 - repeatX) / 2, 0);
+      } else {
+        const repeatY = imageAspect / domAspect;
+        material.uniforms.uTextureRepeat.value.set(1, repeatY);
+        material.uniforms.uTextureOffset.value.set(0, (1 - repeatY) / 2);
+      }
+    }
+  } else if (material.uniforms.uTextureRepeat) {
+    material.uniforms.uTextureRepeat.value.set(1, 1);
+    material.uniforms.uTextureOffset.value.set(0, 0);
   }
 
   if (values.backgroundImage !== undefined) {
