@@ -17,7 +17,7 @@ function wrapText(
       const word = words[i];
       const width = ctx.measureText(currentLine + " " + word).width;
 
-      if (width < maxWidth) {
+      if (width <= maxWidth + 2) {
         currentLine += " " + word;
       } else {
         resultLines.push(currentLine);

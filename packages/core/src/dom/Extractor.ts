@@ -107,6 +107,10 @@ export function extractSceneGraph(
     };
   }
 
+  if (sourceNode.nodeType !== Node.ELEMENT_NODE) {
+    return null;
+  }
+
   const element = sourceNode as HTMLElement;
   // [[Filter]] data attribute based filtering
   const filterData = element.dataset.mirageFilter;
