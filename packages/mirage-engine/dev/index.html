@@ -150,8 +150,8 @@
             /* background-color: rgba(0, 0, 0, 1); */
             background: linear-gradient(
               rgba(0, 0, 0, 1),
-              rgba(0, 0, 0, 0.2) 50%,
-              rgba(0, 0, 0, 0) 100%
+              rgba(0, 0, 0, 0.1) 35%,
+              rgba(0, 0, 0, 0.1) 100%
             );
           "
           data-mirage-travel="traveler"
@@ -173,6 +173,36 @@
       >
         GSAP Target
       </div>
+
+      <div
+        id="image-test"
+        class="box"
+        style="
+          margin-top: 20px;
+          height: 300px;
+          background-image: url(&quot;./test.png&quot;);
+          background-size: cover;
+          background-position: center;
+          color: white;
+          font-weight: bold;
+          text-shadow: 1px 1px 2px black;
+        "
+      >
+        Lazy Loaded Image Test
+      </div>
+
+      <img
+        src="./test.png"
+        style="
+          width: 100%;
+          max-width: 400px;
+          height: auto;
+          margin-top: 20px;
+          border-radius: 10px;
+          display: block;
+        "
+        alt="Test Image"
+      />
     </div>
     <div id="space"></div>
 

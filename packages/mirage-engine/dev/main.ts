@@ -18,7 +18,7 @@ const shader = {
 
     float edgeDist = max(-d_uv, 0.0);
     
-    float bevelWidth = 10.0; 
+    float bevelWidth = 15.0; 
     float maxDepth = 30.0;  
 
     // ==========================================================
