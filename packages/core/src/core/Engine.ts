@@ -13,6 +13,17 @@ export class Engine {
     this.target = target;
     this.registry = new MeshRegistry();
 
+    if (!document.getElementById("mirage-engine-styles")) {
+      const style = document.createElement("style");
+      style.id = "mirage-engine-styles";
+      style.textContent = `
+        [data-mirage-dom="hide"] {
+          opacity: 0 !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
     let mountContainer: HTMLElement | undefined;
 
     if (config.mode === "duplicate") {
