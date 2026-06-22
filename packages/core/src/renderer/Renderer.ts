@@ -395,6 +395,17 @@ export class Renderer {
     mesh.userData.isFixed = node.isFixed;
     mesh.userData.initialScroll = { x: window.scrollX, y: window.scrollY };
 
+    // ✨ 추가: 초기 transform 상태를 저장하여 애니메이션 시 delta 값만 적용하도록 함 (이중 적용 방지)
+    const targetEl = node.element.nodeType === Node.TEXT_NODE ? node.element.parentElement! : node.element;
+    const computed = window.getComputedStyle(targetEl);
+    let baseTx = 0, baseTy = 0;
+    if (computed.transform && computed.transform !== "none") {
+      const matrix = new DOMMatrix(computed.transform);
+      baseTx = matrix.m41;
+      baseTy = matrix.m42;
+    }
+    mesh.userData.baseTransform = { x: baseTx, y: baseTy };
+
     // ✨ 추가: 애니메이션이 끝나고 씬이 갱신되면 비율 캐시 초기화!
     delete mesh.userData.originRatioX;
     delete mesh.userData.originRatioY;

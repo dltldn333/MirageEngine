@@ -31,7 +31,11 @@ export function animateMeshByData(
     ) {
       const rect = element.getBoundingClientRect();
       const tx = styleData.x ?? 0;
-      const currentPageX = rect.left + window.scrollX - tx;
+      const baseTx = mesh.userData.baseTransform?.x ?? 0;
+      const scrollOffsetX = mesh.userData.isFixed ? 0 : window.scrollX;
+      // rect.left already includes GSAP transform (tx).
+      // We subtract tx to strip the animation, then add baseTx to match baseDOM's initial state.
+      const currentPageX = rect.left + scrollOffsetX - tx + baseTx;
       const deltaX = currentPageX - mesh.userData.baseDOM.x;
       
       let ratioX = -deltaX / widthDiff;
@@ -49,7 +53,9 @@ export function animateMeshByData(
     ) {
       const rect = element.getBoundingClientRect();
       const ty = styleData.y ?? 0;
-      const currentPageY = rect.top + window.scrollY - ty;
+      const baseTy = mesh.userData.baseTransform?.y ?? 0;
+      const scrollOffsetY = mesh.userData.isFixed ? 0 : window.scrollY;
+      const currentPageY = rect.top + scrollOffsetY - ty + baseTy;
       const deltaY = currentPageY - mesh.userData.baseDOM.y;
       
       let ratioY = -deltaY / heightDiff;
@@ -68,8 +74,17 @@ export function animateMeshByData(
     const moveX = widthDiff * (0.5 - ratioX);
     const moveY = heightDiff * (0.5 - ratioY);
 
-    mesh.position.setX(baseX + moveX + (styleData.x ?? 0));
-    mesh.position.setY(baseY - (moveY + (styleData.y ?? 0)));
+    // --- Calculate Delta Movement ---
+    // Extract baseTransform stored during syncScene
+    const baseTx = mesh.userData.baseTransform?.x ?? 0;
+    const baseTy = mesh.userData.baseTransform?.y ?? 0;
+    
+    // We only want to apply the DIFFERENCE in transform since the base extraction.
+    const deltaTx = (styleData.x ?? baseTx) - baseTx;
+    const deltaTy = (styleData.y ?? baseTy) - baseTy;
+
+    mesh.position.setX(baseX + moveX + deltaTx);
+    mesh.position.setY(baseY - (moveY + deltaTy));
     mesh.scale.set(currentW, currentH, 1);
 
     Painter.forceUpdateUniforms(mesh.material as THREE.ShaderMaterial, {
