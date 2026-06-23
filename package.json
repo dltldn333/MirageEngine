@@ -2,7 +2,7 @@
   "name": "mirage-monorepo",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter mirage-engine dev",
+    "dev": "pnpm --filter dev dev",
     "build": "pnpm -r build",
 
     "changeset": "changeset",

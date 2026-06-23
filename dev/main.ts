@@ -1,5 +1,5 @@
-import { Mirage } from "@/index";
-import { MirageConfig } from "@/types";
+import { Mirage } from "mirage-engine";
+import { MirageConfig } from "mirage-engine";
 
 const shader = {
   uvModifier: /* glsl */ `
