@@ -29,10 +29,10 @@ function wrapText(
         currentLine += word;
       } else {
         if (currentLine) resultLines.push(currentLine);
-        currentLine = word.trimStart(); 
+        currentLine = word.trimStart();
       }
     }
-    
+
     if (currentLine) {
       resultLines.push(currentLine);
     }
@@ -54,7 +54,6 @@ export function createTextTexture(
   if (!ctx) {
     throw new Error("[Mirage] Failed to create canvas context");
   }
-  // text Quality
 
   const pixelRatio = window.devicePixelRatio || 1;
   const scale = pixelRatio * qualityFactor;
@@ -69,18 +68,10 @@ export function createTextTexture(
 
   ctx.globalAlpha = 1;
 
-  // console.log(text, styles.font);
-
   const lines = wrapText(ctx, text, rectWidth);
   const lineHeight = styles.lineHeight;
-  // const fontSize = parseFloat(styles.fontSize);
 
   const baseline = FontMetricsManager.getBaseline(styles.font);
-
-  // console.log("lineHeight : ", lineHeight);
-  // console.log("fontSize : ", fontSize);
-
-
 
   lines.forEach((line, index) => {
     const y = index * lineHeight + baseline;
@@ -92,8 +83,6 @@ export function createTextTexture(
       x = rectWidth;
     }
     ctx.textAlign = styles.textAlign as CanvasTextAlign;
-    // ctx.letterSpacing = `${styles.letterSpacing}px`;
-
     ctx.fillText(line, x, y);
   });
 
