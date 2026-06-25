@@ -4,7 +4,7 @@ import { TextStyles } from "./types";
 function wrapText(
   ctx: CanvasRenderingContext2D,
   text: string,
-  maxWidth: number
+  maxWidth: number,
 ): string[] {
   const forcedLines = text.split("\n");
   const resultLines: string[] = [];
@@ -35,7 +35,7 @@ export function createTextTexture(
   styles: TextStyles,
   rectWidth: number,
   rectHeight: number,
-  qualityFactor: number = 2
+  qualityFactor: number = 2,
 ): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
@@ -60,9 +60,12 @@ export function createTextTexture(
 
   const lines = wrapText(ctx, text, rectWidth);
   const lineHeight = styles.lineHeight;
+  const fontSize = parseFloat(styles.fontSize);
+  const baselineOffset = (lineHeight - fontSize) / 2;
+  const browserDrift = 1.0;
 
   lines.forEach((line, index) => {
-    const y = index * lineHeight + 2;
+    const y = index * lineHeight + baselineOffset + browserDrift;
 
     let x = 0;
     if (styles.textAlign === "center") {
@@ -71,6 +74,7 @@ export function createTextTexture(
       x = rectWidth;
     }
     ctx.textAlign = styles.textAlign as CanvasTextAlign;
+    // ctx.letterSpacing = `${styles.letterSpacing}px`;
 
     ctx.fillText(line, x, y);
   });

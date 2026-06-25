@@ -40,6 +40,7 @@ function extractTextStyles(computed: CSSStyleDeclaration): TextStyles {
   }
   return {
     font: `${computed.fontStyle} ${computed.fontWeight} ${computed.fontSize} ${computed.fontFamily}`,
+    fontSize: computed.fontSize,
     color: computed.color,
     textAlign: (computed.textAlign as CanvasTextAlign) || "start",
     textBaseline: "alphabetic",
