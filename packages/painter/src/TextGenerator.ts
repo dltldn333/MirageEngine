@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { TextStyles } from "./types";
+import { FontMetricsManager } from "./tools/FontMetricsManager";
 
 function wrapText(
   ctx: CanvasRenderingContext2D,
@@ -58,15 +59,19 @@ export function createTextTexture(
 
   ctx.globalAlpha = 1;
 
+  console.log(text, styles.font);
+
   const lines = wrapText(ctx, text, rectWidth);
   const lineHeight = styles.lineHeight;
   const fontSize = parseFloat(styles.fontSize);
-  const baselineOffset = (lineHeight - fontSize) / 2;
-  const browserDrift = 1.0;
-  console.log("drift:", browserDrift);
+
+  const baseline = FontMetricsManager.getBaseline(styles.font);
+
+  console.log("lineHeight : ", lineHeight);
+  console.log("fontSize : ", fontSize);
 
   lines.forEach((line, index) => {
-    const y = index * lineHeight - baselineOffset + browserDrift;
+    const y = index * lineHeight + baseline;
 
     let x = 0;
     if (styles.textAlign === "center") {
