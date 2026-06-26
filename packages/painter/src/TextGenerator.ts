@@ -54,7 +54,7 @@ export function createTextTexture(
 
   ctx.font = styles.font;
   ctx.fillStyle = styles.color;
-  ctx.textBaseline = "top";
+  ctx.textBaseline = "alphabetic";
 
   ctx.globalAlpha = 1;
 
@@ -63,9 +63,10 @@ export function createTextTexture(
   const fontSize = parseFloat(styles.fontSize);
   const baselineOffset = (lineHeight - fontSize) / 2;
   const browserDrift = 1.0;
+  console.log("drift:", browserDrift);
 
   lines.forEach((line, index) => {
-    const y = index * lineHeight + baselineOffset + browserDrift;
+    const y = index * lineHeight - baselineOffset + browserDrift;
 
     let x = 0;
     if (styles.textAlign === "center") {
