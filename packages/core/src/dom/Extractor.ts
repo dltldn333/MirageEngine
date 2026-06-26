@@ -92,7 +92,10 @@ export function extractSceneGraph(
       styles: {
         backgroundColor: "transparent",
         backgroundImage: "",
-        opacity: (parent && parent.dataset.mirageDom === "hide") ? 1 : parseFloat(computed.opacity),
+        opacity:
+          parent && parent.dataset.mirageDom === "hide"
+            ? 1
+            : parseFloat(computed.opacity),
         zIndex: 0,
         borderRadius: "0px",
         borderColor: "transparent",
@@ -220,7 +223,8 @@ export function extractSceneGraph(
   const styles: BoxStyles = {
     backgroundColor: computed.backgroundColor,
     backgroundImage: computed.backgroundImage,
-    opacity: element.dataset.mirageDom === "hide" ? 1 : parseFloat(computed.opacity),
+    opacity:
+      element.dataset.mirageDom === "hide" ? 1 : parseFloat(computed.opacity),
     zIndex: isNaN(zIndex) ? 0 : zIndex,
     borderRadius: computed.borderRadius,
     borderColor: computed.borderColor,

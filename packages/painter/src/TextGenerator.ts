@@ -59,16 +59,19 @@ export function createTextTexture(
 
   ctx.globalAlpha = 1;
 
-  console.log(text, styles.font);
+  // console.log(text, styles.font);
 
   const lines = wrapText(ctx, text, rectWidth);
   const lineHeight = styles.lineHeight;
-  const fontSize = parseFloat(styles.fontSize);
+  // const fontSize = parseFloat(styles.fontSize);
 
   const baseline = FontMetricsManager.getBaseline(styles.font);
 
-  console.log("lineHeight : ", lineHeight);
-  console.log("fontSize : ", fontSize);
+  // console.log("lineHeight : ", lineHeight);
+  // console.log("fontSize : ", fontSize);
+
+  console.log("의도한 font:", styles.font);
+  console.log("실제 적용된 font:", ctx.font);
 
   lines.forEach((line, index) => {
     const y = index * lineHeight + baseline;
