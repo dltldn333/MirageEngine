@@ -7,26 +7,35 @@ function wrapText(
   text: string,
   maxWidth: number,
 ): string[] {
-  // [TODO] 줄바꿈 로직
+  // [TODO] provide css line break logic
   const forcedLines = text.split("\n");
   const resultLines: string[] = [];
 
   forcedLines.forEach((line) => {
-    const words = line.split(" ");
+    const words = line.match(/[^\s\-]+\-?|\-|\s+/g) || [];
+
+    if (words.length === 0) {
+      resultLines.push("");
+      return;
+    }
+
     let currentLine = words[0];
 
     for (let i = 1; i < words.length; i++) {
       const word = words[i];
-      const width = ctx.measureText(currentLine + " " + word).width;
+      const width = ctx.measureText(currentLine + word).width;
 
       if (width <= maxWidth + 2) {
-        currentLine += " " + word;
+        currentLine += word;
       } else {
-        resultLines.push(currentLine);
-        currentLine = word;
+        if (currentLine) resultLines.push(currentLine);
+        currentLine = word.trimStart(); 
       }
     }
-    resultLines.push(currentLine);
+    
+    if (currentLine) {
+      resultLines.push(currentLine);
+    }
   });
 
   return resultLines;

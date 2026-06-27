@@ -20,6 +20,7 @@ export interface SceneNode {
 
   textContent?: string;
   textStyles?: TextStyles;
+  textLines?: { text: string; rect: NodeRect }[];
 
   dirtyMask: number;
   // TODO: SceneNode의 sort 로직 추가(아마도)

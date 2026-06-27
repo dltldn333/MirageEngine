@@ -306,55 +306,66 @@ export class Renderer {
   }
 
   private reconcileTextChild(parentMesh: THREE.Mesh, node: SceneNode) {
-    let textMesh = parentMesh.children.find(
-      (c) => c.name === "TEXT_CHILD",
-    ) as THREE.Mesh;
-
-    const currentStyleHash = JSON.stringify(node.textStyles);
-    const cachedStyleHash = textMesh?.userData?.styleHash;
+    const lines = node.textLines || [{ text: node.textContent || "", rect: node.rect }];
+    const currentStyleHash = JSON.stringify(node.textStyles) + lines.map(l => l.text).join("");
+    const cachedStyleHash = parentMesh.userData?.textChildStyleHash;
     const isDirty =
-      !textMesh ||
       node.dirtyMask & DIRTY_CONTENT ||
       currentStyleHash !== cachedStyleHash;
 
     if (isDirty) {
-      if (textMesh) {
+      // Remove all existing TEXT_CHILD meshes
+      const existingChildren = parentMesh.children.filter(c => c.name.startsWith("TEXT_CHILD"));
+      existingChildren.forEach(child => {
+        const textMesh = child as THREE.Mesh;
         (textMesh.material as THREE.MeshBasicMaterial).map?.dispose();
         textMesh.geometry.dispose();
         parentMesh.remove(textMesh);
-      }
+      });
 
-      const material = Painter.create(
-        "TEXT",
-        node.textStyles!,
-        node.textContent || "",
-        node.rect.width,
-        node.rect.height,
-        this.qualityFactor,
-      );
-
-      const geometry = new THREE.PlaneGeometry(1, 1);
-      textMesh = new THREE.Mesh(geometry, material);
-
-      textMesh.name = "TEXT_CHILD";
-      textMesh.userData = { styleHash: currentStyleHash };
-      this.updateMeshLayers(textMesh, node);
-      textMesh.position.z = 0.005;
-      parentMesh.add(textMesh);
-    }
-
-    if (textMesh) {
-      const parentRect = parentMesh.userData.domRect;
+      const parentRect = node.rect;
       const parentCenterX = parentRect.x + parentRect.width / 2;
       const parentCenterY = parentRect.y + parentRect.height / 2;
 
-      const textCenterX = node.rect.x + node.rect.width / 2;
-      const textCenterY = node.rect.y + node.rect.height / 2;
+      lines.forEach((line, index) => {
+        const material = Painter.create(
+          "TEXT",
+          node.textStyles!,
+          line.text,
+          line.rect.width,
+          line.rect.height,
+          this.qualityFactor,
+        );
 
-      const offsetX = textCenterX - parentCenterX;
-      const offsetY = -(textCenterY - parentCenterY);
+        const geometry = new THREE.PlaneGeometry(1, 1);
+        const textMesh = new THREE.Mesh(geometry, material);
 
-      textMesh.position.set(offsetX, offsetY, 0.005);
+        textMesh.name = `TEXT_CHILD_${index}`;
+        this.updateMeshLayers(textMesh, node);
+
+        // Parent is already scaled to node.rect.width/height. 
+        // We counter-scale the child so its absolute size is exactly line.rect.width/height.
+        const scaleX = node.rect.width === 0 ? 1 : line.rect.width / node.rect.width;
+        const scaleY = node.rect.height === 0 ? 1 : line.rect.height / node.rect.height;
+        textMesh.scale.set(scaleX, scaleY, 1);
+
+        const textCenterX = line.rect.x + line.rect.width / 2;
+        const textCenterY = line.rect.y + line.rect.height / 2;
+
+        const offsetX = textCenterX - parentCenterX;
+        const offsetY = -(textCenterY - parentCenterY);
+
+        // Position must also be counter-scaled relative to parent's scale
+        textMesh.position.set(
+          node.rect.width === 0 ? 0 : offsetX / node.rect.width,
+          node.rect.height === 0 ? 0 : offsetY / node.rect.height,
+          0.005
+        );
+
+        parentMesh.add(textMesh);
+      });
+
+      parentMesh.userData.textChildStyleHash = currentStyleHash;
     }
   }
 
