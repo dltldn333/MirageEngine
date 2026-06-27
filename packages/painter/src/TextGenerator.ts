@@ -7,6 +7,7 @@ function wrapText(
   text: string,
   maxWidth: number,
 ): string[] {
+  // [TODO] 줄바꿈 로직
   const forcedLines = text.split("\n");
   const resultLines: string[] = [];
 
