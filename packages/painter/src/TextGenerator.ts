@@ -80,8 +80,7 @@ export function createTextTexture(
   // console.log("lineHeight : ", lineHeight);
   // console.log("fontSize : ", fontSize);
 
-  console.log("의도한 font:", styles.font);
-  console.log("실제 적용된 font:", ctx.font);
+
 
   lines.forEach((line, index) => {
     const y = index * lineHeight + baseline;
