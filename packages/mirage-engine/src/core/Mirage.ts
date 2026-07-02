@@ -22,4 +22,8 @@ export class Mirage {
   public destroy(): void {
     this._engine.dispose();
   }
+
+  public test(): void {
+    this._engine.test();
+  }
 }

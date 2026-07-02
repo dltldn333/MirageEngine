@@ -1,8 +1,10 @@
-import { Mirage } from "@/index";
-import { MirageConfig } from "@/types";
+import { Mirage } from "mirage-engine";
+import { MirageConfig } from "mirage-engine";
 
 const shader = {
   uvModifier: /* glsl */ `
+    float textureZoom = 1.0;
+
     vec2 xRadii_uv = mix(uBorderRadius.xw, uBorderRadius.yz, step(0.0, p.x));
     float r_uv = mix(xRadii_uv.y, xRadii_uv.x, step(0.0, p.y));
     float d_uv = sdRoundedBox(p, halfSize, r_uv);
@@ -16,8 +18,8 @@ const shader = {
 
     float edgeDist = max(-d_uv, 0.0);
     
-    float bevelWidth = 10.0; 
-    float maxDepth = 20.0;  
+    float bevelWidth = 20.0; 
+    float maxDepth = 40.0;  
 
     // ==========================================================
     // 1. [붙여지는 부분: 0 ~ 7] 거울처럼 뒤집힌 반사
@@ -28,18 +30,18 @@ const shader = {
     // [핵심 해결] 곡선을 반대로 뒤집었습니다!
     // 가장자리(t1=0)에서 가파르게 이미지를 당겨와 넓게 퍼지게 만들고,
     // 만나는 지점(t1=1)으로 갈수록 완만해져서 자연스럽게 이어집니다.
-    float curve1 = pow(1.0 - t1, 1.5); 
+    float curve1 = pow(1.0 - t1, 3.0); 
 
     float target1 = bevelWidth + (maxDepth - bevelWidth) * curve1;
-    float push1 = (target1 - edgeDist) * mask1;
+    float push1 = ((target1 - edgeDist) + (t1 * 3.0)) * mask1;
 
     // ==========================================================
     // 2. [복사되는 부분: 7 ~ 15] 볼록 렌즈 굴절
     // ==========================================================
     float mask2 = step(bevelWidth, edgeDist) * step(edgeDist, maxDepth);
     float t2 = (edgeDist - bevelWidth) / (maxDepth - bevelWidth); 
-    float curve2 = pow(1.0 - t2, 2.0); 
-    float push2 = curve2 * 2.0 * mask2;
+    float curve2 = pow(1.0 - t2, 3.0); 
+    float push2 = curve2 * 3.0 * mask2;
 
     float pushDist = push1 + push2;
 
@@ -47,11 +49,14 @@ const shader = {
     if (abs(pixelToUv.x) < 0.000001) pixelToUv.x = 1.0 / 1920.0;
     if (abs(pixelToUv.y) < 0.000001) pixelToUv.y = 1.0 / 1080.0;
 
+    // [Fix] 박스 중심(p=0)을 기준으로 줌 오프셋 계산
+    // 1.0/textureZoom - 1.0 은 확대될수록 음수가 되어 중심 방향으로 UV를 당겨옵니다.
+    vec2 zoomOffset = p * pixelToUv * (1.0 / textureZoom - 1.0);
     vec2 distortOffset = -grad * pushDist * pixelToUv;
-    resultUv = screenUv + distortOffset; 
+    resultUv = screenUv + zoomOffset + distortOffset; 
   `,
   colorModifier: /* glsl */ `
-      float thickness_c = 25.0;
+      float thickness_c = 30.0;
       float dx_c = dFdx(d);
       float dy_c = dFdy(d);
       if (abs(dx_c) < 0.001 && abs(dy_c) < 0.001) {
@@ -64,12 +69,9 @@ const shader = {
 
       float edgeReflection = smoothstep(-1.5, 0.0, d) * smoothstep(0.0, -1.5, d);
       float fresnel = pow(1.0 - max(dot(normal_c, vec3(0.0, 0.0, 1.0)), 0.0), 3.0);
-      finalColor.rgb = mix(finalColor.rgb, vec3(1.0, 1.0, 1.0), 0.0);
-      
+
+      // 파이프라인에서 이미 합성된 색상 위에 유리 특유의 반사광과 프레넬 효과만 더해줍니다.
       finalColor.rgb += vec3(1.0) * (edgeReflection * 0.4 + fresnel * 0.5);
-
-      // 텍스쳐의 투명도(0.0)와 유리의 투명도(1.0) 중 큰 값을 취해 빈 공간을 어두운 유리로 채웁니다.
-
   `,
 };
 
@@ -84,17 +86,17 @@ const mirageConifg: MirageConfig = {
   // mode: "duplicate",
   mode: "overlay",
   travelerClipArea: "50px",
-  resizeDebounce: {
-    delay: 200,
-    onStart: () => {
-      document.querySelector("canvas")!.style.display = "none";
-      // (document.querySelector("#loading") as HTMLElement).style.display = "flex";
-    },
-    onEnd: () => {
-      document.querySelector("canvas")!.style.display = "block";
-      // (document.querySelector("#loading") as HTMLElement).style.display = "none";
-    },
-  },
+  // resizeDebounce: {
+  //   delay: 200,
+  //   onStart: () => {
+  //     document.querySelector("canvas")!.style.display = "none";
+  //     // (document.querySelector("#loading") as HTMLElement).style.display = "flex";
+  //   },
+  //   onEnd: () => {
+  //     document.querySelector("canvas")!.style.display = "block";
+  //     // (document.querySelector("#loading") as HTMLElement).style.display = "none";
+  //   },
+  // },
   // container: container,
   // filter: {
   //   excludeTree: ["exclude"],
@@ -125,3 +127,7 @@ mirage.start();
 //   testId.style.backgroundColor = "purple";
 //   testId.dataset.mirageFilter = "";
 // } , 3000);
+
+// const box2 = document.querySelector("#box2");
+
+mirage.test();

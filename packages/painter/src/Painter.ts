@@ -1,36 +1,40 @@
 import * as THREE from "three";
-import { BoxStyles, TextStyles, ShaderHooks} from "./types";
-import { createBoxMaterial, updateBoxMaterial } from "./BoxGenerator";
-import { createTextTexture } from "./TextGenerator";
+import { BoxStyles, TextStyles, ShaderHooks } from "./types";
+import {
+  createBoxMaterial,
+  updateBoxMaterial,
+  setBoxUniforms,
+  BoxUniformValues,
+} from "./Box/BoxGenerator";
+import { TextGenerator } from "./Text/TextGenerator";
 
 export const Painter = {
   create(
     type: "BOX" | "TEXT",
-    styles: any,
+    styles: BoxStyles | TextStyles,
     content: string,
     width: number,
     height: number,
     quality: number = 2,
     texture: THREE.Texture | null = null,
-    shaderHooks?: ShaderHooks
+    shaderHooks?: ShaderHooks,
   ): THREE.Material {
     if (type === "BOX") {
-      return createBoxMaterial(styles as BoxStyles, width, height, texture, shaderHooks);
+      return createBoxMaterial(
+        styles as BoxStyles,
+        width,
+        height,
+        texture,
+        shaderHooks,
+      );
     } else if (type === "TEXT") {
-      const texture = createTextTexture(
+      return new TextGenerator(
         content || "",
         styles as TextStyles,
         width,
         height,
         quality,
       );
-
-      return new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        side: THREE.FrontSide,
-        color: 0xffffff,
-      });
     }
 
     return new THREE.MeshBasicMaterial({ visible: false });
@@ -39,12 +43,12 @@ export const Painter = {
   update(
     material: THREE.Material,
     type: "BOX" | "TEXT",
-    styles: any,
+    styles: BoxStyles | TextStyles,
     content: string,
     width: number,
     height: number,
     quality: number = 2,
-    texture?: THREE.Texture | null
+    texture?: THREE.Texture | null,
   ) {
     if (type === "BOX") {
       updateBoxMaterial(
@@ -52,25 +56,24 @@ export const Painter = {
         styles as BoxStyles,
         width,
         height,
-        texture
+        texture,
       );
     } else if (type === "TEXT") {
-      const basicMat = material as THREE.MeshBasicMaterial;
-
-      if (basicMat.map) {
-        basicMat.map.dispose();
-      }
-
-      const newTexture = createTextTexture(
+      const textMat = material as TextGenerator;
+      textMat.updateText(
         content || "",
         styles as TextStyles,
         width,
         height,
         quality,
       );
-
-      basicMat.map = newTexture;
-      basicMat.needsUpdate = true;
     }
+  },
+
+  forceUpdateUniforms(
+    material: THREE.ShaderMaterial,
+    values: BoxUniformValues,
+  ) {
+    setBoxUniforms(material, values);
   },
 };

@@ -1,15 +1,20 @@
 import { CoreConfig } from "../types/config";
 import { Renderer } from "../renderer/Renderer";
+import { MeshRegistry } from "../store/MeshRegistry";
 import { extractSceneGraph } from "../dom/Extractor";
 import {
   DIRTY_NONE,
   DIRTY_RECT,
   DIRTY_STRUCTURE,
+  DIRTY_CONTENT
+  ,
   DIRTY_STYLE,
   USER_LAYER,
   SYSTEM_LAYER,
   Visibility,
+  StyleData,
 } from "../types";
+import { extractFromStyle, animateMeshByData, updateFixedMeshesScroll } from "../animation/Animator";
 
 interface InternalResizeConfig {
   enabled: boolean;
@@ -21,9 +26,12 @@ interface InternalResizeConfig {
 export class Syncer {
   private target: HTMLElement;
   private renderer: Renderer;
+  private registry: MeshRegistry;
   private filter: CoreConfig["filter"];
 
   private observer: MutationObserver;
+  private pendingDeletions: Set<HTMLElement> = new Set();
+  private pendingStyles: Map<HTMLElement, StyleData> = new Map();
 
   private isDomDirty: boolean = false;
   private isRunning: boolean = false;
@@ -38,9 +46,19 @@ export class Syncer {
   private resizeTimer: number | null = null;
   private isResizing: boolean = false;
 
-  constructor(target: HTMLElement, renderer: Renderer, config: CoreConfig) {
+  private lastScrollX: number = 0;
+  private lastScrollY: number = 0;
+  private scrollTimer: number | null = null;
+
+  constructor(
+    target: HTMLElement,
+    renderer: Renderer,
+    registry: MeshRegistry,
+    config: CoreConfig,
+  ) {
     this.target = target;
     this.renderer = renderer;
+    this.registry = registry;
     this.filter = config.filter;
 
     // Resize Debounce Configuration
@@ -64,13 +82,28 @@ export class Syncer {
       for (const mutation of mutations) {
         if (mutation.type === "childList") {
           currentMask |= DIRTY_STRUCTURE;
+          if (mutation.removedNodes.length > 0) {
+            mutation.removedNodes.forEach((node) => {
+              if (node instanceof HTMLElement) {
+                this.pendingDeletions.add(node);
+              }
+            });
+          }
         } else if (mutation.type === "attributes") {
-          if (
-            mutation.attributeName === "style" ||
-            mutation.attributeName === "class"
-          ) {
+          if (mutation.attributeName === "style") {
+            currentMask |= DIRTY_RECT | DIRTY_STYLE;
+            const target = mutation.target as HTMLElement;
+
+            const extractedStyleData = extractFromStyle(target.style);
+            // console.log(extractedStyleData);
+            this.pendingStyles.set(target, extractedStyleData);
+          } else if (mutation.attributeName === "class") {
             currentMask |= DIRTY_RECT | DIRTY_STYLE;
           }
+          // else if (mutation.attributeName === "data-mirage") {
+          // }
+        } else if (mutation.type === "characterData") {
+          currentMask |= DIRTY_CONTENT | DIRTY_RECT;
         }
       }
 
@@ -80,7 +113,6 @@ export class Syncer {
         // Structural Change detected
         if (currentMask & DIRTY_STRUCTURE) {
           this.clearTimers();
-          console.log("Structural Change detected");
           this.isDomDirty = true;
           return;
         }
@@ -109,7 +141,6 @@ export class Syncer {
 
     this.target.addEventListener("transitionend", this.onTransitionFinished);
     this.target.addEventListener("animationend", this.onTransitionFinished);
-
     window.addEventListener("resize", this.onWindowResize);
 
     this.forceUpdateScene();
@@ -138,17 +169,18 @@ export class Syncer {
       clearTimeout(this.cssTimer);
       this.cssTimer = null;
     }
+    if (this.scrollTimer) {
+      clearTimeout(this.scrollTimer);
+      this.scrollTimer = null;
+    }
   }
 
   private onTransitionFinished = (e: Event) => {
     if (!this.target.contains(e.target as Node)) return;
-
     if (this.mutationTimer !== null) return;
-
     if (this.cssTimer) clearTimeout(this.cssTimer);
-
+    if (this.pendingStyles.size != 0) return;
     this.pendingMask |= DIRTY_RECT | DIRTY_STYLE;
-
     this.cssTimer = window.setTimeout(() => {
       this.isDomDirty = true;
       this.cssTimer = null;
@@ -160,17 +192,13 @@ export class Syncer {
       this.isDomDirty = true;
       return;
     }
-
     if (!this.isResizing) {
       this.isResizing = true;
       if (this.resizeConfig.onStart) this.resizeConfig.onStart();
     }
-
     if (this.resizeTimer) clearTimeout(this.resizeTimer);
-
     this.resizeTimer = window.setTimeout(() => {
       this.isDomDirty = true;
-
       if (this.resizeConfig.onEnd) this.resizeConfig.onEnd();
       this.isResizing = false;
       this.resizeTimer = null;
@@ -179,6 +207,9 @@ export class Syncer {
 
   private forceUpdateScene() {
     this.isDomDirty = false;
+    
+    this.lastScrollX = window.scrollX;
+    this.lastScrollY = window.scrollY;
 
     const discoveredTraveler =
       document.querySelector("[data-mirage-travel='traveler']") !== null;
@@ -197,7 +228,8 @@ export class Syncer {
     );
 
     if (sceneGraph) {
-      this.renderer.syncScene(sceneGraph);
+      this.renderer.syncScene(sceneGraph, this.pendingDeletions);
+      this.pendingDeletions.clear();
     }
 
     this.pendingMask = DIRTY_NONE;
@@ -210,7 +242,30 @@ export class Syncer {
       this.forceUpdateScene();
     }
 
+    const currentScrollX = window.scrollX;
+    const currentScrollY = window.scrollY;
+    if (currentScrollX !== this.lastScrollX || currentScrollY !== this.lastScrollY) {
+      updateFixedMeshesScroll(this.renderer.fixedMeshes, currentScrollX, currentScrollY);
+
+      this.lastScrollX = currentScrollX;
+      this.lastScrollY = currentScrollY;
+
+      if (this.scrollTimer) clearTimeout(this.scrollTimer);
+      this.scrollTimer = window.setTimeout(() => {
+        this.pendingMask |= DIRTY_RECT;
+        this.isDomDirty = true;
+        this.scrollTimer = null;
+      }, 150);
+    }
+
+    if (this.pendingStyles.size > 0) {
+      animateMeshByData(this.registry, this.pendingStyles);
+      this.pendingStyles.clear();
+    }
+
     this.renderer.render();
     requestAnimationFrame(this.renderLoop);
   };
+
+  // [ThinkPoint] change call back pattern when after
 }

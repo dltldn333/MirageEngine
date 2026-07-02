@@ -6,14 +6,17 @@
     <title>MirageEngine Test</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
 
     <style>
       body {
         margin: 0;
         padding: 0;
-        font-family: "Ariel", sans-serif;
+        font-family: "Arial", sans-serif;
+        line-height: 2.2;
         background-color: #f0f0f0;
         color: #333;
+        overscroll-behavior: none;
       }
 
       #root {
@@ -29,13 +32,12 @@
       }
 
       .box {
-        color: black;
         /* This font has problems with mirage-engine"
         /* font-family: "Times New Roman", Times, serif; */
         width: 100%;
         height: 60px;
         box-sizing: border-box;
-        transition: all 0.5s ease;
+        /* transition: all 0.5s ease; */
         border-radius: 8px;
         display: flex;
         align-items: center;
@@ -86,7 +88,7 @@
     >
       loading...
     </div>
-    <div id="root">
+    <div id="root" data-mirage-filter="exclude-self">
       <div id="css-test">
         <span>TEST</span>
       </div>
@@ -118,13 +120,16 @@
           id="box1"
           class="box"
           style="
-            background-color: black;
+            /* background-color: black; */
             color: white;
             font-weight: 900;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 30px;
+            background: linear-gradient(red, blue);
+            /* background: linear-gradient(in oklab, red, blue); */
+            /* background: linear-gradient(in srgb-linear, red, blue); */
           "
         >
           <span>test, test, test</span>
@@ -135,16 +140,27 @@
           class="box"
           style="
             opacity: 1;
-            position: absolute;
-            right: 100px;
-            bottom: 10px;
-            width: 200px;
-            border-radius: 30px;
-            height: 80px;
+            position: fixed;
+            /* position: absolute; */
+            right: 50%;
+            top: 100px;
+            width: 120px;
+            border-radius: 50px;
+            height: 100px;
             width: 150px;
-            /* background-color: lightcoral; */
+            /*box-shadow:;
+            0 4px 6px -1px rgba(0, 0, 0, 0.4);*/
+            background-color: rgba(0, 0, 0, 0.2);
+            /* background: linear-gradient( */
+            /* rgba(0, 0, 0, 0.98) 0%, */
+            /* rgba(0, 0, 0, 0.93) 40%, */
+            /* rgba(0, 0, 0, 0.9) 43%, */
+            /* rgba(0, 0, 0, 0.1) 100% */
+            /* ); */
           "
           data-mirage-travel="traveler"
+          data-mirage-filter="exclude-self"
+          data-mirage-dom="hide"
         >
           <div id="box2-child" style="height: 20px; text-align: center"></div>
         </div>
@@ -163,44 +179,95 @@
       >
         GSAP Target
       </div>
+
+      <div
+        id="image-test"
+        class="box"
+        style="
+          margin-top: 20px;
+          height: 300px;
+          background-image: url(&quot;./test.png&quot;);
+          background-size: cover;
+          background-position: center;
+          color: white;
+          font-weight: bold;
+          text-shadow: 1px 1px 2px black;
+        "
+      >
+        Lazy Loaded Image Test
+      </div>
+
+      <img
+        src="./test.png"
+        style="
+          width: 100%;
+          max-width: 400px;
+          height: auto;
+          margin-top: 20px;
+          border-radius: 10px;
+          display: block;
+        "
+        alt="Test Image"
+      />
     </div>
     <div id="space"></div>
 
     <script type="module" src="./main.ts"></script>
 
-    <!-- <script id="dom-manipulator-script">
-      console.log("DOM 조작기: 테스트 시나리오 시작...");
+    <script id="dom-manipulator-script">
+      //setTimeout(() => {
+      //console.log("TEST 1: #box1 색상 변경 (CSS Transition)");
+      //const box1 = document.getElementById("box1");
+      //  if (box1) box1.style.backgroundColor = "crimson";
+      //}, 2000);
+      // gsap.to("#box1", {
+      // backgroundColor: "#DC143C",
+      // duration: 2,
+      // delay: 2,
+      // ease: "power2.inOut",
+      // });
+
+      // setTimeout(() => {
+      // const root = document.getElementById("root");
+      // const newBox = document.createElement("div");
+      // newBox.className = "box";
+      // newBox.style.backgroundColor = "goldenrod";
+      // newBox.style.height = "1200px";
+      // newBox.textContent = "New Box (DOM Added)";
+      // if (root) root.appendChild(newBox);
+      // }, 4000);
 
       setTimeout(() => {
-        console.log("TEST 1: #box1 색상 변경 (CSS Transition)");
-        const box1 = document.getElementById("box1");
-        if (box1) box1.style.backgroundColor = "crimson";
-      }, 2000);
+        // gsap.to("#box-gsap", {
+        // x: 400,
+        // backgroundColor: "#FF5733",
+        // rotation: 360,
+        // duration: 2,
+        // ease: "power2.inOut",
+        // });
 
-      setTimeout(() => {
-        console.log("TEST 2: #root에 새 박스 추가");
-        const root = document.getElementById("root");
-        const newBox = document.createElement("div");
-        newBox.className = "box";
-        newBox.style.backgroundColor = "goldenrod";
-        newBox.textContent = "New Box (DOM Added)";
-        if (root) root.appendChild(newBox);
-      }, 4000);
-
-      setTimeout(() => {
-        console.log("TEST 3: GSAP 애니메이션 시작! (2초간 지속)");
-        console.log(
-          "-> 캔버스는 움직이지 않다가, 2초 뒤 끝난 위치로 순간이동 해야 성공!",
-        );
-
-        gsap.to("#box-gsap", {
-          x: 400,
-          backgroundColor: "#FF5733",
-          rotation: 360,
-          duration: 2,
+        gsap.to("#box2", {
+          // x: -200,
+          keyframes: [
+            // { width: 400, height: 500 },
+            { width: 400 },
+            // { width: 150, height: 80, duration: 0.2 },
+            // { width: 80, height: 200, duration: 0.8 },
+            // { width: 150, height: 80, duration: 0.2 },
+          ],
+          // background: "linear-gradient(rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.93) 85%, rgba(0, 0, 0, 0.1) 100%)",
+          borderRadius: "30px",
+          duration: 1,
           ease: "power2.inOut",
         });
       }, 6000);
-    </script> -->
+
+      // Initialize Lenis for Virtual Scroll testing
+      const lenis = new Lenis({
+        autoRaf: true,
+        duration: 1.2,
+        syncTouch: true,
+      });
+    </script>
   </body>
 </html>
