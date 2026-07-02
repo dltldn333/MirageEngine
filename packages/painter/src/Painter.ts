@@ -6,7 +6,7 @@ import {
   setBoxUniforms,
   BoxUniformValues,
 } from "./Box/BoxGenerator";
-import { createTextTexture } from "./Text/TextGenerator";
+import { TextGenerator } from "./Text/TextGenerator";
 
 export const Painter = {
   create(
@@ -28,20 +28,13 @@ export const Painter = {
         shaderHooks,
       );
     } else if (type === "TEXT") {
-      // return createTextMaterial()
-      const texture = createTextTexture(
+      return new TextGenerator(
         content || "",
         styles as TextStyles,
         width,
         height,
         quality,
       );
-      return new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        side: THREE.FrontSide,
-        color: 0xffffff,
-      });
     }
 
     return new THREE.MeshBasicMaterial({ visible: false });
@@ -66,22 +59,14 @@ export const Painter = {
         texture,
       );
     } else if (type === "TEXT") {
-      const basicMat = material as THREE.MeshBasicMaterial;
-
-      if (basicMat.map) {
-        basicMat.map.dispose();
-      }
-
-      const newTexture = createTextTexture(
+      const textMat = material as TextGenerator;
+      textMat.updateText(
         content || "",
         styles as TextStyles,
         width,
         height,
         quality,
       );
-
-      basicMat.map = newTexture;
-      basicMat.needsUpdate = true;
     }
   },
 

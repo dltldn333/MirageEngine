@@ -1,11 +1,11 @@
 import * as THREE from "three";
-import { BoxStyles, ShaderHooks } from "./types";
+import { BoxStyles, ShaderHooks } from "../types";
 import {
   parsePixelValue,
   parseColor,
   parseLinearGradient,
-} from "./tools/parser";
-import { BoxShader, BoxChunk } from "./shaders/index";
+} from "../tools/parser";
+import { BoxShader, BoxChunk } from "../shaders/index";
 
 export function createBoxMaterial(
   styles: BoxStyles,
