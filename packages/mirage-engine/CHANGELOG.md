@@ -1,5 +1,14 @@
 # mirage-engine
 
+## 0.2.18
+
+### Patch Changes
+
+- 058e557: fix simple bug
+- Updated dependencies [058e557]
+  - @mirage-engine/painter@1.0.0
+  - @mirage-engine/core@0.2.2
+
 ## 0.2.17
 
 ### Patch Changes
