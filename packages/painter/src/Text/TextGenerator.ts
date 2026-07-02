@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { TextStyles } from "./types";
-import { FontMetricsManager } from "./tools/FontMetricsManager";
+import { TextStyles } from "../types";
+import { FontMetricsManager } from "../tools/FontMetricsManager";
 
 function wrapText(
   ctx: CanvasRenderingContext2D,
