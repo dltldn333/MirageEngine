@@ -6,13 +6,15 @@ import {
   DIRTY_NONE,
   DIRTY_RECT,
   DIRTY_STRUCTURE,
+  DIRTY_CONTENT
+  ,
   DIRTY_STYLE,
   USER_LAYER,
   SYSTEM_LAYER,
   Visibility,
   StyleData,
 } from "../types";
-import { extractFromStyle, animateMeshByData } from "../animation/Animator";
+import { extractFromStyle, animateMeshByData, updateFixedMeshesScroll } from "../animation/Animator";
 
 interface InternalResizeConfig {
   enabled: boolean;
@@ -43,6 +45,10 @@ export class Syncer {
   private resizeConfig: InternalResizeConfig;
   private resizeTimer: number | null = null;
   private isResizing: boolean = false;
+
+  private lastScrollX: number = 0;
+  private lastScrollY: number = 0;
+  private scrollTimer: number | null = null;
 
   constructor(
     target: HTMLElement,
@@ -96,6 +102,8 @@ export class Syncer {
           }
           // else if (mutation.attributeName === "data-mirage") {
           // }
+        } else if (mutation.type === "characterData") {
+          currentMask |= DIRTY_CONTENT | DIRTY_RECT;
         }
       }
 
@@ -133,7 +141,6 @@ export class Syncer {
 
     this.target.addEventListener("transitionend", this.onTransitionFinished);
     this.target.addEventListener("animationend", this.onTransitionFinished);
-
     window.addEventListener("resize", this.onWindowResize);
 
     this.forceUpdateScene();
@@ -162,18 +169,18 @@ export class Syncer {
       clearTimeout(this.cssTimer);
       this.cssTimer = null;
     }
+    if (this.scrollTimer) {
+      clearTimeout(this.scrollTimer);
+      this.scrollTimer = null;
+    }
   }
 
   private onTransitionFinished = (e: Event) => {
     if (!this.target.contains(e.target as Node)) return;
-
     if (this.mutationTimer !== null) return;
-
     if (this.cssTimer) clearTimeout(this.cssTimer);
     if (this.pendingStyles.size != 0) return;
-
     this.pendingMask |= DIRTY_RECT | DIRTY_STYLE;
-
     this.cssTimer = window.setTimeout(() => {
       this.isDomDirty = true;
       this.cssTimer = null;
@@ -185,17 +192,13 @@ export class Syncer {
       this.isDomDirty = true;
       return;
     }
-
     if (!this.isResizing) {
       this.isResizing = true;
       if (this.resizeConfig.onStart) this.resizeConfig.onStart();
     }
-
     if (this.resizeTimer) clearTimeout(this.resizeTimer);
-
     this.resizeTimer = window.setTimeout(() => {
       this.isDomDirty = true;
-
       if (this.resizeConfig.onEnd) this.resizeConfig.onEnd();
       this.isResizing = false;
       this.resizeTimer = null;
@@ -204,6 +207,9 @@ export class Syncer {
 
   private forceUpdateScene() {
     this.isDomDirty = false;
+    
+    this.lastScrollX = window.scrollX;
+    this.lastScrollY = window.scrollY;
 
     const discoveredTraveler =
       document.querySelector("[data-mirage-travel='traveler']") !== null;
@@ -236,10 +242,25 @@ export class Syncer {
       this.forceUpdateScene();
     }
 
+    const currentScrollX = window.scrollX;
+    const currentScrollY = window.scrollY;
+    if (currentScrollX !== this.lastScrollX || currentScrollY !== this.lastScrollY) {
+      updateFixedMeshesScroll(this.renderer.fixedMeshes, currentScrollX, currentScrollY);
+
+      this.lastScrollX = currentScrollX;
+      this.lastScrollY = currentScrollY;
+
+      if (this.scrollTimer) clearTimeout(this.scrollTimer);
+      this.scrollTimer = window.setTimeout(() => {
+        this.pendingMask |= DIRTY_RECT;
+        this.isDomDirty = true;
+        this.scrollTimer = null;
+      }, 150);
+    }
+
     if (this.pendingStyles.size > 0) {
       animateMeshByData(this.registry, this.pendingStyles);
       this.pendingStyles.clear();
-
     }
 
     this.renderer.render();

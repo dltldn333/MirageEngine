@@ -1,5 +1,5 @@
-import { Mirage } from "@/index";
-import { MirageConfig } from "@/types";
+import { Mirage } from "mirage-engine";
+import { MirageConfig } from "mirage-engine";
 
 const shader = {
   uvModifier: /* glsl */ `
@@ -18,8 +18,8 @@ const shader = {
 
     float edgeDist = max(-d_uv, 0.0);
     
-    float bevelWidth = 15.0; 
-    float maxDepth = 30.0;  
+    float bevelWidth = 20.0; 
+    float maxDepth = 40.0;  
 
     // ==========================================================
     // 1. [붙여지는 부분: 0 ~ 7] 거울처럼 뒤집힌 반사

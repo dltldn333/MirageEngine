@@ -16,16 +16,119 @@ import { FilterConfig } from "../types/config";
 
 // Helper function: getTextNodeRect, isValidTextNode, isLeafTextElement, extractTextStyles
 
-function getTextNodeRect(textNode: Text) {
-  const range = document.createRange();
-  range.selectNodeContents(textNode);
-  const rect = range.getBoundingClientRect();
-  return {
-    left: rect.left,
-    top: rect.top,
-    width: rect.width,
-    height: rect.height,
+function extractTextLines(textNode: Text): { text: string; rect: { left: number; top: number; width: number; height: number } }[] {
+  const text = textNode.textContent || "";
+  const lines: { text: string; rect: { left: number; top: number; width: number; height: number } }[] = [];
+  
+  let currentLineText = "";
+  let currentLineRect: { left: number; top: number; right: number; bottom: number } | null = null;
+  let currentTop = -1;
+
+  const processChunk = (chunkText: string, offset: number) => {
+    for (let i = 0; i < chunkText.length; i++) {
+      const char = chunkText[i];
+      const range = document.createRange();
+      range.setStart(textNode, offset + i);
+      range.setEnd(textNode, offset + i + 1);
+      const rect = range.getBoundingClientRect();
+      
+      if (rect.width === 0 && rect.height === 0) {
+        currentLineText += char;
+        continue;
+      }
+
+      if (currentTop === -1 || Math.abs(rect.top - currentTop) > rect.height / 2) {
+        if (currentLineText && currentLineRect) {
+          lines.push({
+            text: currentLineText,
+            rect: {
+              left: currentLineRect.left,
+              top: currentLineRect.top,
+              width: currentLineRect.right - currentLineRect.left,
+              height: currentLineRect.bottom - currentLineRect.top,
+            },
+          });
+        }
+        currentLineText = char;
+        currentLineRect = { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
+        currentTop = rect.top;
+      } else {
+        currentLineText += char;
+        if (currentLineRect) {
+          currentLineRect.left = Math.min(currentLineRect.left, rect.left);
+          currentLineRect.top = Math.min(currentLineRect.top, rect.top);
+          currentLineRect.right = Math.max(currentLineRect.right, rect.right);
+          currentLineRect.bottom = Math.max(currentLineRect.bottom, rect.bottom);
+        }
+      }
+    }
   };
+
+  const tokens = text.match(/[^\s\-]+\-?|\-|\s+/g) || [];
+  let currentOffset = 0;
+
+  for (const token of tokens) {
+    const range = document.createRange();
+    range.setStart(textNode, currentOffset);
+    range.setEnd(textNode, currentOffset + token.length);
+    const rects = range.getClientRects();
+
+    if (rects.length > 1) {
+      // Token wraps across lines (e.g. word-break: break-all)
+      // Fallback to precise character-by-character iteration for this token
+      processChunk(token, currentOffset);
+    } else {
+      // Token is on a single line. Process it as a single block!
+      const rect = rects.length === 1 ? rects[0] : range.getBoundingClientRect();
+      
+      if (rect.width === 0 && rect.height === 0) {
+        currentLineText += token;
+        currentOffset += token.length;
+        continue;
+      }
+
+      if (currentTop === -1 || Math.abs(rect.top - currentTop) > rect.height / 2) {
+        if (currentLineText && currentLineRect) {
+          lines.push({
+            text: currentLineText,
+            rect: {
+              left: currentLineRect.left,
+              top: currentLineRect.top,
+              width: currentLineRect.right - currentLineRect.left,
+              height: currentLineRect.bottom - currentLineRect.top,
+            },
+          });
+        }
+        currentLineText = token;
+        currentLineRect = { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
+        currentTop = rect.top;
+      } else {
+        currentLineText += token;
+        if (currentLineRect) {
+          currentLineRect.left = Math.min(currentLineRect.left, rect.left);
+          currentLineRect.top = Math.min(currentLineRect.top, rect.top);
+          currentLineRect.right = Math.max(currentLineRect.right, rect.right);
+          currentLineRect.bottom = Math.max(currentLineRect.bottom, rect.bottom);
+        }
+      }
+    }
+    
+    currentOffset += token.length;
+  }
+
+  if (currentLineText && currentLineRect) {
+    lines.push({
+      text: currentLineText,
+      rect: {
+        left: currentLineRect.left,
+        top: currentLineRect.top,
+        width: currentLineRect.right - currentLineRect.left,
+        height: currentLineRect.bottom - currentLineRect.top,
+      },
+    });
+  }
+
+  return lines.filter(line => line.text.trim().length > 0 && line.rect.width > 0 && line.rect.height > 0);
 }
 
 function extractTextStyles(computed: CSSStyleDeclaration): TextStyles {
@@ -40,6 +143,7 @@ function extractTextStyles(computed: CSSStyleDeclaration): TextStyles {
   }
   return {
     font: `${computed.fontStyle} ${computed.fontWeight} ${computed.fontSize} ${computed.fontFamily}`,
+    fontSize: computed.fontSize,
     color: computed.color,
     textAlign: (computed.textAlign as CanvasTextAlign) || "start",
     textBaseline: "alphabetic",
@@ -64,47 +168,69 @@ export function extractSceneGraph(
     const textNode = sourceNode as Text;
     // empthy text check
     if (!textNode.textContent || !textNode.textContent.trim()) return null;
-    const normalizedText = textNode.textContent.replace(/\s+/g, " ").trim();
+    const normalizedText = textNode.textContent.replace(/\s+/g, " ");
     if (normalizedText.length === 0) return null;
 
-    const rect = getTextNodeRect(textNode);
+    const textLines = extractTextLines(textNode);
 
-    // size check
-    if (rect.width === 0 || rect.height === 0) return null;
+    if (textLines.length === 0) return null;
 
     // Cascading Styles
     const parent = textNode.parentElement;
     const computed = parent ? window.getComputedStyle(parent) : null;
     if (!computed) return null;
 
-    // Create SceneNode for text node
+    // Calculate overall bounding box of the lines
+    const minX = Math.min(...textLines.map(l => l.rect.left));
+    const minY = Math.min(...textLines.map(l => l.rect.top));
+    const maxX = Math.max(...textLines.map(l => l.rect.left + l.rect.width));
+    const maxY = Math.max(...textLines.map(l => l.rect.top + l.rect.height));
+
+    // Create SceneNode for the text node
     return {
       id: Math.random().toString(36).substring(2, 9),
       type: "TEXT",
       element: textNode as unknown as HTMLElement,
       rect: {
-        x: rect.left + window.scrollX,
-        y: rect.top + window.scrollY,
-        width: rect.width,
-        height: rect.height,
+        x: minX + window.scrollX,
+        y: minY + window.scrollY,
+        width: maxX - minX,
+        height: maxY - minY,
       },
       styles: {
         backgroundColor: "transparent",
         backgroundImage: "",
-        opacity: parseFloat(computed.opacity),
+        opacity:
+          parent && parent.dataset.mirageDom === "hide"
+            ? 1
+            : parseFloat(computed.opacity),
         zIndex: 0,
         borderRadius: "0px",
         borderColor: "transparent",
         borderWidth: "0px",
-        imageSrc: undefined,
+        isTraveler: false,
       },
       textContent: normalizedText,
+      textLines: textLines.map(l => ({
+        text: l.text.trim(),
+        rect: {
+          x: l.rect.left + window.scrollX,
+          y: l.rect.top + window.scrollY,
+          width: l.rect.width,
+          height: l.rect.height,
+        }
+      })),
       textStyles: extractTextStyles(computed),
       dirtyMask: initialMask,
       visibility: inheritedFlow,
       isTraveler: false,
+      isFixed: computed.position === "fixed",
       children: [],
     };
+  }
+
+  if (sourceNode.nodeType !== Node.ELEMENT_NODE) {
+    return null;
   }
 
   const element = sourceNode as HTMLElement;
@@ -214,7 +340,8 @@ export function extractSceneGraph(
   const styles: BoxStyles = {
     backgroundColor: computed.backgroundColor,
     backgroundImage: computed.backgroundImage,
-    opacity: parseFloat(computed.opacity),
+    opacity:
+      element.dataset.mirageDom === "hide" ? 1 : parseFloat(computed.opacity),
     zIndex: isNaN(zIndex) ? 0 : zIndex,
     borderRadius: computed.borderRadius,
     borderColor: computed.borderColor,
@@ -257,6 +384,7 @@ export function extractSceneGraph(
     dirtyMask: initialMask,
     visibility: visibleFlag,
     isTraveler: isTraveler,
+    isFixed: computed.position === "fixed",
     children,
     shaderHooks,
   };

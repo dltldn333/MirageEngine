@@ -33,6 +33,8 @@ export class Renderer {
   private textureManager: TextureLifecycleManager;
   // private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
 
+  public readonly fixedMeshes: Set<THREE.Mesh> = new Set();
+
   constructor(
     target: HTMLElement,
     config: CoreConfig,
@@ -211,6 +213,7 @@ export class Renderer {
         if (meshToDestroy) {
           this.scene.remove(meshToDestroy);
           this.travelers.delete(meshToDestroy);
+          this.fixedMeshes.delete(meshToDestroy);
           meshToDestroy.geometry.dispose();
           meshToDestroy.traverse((child) => {
             if (child instanceof THREE.Mesh) {
@@ -281,6 +284,12 @@ export class Renderer {
       this.travelers.delete(mesh);
     }
 
+    if (node.isFixed) {
+      this.fixedMeshes.add(mesh);
+    } else {
+      this.fixedMeshes.delete(mesh);
+    }
+
     if (node.styles.imageSrc) {
       this.textureManager.register(node.element, node.styles.imageSrc);
     } else {
@@ -297,55 +306,66 @@ export class Renderer {
   }
 
   private reconcileTextChild(parentMesh: THREE.Mesh, node: SceneNode) {
-    let textMesh = parentMesh.children.find(
-      (c) => c.name === "TEXT_CHILD",
-    ) as THREE.Mesh;
-
-    const currentStyleHash = JSON.stringify(node.textStyles);
-    const cachedStyleHash = textMesh?.userData?.styleHash;
+    const lines = node.textLines || [{ text: node.textContent || "", rect: node.rect }];
+    const currentStyleHash = JSON.stringify(node.textStyles) + node.textContent + lines.map(l => l.text).join("|");
+    const cachedStyleHash = parentMesh.userData?.textChildStyleHash;
     const isDirty =
-      !textMesh ||
       node.dirtyMask & DIRTY_CONTENT ||
       currentStyleHash !== cachedStyleHash;
 
     if (isDirty) {
-      if (textMesh) {
+      // Remove all existing TEXT_CHILD meshes
+      const existingChildren = parentMesh.children.filter(c => c.name.startsWith("TEXT_CHILD"));
+      existingChildren.forEach(child => {
+        const textMesh = child as THREE.Mesh;
         (textMesh.material as THREE.MeshBasicMaterial).map?.dispose();
         textMesh.geometry.dispose();
         parentMesh.remove(textMesh);
-      }
+      });
 
-      const material = Painter.create(
-        "TEXT",
-        node.textStyles!,
-        node.textContent || "",
-        node.rect.width,
-        node.rect.height,
-        this.qualityFactor,
-      );
-
-      const geometry = new THREE.PlaneGeometry(1, 1);
-      textMesh = new THREE.Mesh(geometry, material);
-
-      textMesh.name = "TEXT_CHILD";
-      textMesh.userData = { styleHash: currentStyleHash };
-      this.updateMeshLayers(textMesh, node);
-      textMesh.position.z = 0.005;
-      parentMesh.add(textMesh);
-    }
-
-    if (textMesh) {
-      const parentRect = parentMesh.userData.domRect;
+      const parentRect = node.rect;
       const parentCenterX = parentRect.x + parentRect.width / 2;
       const parentCenterY = parentRect.y + parentRect.height / 2;
 
-      const textCenterX = node.rect.x + node.rect.width / 2;
-      const textCenterY = node.rect.y + node.rect.height / 2;
+      lines.forEach((line, index) => {
+        const material = Painter.create(
+          "TEXT",
+          node.textStyles!,
+          line.text,
+          line.rect.width,
+          line.rect.height,
+          this.qualityFactor,
+        );
 
-      const offsetX = textCenterX - parentCenterX;
-      const offsetY = -(textCenterY - parentCenterY);
+        const geometry = new THREE.PlaneGeometry(1, 1);
+        const textMesh = new THREE.Mesh(geometry, material);
 
-      textMesh.position.set(offsetX, offsetY, 0.005);
+        textMesh.name = `TEXT_CHILD_${index}`;
+        this.updateMeshLayers(textMesh, node);
+
+        // Parent is already scaled to node.rect.width/height. 
+        // We counter-scale the child so its absolute size is exactly line.rect.width/height.
+        const scaleX = node.rect.width === 0 ? 1 : line.rect.width / node.rect.width;
+        const scaleY = node.rect.height === 0 ? 1 : line.rect.height / node.rect.height;
+        textMesh.scale.set(scaleX, scaleY, 1);
+
+        const textCenterX = line.rect.x + line.rect.width / 2;
+        const textCenterY = line.rect.y + line.rect.height / 2;
+
+        const offsetX = textCenterX - parentCenterX;
+        const offsetY = -(textCenterY - parentCenterY);
+
+        // Position must also be counter-scaled relative to parent's scale
+        textMesh.position.set(
+          node.rect.width === 0 ? 0 : offsetX / node.rect.width,
+          node.rect.height === 0 ? 0 : offsetY / node.rect.height,
+          0.005
+        );
+
+        parentMesh.add(textMesh);
+      });
+
+      parentMesh.userData.textChildStyleHash = currentStyleHash;
     }
   }
 
@@ -379,9 +399,23 @@ export class Renderer {
     const pureDOM_Y = rect.y;
 
     mesh.userData.basePosition = { x: baseX, y: baseY };
+    mesh.userData.originalBasePosition = { x: baseX, y: baseY };
     mesh.userData.baseSize = { width: rect.width, height: rect.height };
     // ✨ 추가: 역산을 위한 순수 DOM 초기 좌표 저장
     mesh.userData.baseDOM = { x: pureDOM_X, y: pureDOM_Y };
+    mesh.userData.isFixed = node.isFixed;
+    mesh.userData.initialScroll = { x: window.scrollX, y: window.scrollY };
+
+    // ✨ 추가: 초기 transform 상태를 저장하여 애니메이션 시 delta 값만 적용하도록 함 (이중 적용 방지)
+    const targetEl = node.element.nodeType === Node.TEXT_NODE ? node.element.parentElement! : node.element;
+    const computed = window.getComputedStyle(targetEl);
+    let baseTx = 0, baseTy = 0;
+    if (computed.transform && computed.transform !== "none") {
+      const matrix = new DOMMatrix(computed.transform);
+      baseTx = matrix.m41;
+      baseTy = matrix.m42;
+    }
+    mesh.userData.baseTransform = { x: baseTx, y: baseTy };
 
     // ✨ 추가: 애니메이션이 끝나고 씬이 갱신되면 비율 캐시 초기화!
     delete mesh.userData.originRatioX;
@@ -470,7 +504,7 @@ export class Renderer {
     this.renderer.setScissorTest(false);
     this.renderer.autoClear = true;
     this.renderer.setRenderTarget(null);
-    this.camera.layers.set(28);
+    this.camera.layers.set(0);
     this.renderer.setClearColor(oldClearColor, oldClearAlpha);
   }
 

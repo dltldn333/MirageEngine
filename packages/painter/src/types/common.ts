@@ -1,6 +1,7 @@
 // For CanvasRenderingContext2D
 export interface TextStyles {
   font: string;
+  fontSize :string;
   color: string;
   textAlign: CanvasTextAlign;
   textBaseline: CanvasTextBaseline;

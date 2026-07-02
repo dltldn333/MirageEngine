@@ -21,7 +21,6 @@
     "dist"
   ],
   "scripts": {
-    "dev": "vite",
     "build": "tsc && vite build",
     "prepublishOnly": "npm run build"
   },
