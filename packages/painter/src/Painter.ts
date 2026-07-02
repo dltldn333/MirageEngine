@@ -5,7 +5,7 @@ import {
   updateBoxMaterial,
   setBoxUniforms,
   BoxUniformValues,
-} from "./BoxGenerator";
+} from "./Box/BoxGenerator";
 import { createTextTexture } from "./Text/TextGenerator";
 
 export const Painter = {

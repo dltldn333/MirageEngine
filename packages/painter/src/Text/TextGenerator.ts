@@ -1,96 +1,100 @@
 import * as THREE from "three";
 import { TextStyles } from "../types";
-import { FontMetricsManager } from "../tools/FontMetricsManager";
+import { FontMetricsManager } from "./FontMetricsManager";
 
-function wrapText(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number,
-): string[] {
-  // [TODO] provide css line break logic
-  const forcedLines = text.split("\n");
-  const resultLines: string[] = [];
-
-  forcedLines.forEach((line) => {
-    const words = line.match(/[^\s\-]+\-?|\-|\s+/g) || [];
-
-    if (words.length === 0) {
-      resultLines.push("");
-      return;
-    }
-
-    let currentLine = words[0];
-
-    for (let i = 1; i < words.length; i++) {
-      const word = words[i];
-      const width = ctx.measureText(currentLine + word).width;
-
-      if (width <= maxWidth + 2) {
-        currentLine += word;
-      } else {
-        if (currentLine) resultLines.push(currentLine);
-        currentLine = word.trimStart();
-      }
-    }
-
-    if (currentLine) {
-      resultLines.push(currentLine);
-    }
-  });
-
-  return resultLines;
+export class TextGenerator {
+  
 }
 
-export function createTextTexture(
-  text: string,
-  styles: TextStyles,
-  rectWidth: number,
-  rectHeight: number,
-  qualityFactor: number = 2,
-): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
+// function wrapText(
+//   ctx: CanvasRenderingContext2D,
+//   text: string,
+//   maxWidth: number,
+// ): string[] {
+//   // [TODO] provide css line break logic
+//   const forcedLines = text.split("\n");
+//   const resultLines: string[] = [];
 
-  if (!ctx) {
-    throw new Error("[Mirage] Failed to create canvas context");
-  }
+//   forcedLines.forEach((line) => {
+//     const words = line.match(/[^\s\-]+\-?|\-|\s+/g) || [];
 
-  const pixelRatio = window.devicePixelRatio || 1;
-  const scale = pixelRatio * qualityFactor;
+//     if (words.length === 0) {
+//       resultLines.push("");
+//       return;
+//     }
 
-  canvas.width = rectWidth * scale;
-  canvas.height = rectHeight * scale;
-  ctx.scale(scale, scale);
+//     let currentLine = words[0];
 
-  ctx.font = styles.font;
-  ctx.fillStyle = styles.color;
-  ctx.textBaseline = "alphabetic";
+//     for (let i = 1; i < words.length; i++) {
+//       const word = words[i];
+//       const width = ctx.measureText(currentLine + word).width;
 
-  ctx.globalAlpha = 1;
+//       if (width <= maxWidth + 2) {
+//         currentLine += word;
+//       } else {
+//         if (currentLine) resultLines.push(currentLine);
+//         currentLine = word.trimStart();
+//       }
+//     }
 
-  const lines = wrapText(ctx, text, rectWidth);
-  const lineHeight = styles.lineHeight;
+//     if (currentLine) {
+//       resultLines.push(currentLine);
+//     }
+//   });
 
-  const baseline = FontMetricsManager.getBaseline(styles.font);
+//   return resultLines;
+// }
 
-  lines.forEach((line, index) => {
-    const y = index * lineHeight + baseline;
+// export function createTextTexture(
+//   text: string,
+//   styles: TextStyles,
+//   rectWidth: number,
+//   rectHeight: number,
+//   qualityFactor: number = 2,
+// ): THREE.CanvasTexture {
+//   const canvas = document.createElement("canvas");
+//   const ctx = canvas.getContext("2d");
 
-    let x = 0;
-    if (styles.textAlign === "center") {
-      x = rectWidth / 2;
-    } else if (styles.textAlign === "right") {
-      x = rectWidth;
-    }
-    ctx.textAlign = styles.textAlign as CanvasTextAlign;
-    ctx.fillText(line, x, y);
-  });
+//   if (!ctx) {
+//     throw new Error("[Mirage] Failed to create canvas context");
+//   }
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
+//   const pixelRatio = window.devicePixelRatio || 1;
+//   const scale = pixelRatio * qualityFactor;
 
-  return texture;
-}
+//   canvas.width = rectWidth * scale;
+//   canvas.height = rectHeight * scale;
+//   ctx.scale(scale, scale);
+
+//   ctx.font = styles.font;
+//   ctx.fillStyle = styles.color;
+//   ctx.textBaseline = "alphabetic";
+
+//   ctx.globalAlpha = 1;
+
+//   const lines = wrapText(ctx, text, rectWidth);
+//   const lineHeight = styles.lineHeight;
+
+//   const baseline = FontMetricsManager.getBaseline(styles.font);
+
+//   lines.forEach((line, index) => {
+//     const y = index * lineHeight + baseline;
+
+//     let x = 0;
+//     if (styles.textAlign === "center") {
+//       x = rectWidth / 2;
+//     } else if (styles.textAlign === "right") {
+//       x = rectWidth;
+//     }
+//     ctx.textAlign = styles.textAlign as CanvasTextAlign;
+//     ctx.fillText(line, x, y);
+//   });
+
+//   const texture = new THREE.CanvasTexture(canvas);
+//   texture.colorSpace = THREE.SRGBColorSpace;
+//   texture.minFilter = THREE.LinearFilter;
+//   texture.magFilter = THREE.LinearFilter;
+//   texture.needsUpdate = true;
+
+//   return texture;
+// }
