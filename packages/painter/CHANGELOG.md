@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 1.0.0
+
+### Major Changes
+
+- 058e557: fix simple bug
+
 ## 0.4.0
 
 ### Minor Changes

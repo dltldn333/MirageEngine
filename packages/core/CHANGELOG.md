@@ -1,5 +1,13 @@
 # @mirage-engine/core
 
+## 0.2.2
+
+### Patch Changes
+
+- 058e557: fix simple bug
+- Updated dependencies [058e557]
+  - @mirage-engine/painter@1.0.0
+
 ## 0.2.1
 
 ### Patch Changes
