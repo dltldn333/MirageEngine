@@ -307,7 +307,7 @@ export class Renderer {
 
   private reconcileTextChild(parentMesh: THREE.Mesh, node: SceneNode) {
     const lines = node.textLines || [{ text: node.textContent || "", rect: node.rect }];
-    const currentStyleHash = JSON.stringify(node.textStyles) + lines.map(l => l.text).join("");
+    const currentStyleHash = JSON.stringify(node.textStyles) + node.textContent + lines.map(l => l.text).join("|");
     const cachedStyleHash = parentMesh.userData?.textChildStyleHash;
     const isDirty =
       node.dirtyMask & DIRTY_CONTENT ||

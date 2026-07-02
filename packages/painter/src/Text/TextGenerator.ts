@@ -104,6 +104,7 @@ export class TextGenerator extends THREE.MeshBasicMaterial {
       } else if (styles.textAlign === "right") {
         x = rectWidth;
       }
+      
       this.ctx.textAlign = styles.textAlign as CanvasTextAlign;
       this.ctx.fillText(line, x, y);
     });

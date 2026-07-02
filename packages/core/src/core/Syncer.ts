@@ -6,6 +6,8 @@ import {
   DIRTY_NONE,
   DIRTY_RECT,
   DIRTY_STRUCTURE,
+  DIRTY_CONTENT
+  ,
   DIRTY_STYLE,
   USER_LAYER,
   SYSTEM_LAYER,
@@ -100,6 +102,8 @@ export class Syncer {
           }
           // else if (mutation.attributeName === "data-mirage") {
           // }
+        } else if (mutation.type === "characterData") {
+          currentMask |= DIRTY_CONTENT | DIRTY_RECT;
         }
       }
 

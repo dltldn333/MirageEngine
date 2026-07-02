@@ -168,7 +168,7 @@ export function extractSceneGraph(
     const textNode = sourceNode as Text;
     // empthy text check
     if (!textNode.textContent || !textNode.textContent.trim()) return null;
-    const normalizedText = textNode.textContent.replace(/\s+/g, " ").trim();
+    const normalizedText = textNode.textContent.replace(/\s+/g, " ");
     if (normalizedText.length === 0) return null;
 
     const textLines = extractTextLines(textNode);
