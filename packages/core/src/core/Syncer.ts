@@ -137,7 +137,6 @@ export class Syncer {
 
     this.target.addEventListener("transitionend", this.onTransitionFinished);
     this.target.addEventListener("animationend", this.onTransitionFinished);
-
     window.addEventListener("resize", this.onWindowResize);
 
     this.forceUpdateScene();
@@ -174,14 +173,10 @@ export class Syncer {
 
   private onTransitionFinished = (e: Event) => {
     if (!this.target.contains(e.target as Node)) return;
-
     if (this.mutationTimer !== null) return;
-
     if (this.cssTimer) clearTimeout(this.cssTimer);
     if (this.pendingStyles.size != 0) return;
-
     this.pendingMask |= DIRTY_RECT | DIRTY_STYLE;
-
     this.cssTimer = window.setTimeout(() => {
       this.isDomDirty = true;
       this.cssTimer = null;
@@ -193,17 +188,13 @@ export class Syncer {
       this.isDomDirty = true;
       return;
     }
-
     if (!this.isResizing) {
       this.isResizing = true;
       if (this.resizeConfig.onStart) this.resizeConfig.onStart();
     }
-
     if (this.resizeTimer) clearTimeout(this.resizeTimer);
-
     this.resizeTimer = window.setTimeout(() => {
       this.isDomDirty = true;
-
       if (this.resizeConfig.onEnd) this.resizeConfig.onEnd();
       this.isResizing = false;
       this.resizeTimer = null;
@@ -249,7 +240,6 @@ export class Syncer {
 
     const currentScrollX = window.scrollX;
     const currentScrollY = window.scrollY;
-
     if (currentScrollX !== this.lastScrollX || currentScrollY !== this.lastScrollY) {
       updateFixedMeshesScroll(this.renderer.fixedMeshes, currentScrollX, currentScrollY);
 

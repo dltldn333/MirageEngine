@@ -17,20 +17,20 @@ export const Painter = {
     if (type === "BOX") {
       return createBoxMaterial(styles as BoxStyles, width, height, texture, shaderHooks);
     } else if (type === "TEXT") {
-      const texture = createTextTexture(
-        content || "",
-        styles as TextStyles,
-        width,
-        height,
-        quality,
-      );
-
-      return new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        side: THREE.FrontSide,
-        color: 0xffffff,
-      });
+      return createTextMaterial()
+      // const texture = createTextTexture(
+      //   content || "",
+      //   styles as TextStyles,
+      //   width,
+      //   height,
+      //   quality,
+      // );
+      // return new THREE.MeshBasicMaterial({
+      //   map: texture,
+      //   transparent: true,
+      //   side: THREE.FrontSide,
+      //   color: 0xffffff,
+      // });
     }
 
     return new THREE.MeshBasicMaterial({ visible: false });
