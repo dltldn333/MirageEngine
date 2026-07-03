@@ -14,7 +14,7 @@ export const EXCLUDED = 0;
 // Three.js Layer Channels (0 ~ 31)
 export const THREE_LAYERS = {
   BASE: 0,
-  TRAVELER: 28,
+  TRAVELER: 1,
   CAPTURE_2: 29,
   CAPTURE_1: 30,
   HIDDEN: 31,

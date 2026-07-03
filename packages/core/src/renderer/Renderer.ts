@@ -443,7 +443,7 @@ export class Renderer {
     if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) mesh.layers.enable(THREE_LAYERS.CAPTURE_1);
   }
 
-  private captureRenderTarget(targetLayer: number, baseLayer: number = 0) {
+  private captureRenderTarget(targetLayer: number) {
     // [Problem] this method called on requestAnimationFrame
     // => this logic travers all meshes every frame, need optimization
 
@@ -504,7 +504,7 @@ export class Renderer {
     this.renderer.setScissorTest(false);
     this.renderer.autoClear = true;
     this.renderer.setRenderTarget(null);
-    this.camera.layers.set(baseLayer);
+    this.camera.layers.set(THREE_LAYERS.BASE);
     this.renderer.setClearColor(oldClearColor, oldClearAlpha);
   }
 
