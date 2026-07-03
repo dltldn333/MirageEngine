@@ -8,6 +8,8 @@ import {
   USER_LAYER,
   SYSTEM_LAYER,
   travelerClipArea,
+  EXCLUDED,
+  THREE_LAYERS,
 } from "../types";
 import { Painter } from "@mirage-engine/painter";
 import { MeshRegistry } from "../store/MeshRegistry";
@@ -74,7 +76,7 @@ export class Renderer {
       1000,
     );
     this.camera.position.z = 100;
-    this.camera.layers.set(0);
+    this.camera.layers.set(THREE_LAYERS.BASE);
 
 
     this.renderer = new THREE.WebGLRenderer({
@@ -277,10 +279,10 @@ export class Renderer {
     this.updateMeshProperties(mesh, node);
     this.updateMeshLayers(mesh, node);
     if (node.isTraveler) {
-      mesh.layers.enable(28);
+      mesh.layers.enable(THREE_LAYERS.TRAVELER);
       this.travelers.add(mesh);
     } else {
-      mesh.layers.disable(28);
+      mesh.layers.disable(THREE_LAYERS.TRAVELER);
       this.travelers.delete(mesh);
     }
 
@@ -401,12 +403,11 @@ export class Renderer {
     mesh.userData.basePosition = { x: baseX, y: baseY };
     mesh.userData.originalBasePosition = { x: baseX, y: baseY };
     mesh.userData.baseSize = { width: rect.width, height: rect.height };
-    // ✨ 추가: 역산을 위한 순수 DOM 초기 좌표 저장
+
     mesh.userData.baseDOM = { x: pureDOM_X, y: pureDOM_Y };
     mesh.userData.isFixed = node.isFixed;
     mesh.userData.initialScroll = { x: window.scrollX, y: window.scrollY };
 
-    // ✨ 추가: 초기 transform 상태를 저장하여 애니메이션 시 delta 값만 적용하도록 함 (이중 적용 방지)
     const targetEl = node.element.nodeType === Node.TEXT_NODE ? node.element.parentElement! : node.element;
     const computed = window.getComputedStyle(targetEl);
     let baseTx = 0, baseTy = 0;
@@ -417,7 +418,6 @@ export class Renderer {
     }
     mesh.userData.baseTransform = { x: baseTx, y: baseTy };
 
-    // ✨ 추가: 애니메이션이 끝나고 씬이 갱신되면 비율 캐시 초기화!
     delete mesh.userData.originRatioX;
     delete mesh.userData.originRatioY;
     // mesh.position.set(
@@ -438,12 +438,12 @@ export class Renderer {
   }
 
   private updateMeshLayers(mesh: THREE.Mesh, node: SceneNode) {
-    const layerNum = (1 - (node.visibility & USER_LAYER)) * 30;
+    const layerNum = (node.visibility & USER_LAYER) ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
     mesh.layers.set(layerNum);
-    if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) mesh.layers.enable(29);
+    if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) mesh.layers.enable(THREE_LAYERS.CAPTURE_1);
   }
 
-  private captureRenderTarget() {
+  private captureRenderTarget(targetLayer: number, baseLayer: number = 0) {
     // [Problem] this method called on requestAnimationFrame
     // => this logic travers all meshes every frame, need optimization
 
@@ -461,7 +461,7 @@ export class Renderer {
 
     this.renderer.autoClear = false;
     this.renderer.setScissorTest(true);
-    this.camera.layers.set(29);
+    this.camera.layers.set(targetLayer);
 
     const vector = new THREE.Vector3();
     const canvasWidth = this.targetRect.width;
@@ -504,12 +504,12 @@ export class Renderer {
     this.renderer.setScissorTest(false);
     this.renderer.autoClear = true;
     this.renderer.setRenderTarget(null);
-    this.camera.layers.set(0);
+    this.camera.layers.set(baseLayer);
     this.renderer.setClearColor(oldClearColor, oldClearAlpha);
   }
 
   public render() {
-    if (this.renderTarget) this.captureRenderTarget();
+    if (this.renderTarget) this.captureRenderTarget(THREE_LAYERS.CAPTURE_1);
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -531,7 +531,7 @@ export class Renderer {
     const debugMesh = new THREE.Mesh(geometry, material);
 
     debugMesh.position.set(0, 0, 90);
-    debugMesh.layers.set(28);
+    debugMesh.layers.set(THREE_LAYERS.TRAVELER);
 
     this.scene.add(debugMesh);
   }
