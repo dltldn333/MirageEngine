@@ -1,7 +1,5 @@
 import { Mirage } from "mirage-engine";
 import { MirageConfig } from "mirage-engine";
-import { SandwichRenderer } from "@mirage-engine/sandwich";
-
 const shader = {
   uvModifier: /* glsl */ `
     float textureZoom = 1.0;
@@ -111,12 +109,7 @@ const mirage = new Mirage(target, mirageConifg);
 console.log(mirageConifg.filter);
 
 // mirage.start();
-
-const sandwich = new SandwichRenderer({
-  frontSelector: ".front",
-});
-sandwich.useTracker(mirage.getTracker());
-sandwich.init();
+mirage.start();
 
 // while (true) {
 //   setTimeout(() => {

@@ -111,6 +111,9 @@ importers:
       '@mirage-engine/painter':
         specifier: workspace:*
         version: link:../painter
+      '@mirage-engine/sandwich':
+        specifier: workspace:*
+        version: link:../sandwich
     devDependencies:
       '@types/three':
         specifier: ^0.181.0
