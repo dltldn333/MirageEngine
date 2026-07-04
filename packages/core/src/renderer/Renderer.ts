@@ -292,15 +292,12 @@ export class Renderer {
       if (node.travelerType === "front") {
         this.travelersFront.add(mesh);
         this.travelersBack.delete(mesh);
-        mesh.layers.disable(THREE_LAYERS.CAPTURE_2);
       } else {
         this.travelersBack.add(mesh);
         this.travelersFront.delete(mesh);
         mesh.layers.enable(THREE_LAYERS.CAPTURE_2);
       }
     } else {
-      mesh.layers.disable(THREE_LAYERS.TRAVELER);
-      mesh.layers.disable(THREE_LAYERS.CAPTURE_2);
       this.travelersBack.delete(mesh);
       this.travelersFront.delete(mesh);
     }
