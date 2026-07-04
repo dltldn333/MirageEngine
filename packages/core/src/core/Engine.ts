@@ -59,6 +59,14 @@ export class Engine {
     this.renderer.dispose();
   }
 
+  public getTracker() {
+    return this.syncer.tracker;
+  }
+
+  public getCanvas() {
+    return this.renderer.canvas;
+  }
+
   public test() {
     const boxMesh = this.registry.get(
       document.querySelector("#box2") as HTMLElement,

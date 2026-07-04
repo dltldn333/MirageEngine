@@ -23,6 +23,14 @@ export class Mirage {
     this._engine.dispose();
   }
 
+  public getTracker() {
+    return this._engine.getTracker();
+  }
+
+  public getCanvas() {
+    return this._engine.getCanvas();
+  }
+
   public test(): void {
     this._engine.test();
   }

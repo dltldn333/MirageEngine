@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "mirage-engine": "workspace:*",
+    "@mirage-engine/sandwich": "workspace:*",
     "three": "^0.160.0",
     "gsap": "3.12.2"
   },

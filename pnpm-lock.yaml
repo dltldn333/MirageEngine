@@ -66,6 +66,9 @@ importers:
 
   dev:
     dependencies:
+      '@mirage-engine/sandwich':
+        specifier: workspace:*
+        version: link:../packages/sandwich
       gsap:
         specifier: 3.12.2
         version: 3.12.2
@@ -85,6 +88,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@mirage-engine/dom-tracker':
+        specifier: workspace:*
+        version: link:../dom-tracker
       '@mirage-engine/painter':
         specifier: workspace:*
         version: link:../painter
@@ -94,6 +100,8 @@ importers:
       three:
         specifier: ^0.160.0
         version: 0.160.1
+
+  packages/dom-tracker: {}
 
   packages/mirage-engine:
     dependencies:
@@ -128,6 +136,12 @@ importers:
       three:
         specifier: ^0.160.0
         version: 0.160.1
+
+  packages/sandwich:
+    dependencies:
+      '@mirage-engine/dom-tracker':
+        specifier: workspace:*
+        version: link:../dom-tracker
 
 packages:
 

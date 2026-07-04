@@ -115,13 +115,13 @@
           class="box"
           style="
             background-color: rgba(255, 255, 255, 0.8);
-            color: white;
+            color: black;
             text-align: center;
           "
           data-mirage-travel="traveler back"
           data-mirage-dom="hide"
         >
-          (not-exclude)
+          <span>(not-exclude)</span>
         </div>
         <div
           id="box1"
@@ -157,7 +157,7 @@
             width: 150px;
             /*box-shadow:;
             0 4px 6px -1px rgba(0, 0, 0, 0.4);*/
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(0, 0, 0, 0.2);
             cursor: pointer;
             /* background: linear-gradient( */
             /* rgba(0, 0, 0, 0.98) 0%, */
@@ -169,7 +169,18 @@
           data-mirage-travel="traveler front"
           data-mirage-dom="hide"
         >
-          <div id="box2-child" style="height: 20px; text-align: center"></div>
+          <div
+            id="box2-child"
+            class="front"
+            style="
+              height: 20px;
+              text-align: center;
+              color: black;
+              font-weight: bold;
+            "
+          >
+            Hello Sandwich
+          </div>
         </div>
       </div>
 
