@@ -212,7 +212,7 @@ export class Syncer {
     this.lastScrollY = window.scrollY;
 
     const discoveredTraveler =
-      document.querySelector("[data-mirage-travel='traveler']") !== null;
+      document.querySelector("[data-mirage-travel~='traveler']") !== null;
     if (discoveredTraveler && !this.isTravelEnabled) {
       this.isTravelEnabled = true;
       this.renderer.createRenderTarget();

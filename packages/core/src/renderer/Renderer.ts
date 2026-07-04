@@ -20,7 +20,8 @@ export class Renderer {
   private readonly scene: THREE.Scene;
   private readonly camera: THREE.OrthographicCamera;
   private readonly renderer: THREE.WebGLRenderer;
-  private renderTarget: THREE.WebGLRenderTarget | null = null;
+  private renderTargetBack: THREE.WebGLRenderTarget | null = null;
+  private renderTargetFront: THREE.WebGLRenderTarget | null = null;
   private renderOrder: number = 0;
   private qualityFactor: number = 2;
   private mode: MirageMode = "overlay";
@@ -31,7 +32,8 @@ export class Renderer {
   private registry: MeshRegistry;
   private targetRect: DOMRect;
 
-  private travelers: Set<THREE.Mesh> = new Set();
+  private travelersBack: Set<THREE.Mesh> = new Set();
+  private travelersFront: Set<THREE.Mesh> = new Set();
   private textureManager: TextureLifecycleManager;
   // private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
 
@@ -98,7 +100,7 @@ export class Renderer {
     this.applyTextQuality(config.quality ?? "medium");
   }
   public createRenderTarget() {
-    this.renderTarget = new THREE.WebGLRenderTarget(
+    this.renderTargetBack = new THREE.WebGLRenderTarget(
       this.targetRect.width * this.qualityFactor,
       this.targetRect.height * this.qualityFactor,
       {
@@ -107,9 +109,9 @@ export class Renderer {
         format: THREE.RGBAFormat,
         stencilBuffer: false,
         depthBuffer: true,
-        // samples: 0.7,
       },
     );
+    this.renderTargetFront = this.renderTargetBack.clone();
   }
 
   private applyTextQuality(quality: Quality) {
@@ -165,8 +167,14 @@ export class Renderer {
 
   public setSize(width: number, height: number) {
     this.renderer.setSize(width, height);
-    if (this.renderTarget) {
-      this.renderTarget.setSize(
+    if (this.renderTargetBack) {
+      this.renderTargetBack.setSize(
+        width * this.qualityFactor,
+        height * this.qualityFactor,
+      );
+    }
+    if (this.renderTargetFront) {
+      this.renderTargetFront.setSize(
         width * this.qualityFactor,
         height * this.qualityFactor,
       );
@@ -214,7 +222,8 @@ export class Renderer {
         const meshToDestroy = this.registry.get(el) as THREE.Mesh | undefined;
         if (meshToDestroy) {
           this.scene.remove(meshToDestroy);
-          this.travelers.delete(meshToDestroy);
+          this.travelersBack.delete(meshToDestroy);
+          this.travelersFront.delete(meshToDestroy);
           this.fixedMeshes.delete(meshToDestroy);
           meshToDestroy.geometry.dispose();
           meshToDestroy.traverse((child) => {
@@ -255,7 +264,7 @@ export class Renderer {
     if (!mesh) {
       const geometry = new THREE.PlaneGeometry(1, 1);
       let material: THREE.MeshBasicMaterial | THREE.Material;
-      const initialTexture = node.isTraveler ? this.renderTarget?.texture : this.textureManager.get(node.element);
+      const initialTexture = node.travelerType === "front" ? this.renderTargetFront?.texture : (node.isTraveler ? this.renderTargetBack?.texture : this.textureManager.get(node.element));
 
       material = Painter.create(
         "BOX",
@@ -280,10 +289,20 @@ export class Renderer {
     this.updateMeshLayers(mesh, node);
     if (node.isTraveler) {
       mesh.layers.enable(THREE_LAYERS.TRAVELER);
-      this.travelers.add(mesh);
+      if (node.travelerType === "front") {
+        this.travelersFront.add(mesh);
+        this.travelersBack.delete(mesh);
+        mesh.layers.disable(THREE_LAYERS.CAPTURE_2);
+      } else {
+        this.travelersBack.add(mesh);
+        this.travelersFront.delete(mesh);
+        mesh.layers.enable(THREE_LAYERS.CAPTURE_2);
+      }
     } else {
       mesh.layers.disable(THREE_LAYERS.TRAVELER);
-      this.travelers.delete(mesh);
+      mesh.layers.disable(THREE_LAYERS.CAPTURE_2);
+      this.travelersBack.delete(mesh);
+      this.travelersFront.delete(mesh);
     }
 
     if (node.isFixed) {
@@ -433,29 +452,32 @@ export class Renderer {
       node.rect.width,
       node.rect.height,
       this.qualityFactor,
-      node.isTraveler ? this.renderTarget?.texture : this.textureManager.get(node.element),
+      node.travelerType === "front" ? this.renderTargetFront?.texture : (node.isTraveler ? this.renderTargetBack?.texture : this.textureManager.get(node.element)),
     );
   }
 
   private updateMeshLayers(mesh: THREE.Mesh, node: SceneNode) {
     const layerNum = (node.visibility & USER_LAYER) ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
     mesh.layers.set(layerNum);
-    if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) mesh.layers.enable(THREE_LAYERS.CAPTURE_1);
+    if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) {
+      mesh.layers.enable(THREE_LAYERS.CAPTURE_1);
+      mesh.layers.enable(THREE_LAYERS.CAPTURE_2);
+    }
   }
 
-  private captureRenderTarget(targetLayer: number) {
+  private captureRenderTarget(travelers: Set<THREE.Mesh>, targetLayer: number, renderTarget: THREE.WebGLRenderTarget | null) {
     // [Problem] this method called on requestAnimationFrame
     // => this logic travers all meshes every frame, need optimization
 
     // if (travelers.length === 0) return;
-    if (this.travelers.size === 0) return;
+    if (travelers.size === 0 || !renderTarget) return;
 
     const oldClearColor = new THREE.Color();
     const oldClearAlpha = this.renderer.getClearAlpha();
     this.renderer.getClearColor(oldClearColor);
 
     this.renderer.setClearColor(0x000000, 0);
-    this.renderer.setRenderTarget(this.renderTarget);
+    this.renderer.setRenderTarget(renderTarget);
 
     this.renderer.clear();
 
@@ -469,7 +491,7 @@ export class Renderer {
 
     const pixelRatio = this.renderer.getPixelRatio();
 
-    for (const traveler of this.travelers) {
+    for (const traveler of travelers) {
       vector.setFromMatrixPosition(traveler.matrixWorld);
       vector.project(this.camera);
 
@@ -504,25 +526,26 @@ export class Renderer {
     this.renderer.setScissorTest(false);
     this.renderer.autoClear = true;
     this.renderer.setRenderTarget(null);
-    this.camera.layers.set(THREE_LAYERS.BASE);
+    this.camera.layers.set(1);
     this.renderer.setClearColor(oldClearColor, oldClearAlpha);
   }
 
   public render() {
-    if (this.renderTarget) this.captureRenderTarget(THREE_LAYERS.CAPTURE_1);
+    this.captureRenderTarget(this.travelersBack, THREE_LAYERS.CAPTURE_1, this.renderTargetBack);
+    this.captureRenderTarget(this.travelersFront, THREE_LAYERS.CAPTURE_2, this.renderTargetFront);
     this.renderer.render(this.scene, this.camera);
   }
 
   // for debugging
   public showScissoredRenderTarget() {
-    if (!this.renderTarget) return;
+    if (!this.renderTargetBack) return;
 
     const w = this.targetRect.width;
     const h = this.targetRect.height;
 
     const geometry = new THREE.PlaneGeometry(w, h);
     const material = new THREE.MeshBasicMaterial({
-      map: this.renderTarget.texture,
+      map: this.renderTargetBack.texture,
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.8,

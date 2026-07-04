@@ -224,6 +224,7 @@ export function extractSceneGraph(
       dirtyMask: initialMask,
       visibility: inheritedFlow,
       isTraveler: false,
+      travelerType: undefined,
       isFixed: computed.position === "fixed",
       children: [],
     };
@@ -292,12 +293,14 @@ export function extractSceneGraph(
 
   const travelData = element.dataset.mirageTravel;
   let isTraveler = false;
+  let travelerType: "front" | "back" | undefined;
   if (travelData) {
     const travelSet = new Set(travelData.split(/\s+/));
     if (travelSet.has("traveler")) {
       visibleFlag = (visibleFlag & ~SYSTEM_LAYER) as Visibility;
       visibleFlow = (visibleFlow & ~SYSTEM_LAYER) as Visibility;
       isTraveler = true;
+      travelerType = travelSet.has("front") ? "front" : "back";
     }
   }
 
@@ -384,6 +387,7 @@ export function extractSceneGraph(
     dirtyMask: initialMask,
     visibility: visibleFlag,
     isTraveler: isTraveler,
+    travelerType,
     isFixed: computed.position === "fixed",
     children,
     shaderHooks,
