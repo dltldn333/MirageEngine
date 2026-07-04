@@ -76,7 +76,11 @@ const shader = {
 };
 
 const traveler = document.querySelector("#box2") as HTMLElement;
+const traveler2 = document.querySelector("#box-z") as HTMLElement;
+
 traveler.dataset.mirageShader = JSON.stringify(shader);
+traveler2.dataset.mirageShader = JSON.stringify(shader);
+
 
 const target = document.querySelector("#root") as HTMLElement;
 // const container = document.querySelector("#space") as HTMLElement;
