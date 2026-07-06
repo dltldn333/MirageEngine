@@ -1,6 +1,5 @@
 import { Mirage } from "mirage-engine";
 import { MirageConfig } from "mirage-engine";
-
 const shader = {
   uvModifier: /* glsl */ `
     float textureZoom = 1.0;
@@ -107,9 +106,11 @@ const mirageConifg: MirageConfig = {
   // },
 };
 const mirage = new Mirage(target, mirageConifg);
-// console.log(mirageConifg.filter);
+console.log(mirageConifg.filter);
 
+// mirage.start();
 mirage.start();
+
 // while (true) {
 //   setTimeout(() => {
 //     mirage.destroy();

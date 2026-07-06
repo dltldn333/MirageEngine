@@ -8,7 +8,6 @@ import {
   USER_LAYER,
   SYSTEM_LAYER,
   travelerClipArea,
-  EXCLUDED,
   THREE_LAYERS,
 } from "../types";
 import { Painter } from "@mirage-engine/painter";

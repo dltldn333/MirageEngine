@@ -1,18 +1,31 @@
 import { MirageConfig } from "@/types";
 import { Engine } from "@mirage-engine/core";
+import { SandwichRenderer } from "@mirage-engine/sandwich";
 
 export class Mirage {
   private _engine: Engine;
+  private _sandwich?: SandwichRenderer;
 
   constructor(target: HTMLElement, config: MirageConfig) {
     if (!target) {
       throw new Error("[Mirage] Target element is required.");
     }
     this._engine = new Engine(target, config);
+
+    if (config.sandwich !== false) {
+      const sandwichOptions = typeof config.sandwich === "object" ? config.sandwich : {};
+      this._sandwich = new SandwichRenderer({
+        frontSelector: sandwichOptions.frontSelector || "[data-mirage-sandwich='front']",
+      });
+      this._sandwich.useTracker(this._engine.getTracker());
+    }
   }
 
   public start(): void {
     this._engine.start();
+    if (this._sandwich) {
+      this._sandwich.init();
+    }
   }
 
   public stop(): void {
@@ -21,6 +34,14 @@ export class Mirage {
 
   public destroy(): void {
     this._engine.dispose();
+  }
+
+  public getTracker() {
+    return this._engine.getTracker();
+  }
+
+  public getCanvas() {
+    return this._engine.getCanvas();
   }
 
   public test(): void {

@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@mirage-engine/painter": ["packages/painter/src/index.ts"]
+    },
+    "jsx": "preserve"
+  },
+  "include": ["src", "dev", "vite.config.ts"]
+}
