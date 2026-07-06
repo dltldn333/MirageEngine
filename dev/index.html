@@ -118,10 +118,14 @@
             color: black;
             text-align: center;
           "
-          data-mirage-travel="traveler back"
+          data-mirage-travel="traveler 1"
           data-mirage-dom="hide"
         >
-          <div style="color: black" data-mirage-sandwich="front">
+          <div
+            style="color: black"
+            data-mirage-sandwich=""
+            data-mirage-filter=""
+          >
             (not-exclude)
           </div>
         </div>
@@ -157,6 +161,7 @@
             border-radius: 50px;
             height: 100px;
             width: 150px;
+            z-index: 5;
             /*box-shadow:;
             0 4px 6px -1px rgba(0, 0, 0, 0.4);*/
             background-color: rgba(0, 0, 0, 0.2);
@@ -168,17 +173,19 @@
             /* rgba(0, 0, 0, 0.1) 100% */
             /* ); */
           "
-          data-mirage-travel="traveler front"
+          data-mirage-travel="traveler 2"
           data-mirage-dom="hide"
         >
           <div
             id="box2-child"
-            data-mirage-sandwich="front"
+            data-mirage-sandwich=""
+            data-mirage-filter=""
             style="
               height: 20px;
               text-align: center;
               color: black;
               font-weight: bold;
+
             "
           >
             Hello Sandwich
