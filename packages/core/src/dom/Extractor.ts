@@ -250,7 +250,7 @@ export function extractSceneGraph(
           parent && parent.dataset[ATTR_DOM.KEY] === ATTR_DOM.VALUES.HIDE
             ? 1
             : parseFloat(computed.opacity),
-        zIndex: 0,
+        zIndex: isNaN(parseInt(computed.zIndex)) ? 0 : parseInt(computed.zIndex),
         borderRadius: "0px",
         borderColor: "transparent",
         borderWidth: "0px",
