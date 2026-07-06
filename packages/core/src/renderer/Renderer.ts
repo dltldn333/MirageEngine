@@ -296,7 +296,7 @@ export class Renderer {
       } else {
         this.travelersBack.add(mesh);
         this.travelersFront.delete(mesh);
-        mesh.layers.enable(THREE_LAYERS.CAPTURE_2);
+        mesh.layers.enable(THREE_LAYERS.getCaptureLayer(2));
       }
     } else {
       this.travelersBack.delete(mesh);
@@ -475,8 +475,8 @@ export class Renderer {
       node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
     mesh.layers.set(layerNum);
     if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) {
-      mesh.layers.enable(THREE_LAYERS.CAPTURE_1);
-      mesh.layers.enable(THREE_LAYERS.CAPTURE_2);
+      mesh.layers.enable(THREE_LAYERS.getCaptureLayer(1));
+      mesh.layers.enable(THREE_LAYERS.getCaptureLayer(2));
     }
   }
 
@@ -552,12 +552,12 @@ export class Renderer {
   public render() {
     this.captureRenderTarget(
       this.travelersBack,
-      THREE_LAYERS.CAPTURE_1,
+      THREE_LAYERS.getCaptureLayer(1),
       this.renderTargetBack,
     );
     this.captureRenderTarget(
       this.travelersFront,
-      THREE_LAYERS.CAPTURE_2,
+      THREE_LAYERS.getCaptureLayer(2),
       this.renderTargetFront,
     );
     this.renderer.render(this.scene, this.camera);

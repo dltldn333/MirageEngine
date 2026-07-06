@@ -18,8 +18,7 @@ export const EXCLUDED = 0;
 export const THREE_LAYERS = {
   BASE: 0,
   SELECTED: 1,
-  CAPTURE_2: 29,
-  CAPTURE_1: 30,
+  getCaptureLayer: (layerNum: number) => 31 - layerNum,
   HIDDEN: 31,
 } as const;
 
