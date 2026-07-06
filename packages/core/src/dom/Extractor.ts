@@ -346,10 +346,21 @@ export function extractSceneGraph(
   const travelData = element.dataset[ATTR_TRAVEL.KEY];
   let isTraveler = false;
   if (travelData) {
-    const travelSet = new Set(travelData.split(/\s+/));
-    if (travelSet.has(ATTR_TRAVEL.VALUES.TRAVELER)) {
+    const tokens = travelData.split(/\s+/);
+    if (tokens.includes(ATTR_TRAVEL.VALUES.TRAVELER)) {
       isTraveler = true;
-      captureLayer = Math.min(captureLayer + 1, ATTR_TRAVEL.MAX_LAYERS);
+      
+      let explicitLayer = 1;
+      const numToken = tokens.find(t => !isNaN(parseInt(t, 10)));
+      if (numToken) {
+        explicitLayer = parseInt(numToken, 10);
+      }
+      
+      const targetCaptureLayer = explicitLayer + 1;
+      if (targetCaptureLayer < captureLayer) {
+        throw new Error(`[MirageEngine] Traveler layer (${explicitLayer}) cannot be smaller than inherited capture layer (${captureLayer - 1}).`);
+      }
+      captureLayer = Math.min(targetCaptureLayer, ATTR_TRAVEL.MAX_LAYERS + 1);
     }
   }
 

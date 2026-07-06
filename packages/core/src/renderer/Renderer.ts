@@ -30,7 +30,10 @@ export class Renderer {
   private registry: MeshRegistry;
   private targetRect: DOMRect;
 
-  private travelersByLayer: Set<THREE.Mesh>[] = Array.from({ length: ATTR_TRAVEL.MAX_LAYERS }, () => new Set());
+  private travelersByLayer: Set<THREE.Mesh>[] = Array.from(
+    { length: ATTR_TRAVEL.MAX_LAYERS },
+    () => new Set(),
+  );
   private textureManager: TextureLifecycleManager;
   // private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
 
@@ -106,7 +109,7 @@ export class Renderer {
             stencilBuffer: false,
             depthBuffer: true,
           },
-        )
+        ),
       );
     }
   }
@@ -165,10 +168,7 @@ export class Renderer {
   public setSize(width: number, height: number) {
     this.renderer.setSize(width, height);
     for (const target of this.renderTargets) {
-      target.setSize(
-        width * this.qualityFactor,
-        height * this.qualityFactor,
-      );
+      target.setSize(width * this.qualityFactor, height * this.qualityFactor);
     }
     this.camera.left = width / -2;
     this.camera.right = width / 2;
@@ -257,7 +257,7 @@ export class Renderer {
       const geometry = new THREE.PlaneGeometry(1, 1);
       let material: THREE.MeshBasicMaterial | THREE.Material;
       const initialTexture = node.isTraveler
-        ? this.renderTargets[node.captureLayer - 1]?.texture
+        ? this.renderTargets[node.captureLayer - 2]?.texture
         : this.textureManager.get(node.element);
 
       material = Painter.create(
@@ -283,7 +283,7 @@ export class Renderer {
     this.updateMeshLayers(mesh, node);
     if (node.isTraveler) {
       for (let i = 0; i < ATTR_TRAVEL.MAX_LAYERS; i++) {
-        if (i === node.captureLayer - 1) {
+        if (i === node.captureLayer - 2) {
           this.travelersByLayer[i].add(mesh);
         } else {
           this.travelersByLayer[i].delete(mesh);
@@ -455,7 +455,7 @@ export class Renderer {
       node.rect.height,
       this.qualityFactor,
       node.isTraveler
-        ? this.renderTargets[node.captureLayer - 1]?.texture
+        ? this.renderTargets[node.captureLayer - 2]?.texture
         : this.textureManager.get(node.element),
     );
   }
@@ -464,9 +464,11 @@ export class Renderer {
     const layerNum =
       node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
     mesh.layers.set(layerNum);
+    console.log("레이어", node.captureLayer);
     if (node.visibility & USER_LAYER) {
-      for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS; i++) {
+      for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
         mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+        console.log(THREE_LAYERS.getCaptureLayer(i));
       }
     }
   }
@@ -536,7 +538,7 @@ export class Renderer {
     this.renderer.setScissorTest(false);
     this.renderer.autoClear = true;
     this.renderer.setRenderTarget(null);
-    this.camera.layers.set(29);
+    this.camera.layers.set(27);
     this.renderer.setClearColor(oldClearColor, oldClearAlpha);
   }
 
@@ -544,7 +546,7 @@ export class Renderer {
     for (let i = 0; i < ATTR_TRAVEL.MAX_LAYERS; i++) {
       this.captureRenderTarget(
         this.travelersByLayer[i],
-        THREE_LAYERS.getCaptureLayer(i+1),
+        THREE_LAYERS.getCaptureLayer(i + 1),
         this.renderTargets[i],
       );
     }
