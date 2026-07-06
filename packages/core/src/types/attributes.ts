@@ -6,13 +6,20 @@ export const ATTR_DOM = {
   },
 } as const;
 
+export const TRAVEL_VALUES = {
+  TRAVELER: "traveler",
+  CAPTURE_1: "1",
+  CAPTURE_2: "2",
+  CAPTURE_3: "3",
+  CAPTURE_4: "4",
+  CAPTURE_5: "5",
+} as const;
+
 export const ATTR_TRAVEL = {
   NAME: "data-mirage-travel",
   KEY: "mirageTravel",
-  VALUES: {
-    TRAVELER: "traveler",
-  },
-  MAX_LAYERS: 2,
+  VALUES: TRAVEL_VALUES,
+  MAX_LAYERS: Object.keys(TRAVEL_VALUES).length - 1,
 } as const;
 
 export const ATTR_FILTER = {

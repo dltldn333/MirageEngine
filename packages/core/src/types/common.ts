@@ -27,7 +27,7 @@ export interface SceneNode {
 
   visibility: Visibility;
   isTraveler: boolean;
-  travelerLayer?: number;
+  captureLayer: number;
   isFixed: boolean;
   shaderHooks?: ShaderHooks;
 

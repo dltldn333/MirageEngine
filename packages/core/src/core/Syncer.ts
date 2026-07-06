@@ -2,7 +2,7 @@ import { CoreConfig } from "../types/config";
 import { Renderer } from "../renderer/Renderer";
 import { MeshRegistry } from "../store/MeshRegistry";
 import { extractSceneGraph } from "../dom/Extractor";
-import { Visibility, USER_LAYER, SYSTEM_LAYER, ATTR_TRAVEL } from "../types";
+import { Visibility, USER_LAYER, ATTR_TRAVEL } from "../types";
 import { animateMeshByData, updateFixedMeshesScroll } from "../animation/Animator";
 import { Tracker } from "@mirage-engine/dom-tracker";
 
@@ -43,9 +43,7 @@ export class Syncer {
       const sceneGraph = extractSceneGraph(
         this.target,
         pendingMask,
-        (discoveredTraveler
-          ? USER_LAYER | SYSTEM_LAYER
-          : USER_LAYER) as Visibility,
+        USER_LAYER as Visibility,
         this.filter,
       );
 

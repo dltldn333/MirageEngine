@@ -7,7 +7,7 @@ import {
   SceneNode,
   Visibility,
   USER_LAYER,
-  SYSTEM_LAYER,
+
   ALLOWED_FILTERS,
   ATTR_DOM,
   ATTR_FILTER,
@@ -20,12 +20,25 @@ import { FilterConfig } from "../types/config";
 
 // Helper function: getTextNodeRect, isValidTextNode, isLeafTextElement, extractTextStyles
 
-function extractTextLines(textNode: Text): { text: string; rect: { left: number; top: number; width: number; height: number } }[] {
+function extractTextLines(
+  textNode: Text,
+): {
+  text: string;
+  rect: { left: number; top: number; width: number; height: number };
+}[] {
   const text = textNode.textContent || "";
-  const lines: { text: string; rect: { left: number; top: number; width: number; height: number } }[] = [];
-  
+  const lines: {
+    text: string;
+    rect: { left: number; top: number; width: number; height: number };
+  }[] = [];
+
   let currentLineText = "";
-  let currentLineRect: { left: number; top: number; right: number; bottom: number } | null = null;
+  let currentLineRect: {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+  } | null = null;
   let currentTop = -1;
 
   const processChunk = (chunkText: string, offset: number) => {
@@ -35,13 +48,16 @@ function extractTextLines(textNode: Text): { text: string; rect: { left: number;
       range.setStart(textNode, offset + i);
       range.setEnd(textNode, offset + i + 1);
       const rect = range.getBoundingClientRect();
-      
+
       if (rect.width === 0 && rect.height === 0) {
         currentLineText += char;
         continue;
       }
 
-      if (currentTop === -1 || Math.abs(rect.top - currentTop) > rect.height / 2) {
+      if (
+        currentTop === -1 ||
+        Math.abs(rect.top - currentTop) > rect.height / 2
+      ) {
         if (currentLineText && currentLineRect) {
           lines.push({
             text: currentLineText,
@@ -54,7 +70,12 @@ function extractTextLines(textNode: Text): { text: string; rect: { left: number;
           });
         }
         currentLineText = char;
-        currentLineRect = { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
+        currentLineRect = {
+          left: rect.left,
+          top: rect.top,
+          right: rect.right,
+          bottom: rect.bottom,
+        };
         currentTop = rect.top;
       } else {
         currentLineText += char;
@@ -62,7 +83,10 @@ function extractTextLines(textNode: Text): { text: string; rect: { left: number;
           currentLineRect.left = Math.min(currentLineRect.left, rect.left);
           currentLineRect.top = Math.min(currentLineRect.top, rect.top);
           currentLineRect.right = Math.max(currentLineRect.right, rect.right);
-          currentLineRect.bottom = Math.max(currentLineRect.bottom, rect.bottom);
+          currentLineRect.bottom = Math.max(
+            currentLineRect.bottom,
+            rect.bottom,
+          );
         }
       }
     }
@@ -83,15 +107,19 @@ function extractTextLines(textNode: Text): { text: string; rect: { left: number;
       processChunk(token, currentOffset);
     } else {
       // Token is on a single line. Process it as a single block!
-      const rect = rects.length === 1 ? rects[0] : range.getBoundingClientRect();
-      
+      const rect =
+        rects.length === 1 ? rects[0] : range.getBoundingClientRect();
+
       if (rect.width === 0 && rect.height === 0) {
         currentLineText += token;
         currentOffset += token.length;
         continue;
       }
 
-      if (currentTop === -1 || Math.abs(rect.top - currentTop) > rect.height / 2) {
+      if (
+        currentTop === -1 ||
+        Math.abs(rect.top - currentTop) > rect.height / 2
+      ) {
         if (currentLineText && currentLineRect) {
           lines.push({
             text: currentLineText,
@@ -104,7 +132,12 @@ function extractTextLines(textNode: Text): { text: string; rect: { left: number;
           });
         }
         currentLineText = token;
-        currentLineRect = { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
+        currentLineRect = {
+          left: rect.left,
+          top: rect.top,
+          right: rect.right,
+          bottom: rect.bottom,
+        };
         currentTop = rect.top;
       } else {
         currentLineText += token;
@@ -112,11 +145,14 @@ function extractTextLines(textNode: Text): { text: string; rect: { left: number;
           currentLineRect.left = Math.min(currentLineRect.left, rect.left);
           currentLineRect.top = Math.min(currentLineRect.top, rect.top);
           currentLineRect.right = Math.max(currentLineRect.right, rect.right);
-          currentLineRect.bottom = Math.max(currentLineRect.bottom, rect.bottom);
+          currentLineRect.bottom = Math.max(
+            currentLineRect.bottom,
+            rect.bottom,
+          );
         }
       }
     }
-    
+
     currentOffset += token.length;
   }
 
@@ -132,7 +168,12 @@ function extractTextLines(textNode: Text): { text: string; rect: { left: number;
     });
   }
 
-  return lines.filter(line => line.text.trim().length > 0 && line.rect.width > 0 && line.rect.height > 0);
+  return lines.filter(
+    (line) =>
+      line.text.trim().length > 0 &&
+      line.rect.width > 0 &&
+      line.rect.height > 0,
+  );
 }
 
 function extractTextStyles(computed: CSSStyleDeclaration): TextStyles {
@@ -166,6 +207,7 @@ export function extractSceneGraph(
     DIRTY_STRUCTURE,
   inheritedFlow: Visibility,
   filterConfig?: FilterConfig,
+  captureLayer: number = 1,
 ): SceneNode | null {
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {
@@ -185,10 +227,10 @@ export function extractSceneGraph(
     if (!computed) return null;
 
     // Calculate overall bounding box of the lines
-    const minX = Math.min(...textLines.map(l => l.rect.left));
-    const minY = Math.min(...textLines.map(l => l.rect.top));
-    const maxX = Math.max(...textLines.map(l => l.rect.left + l.rect.width));
-    const maxY = Math.max(...textLines.map(l => l.rect.top + l.rect.height));
+    const minX = Math.min(...textLines.map((l) => l.rect.left));
+    const minY = Math.min(...textLines.map((l) => l.rect.top));
+    const maxX = Math.max(...textLines.map((l) => l.rect.left + l.rect.width));
+    const maxY = Math.max(...textLines.map((l) => l.rect.top + l.rect.height));
 
     // Create SceneNode for the text node
     return {
@@ -215,20 +257,20 @@ export function extractSceneGraph(
         isTraveler: false,
       },
       textContent: normalizedText,
-      textLines: textLines.map(l => ({
+      textLines: textLines.map((l) => ({
         text: l.text.trim(),
         rect: {
           x: l.rect.left + window.scrollX,
           y: l.rect.top + window.scrollY,
           width: l.rect.width,
           height: l.rect.height,
-        }
+        },
       })),
       textStyles: extractTextStyles(computed),
       dirtyMask: initialMask,
       visibility: inheritedFlow,
       isTraveler: false,
-      travelerLayer: undefined,
+      captureLayer,
       isFixed: computed.position === "fixed",
       children: [],
     };
@@ -258,12 +300,18 @@ export function extractSceneGraph(
     if (filterSet.has(ATTR_FILTER.VALUES.END)) return null;
 
     // error check
-    if (filterSet.has(ATTR_FILTER.VALUES.INCLUDE_TREE) && filterSet.has(ATTR_FILTER.VALUES.EXCLUDE_TREE)) {
+    if (
+      filterSet.has(ATTR_FILTER.VALUES.INCLUDE_TREE) &&
+      filterSet.has(ATTR_FILTER.VALUES.EXCLUDE_TREE)
+    ) {
       throw new Error(
         `[MirageEngine] Conflicting filters: 'include-tree' and 'exclude-tree' cannot be used together on the same element.`,
       );
     }
-    if (filterSet.has(ATTR_FILTER.VALUES.INCLUDE_SELF) && filterSet.has(ATTR_FILTER.VALUES.EXCLUDE_SELF)) {
+    if (
+      filterSet.has(ATTR_FILTER.VALUES.INCLUDE_SELF) &&
+      filterSet.has(ATTR_FILTER.VALUES.EXCLUDE_SELF)
+    ) {
       throw new Error(
         `[MirageEngine] Conflicting filters: 'include-self' and 'exclude-self' cannot be used together on the same element.`,
       );
@@ -293,23 +341,15 @@ export function extractSceneGraph(
   //   if (isEnd) return null;
   // }
 
-  visibleFlag = (visibleFlag | (inheritedFlow & SYSTEM_LAYER)) as Visibility;
+
 
   const travelData = element.dataset[ATTR_TRAVEL.KEY];
   let isTraveler = false;
-  let travelerLayer: number | undefined;
   if (travelData) {
     const travelSet = new Set(travelData.split(/\s+/));
     if (travelSet.has(ATTR_TRAVEL.VALUES.TRAVELER)) {
       isTraveler = true;
-      for (const token of travelSet) {
-        const parsed = parseInt(token, 10);
-        if (!isNaN(parsed) && parsed >= 1 && parsed <= ATTR_TRAVEL.MAX_LAYERS) {
-          travelerLayer = parsed;
-          break;
-        }
-      }
-      if (!travelerLayer) travelerLayer = 1;
+      captureLayer = Math.min(captureLayer + 1, ATTR_TRAVEL.MAX_LAYERS);
     }
   }
 
@@ -353,7 +393,9 @@ export function extractSceneGraph(
     backgroundColor: computed.backgroundColor,
     backgroundImage: computed.backgroundImage,
     opacity:
-      element.dataset[ATTR_DOM.KEY] === ATTR_DOM.VALUES.HIDE ? 1 : parseFloat(computed.opacity),
+      element.dataset[ATTR_DOM.KEY] === ATTR_DOM.VALUES.HIDE
+        ? 1
+        : parseFloat(computed.opacity),
     zIndex: isNaN(zIndex) ? 0 : zIndex,
     borderRadius: computed.borderRadius,
     borderColor: computed.borderColor,
@@ -374,6 +416,7 @@ export function extractSceneGraph(
       initialMask,
       visibleFlowToPass,
       filterConfig,
+      captureLayer,
     );
     if (childNode) {
       children.push(childNode);
@@ -396,7 +439,7 @@ export function extractSceneGraph(
     dirtyMask: initialMask,
     visibility: visibleFlag,
     isTraveler: isTraveler,
-    travelerLayer,
+    captureLayer,
     isFixed: computed.position === "fixed",
     children,
     shaderHooks,

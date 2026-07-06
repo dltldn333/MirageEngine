@@ -6,9 +6,9 @@ import {
   CoreConfig,
   MirageMode,
   USER_LAYER,
-  SYSTEM_LAYER,
   travelerClipArea,
   THREE_LAYERS,
+  ATTR_TRAVEL,
 } from "../types";
 import { Painter } from "@mirage-engine/painter";
 import { MeshRegistry } from "../store/MeshRegistry";
@@ -19,8 +19,7 @@ export class Renderer {
   private readonly scene: THREE.Scene;
   private readonly camera: THREE.OrthographicCamera;
   private readonly renderer: THREE.WebGLRenderer;
-  private renderTargetBack: THREE.WebGLRenderTarget | null = null;
-  private renderTargetFront: THREE.WebGLRenderTarget | null = null;
+  private renderTargets: THREE.WebGLRenderTarget[] = [];
   private renderOrder: number = 0;
   private qualityFactor: number = 2;
   private mode: MirageMode = "overlay";
@@ -31,8 +30,7 @@ export class Renderer {
   private registry: MeshRegistry;
   private targetRect: DOMRect;
 
-  private travelersBack: Set<THREE.Mesh> = new Set();
-  private travelersFront: Set<THREE.Mesh> = new Set();
+  private travelersByLayer: Set<THREE.Mesh>[] = Array.from({ length: ATTR_TRAVEL.MAX_LAYERS }, () => new Set());
   private textureManager: TextureLifecycleManager;
   // private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
 
@@ -96,18 +94,21 @@ export class Renderer {
     this.applyTextQuality(config.quality ?? "medium");
   }
   public createRenderTarget() {
-    this.renderTargetBack = new THREE.WebGLRenderTarget(
-      this.targetRect.width * this.qualityFactor,
-      this.targetRect.height * this.qualityFactor,
-      {
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.LinearFilter,
-        format: THREE.RGBAFormat,
-        stencilBuffer: false,
-        depthBuffer: true,
-      },
-    );
-    this.renderTargetFront = this.renderTargetBack.clone();
+    for (let i = 0; i < ATTR_TRAVEL.MAX_LAYERS; i++) {
+      this.renderTargets.push(
+        new THREE.WebGLRenderTarget(
+          this.targetRect.width * this.qualityFactor,
+          this.targetRect.height * this.qualityFactor,
+          {
+            minFilter: THREE.LinearFilter,
+            magFilter: THREE.LinearFilter,
+            format: THREE.RGBAFormat,
+            stencilBuffer: false,
+            depthBuffer: true,
+          },
+        )
+      );
+    }
   }
 
   private applyTextQuality(quality: Quality) {
@@ -163,14 +164,8 @@ export class Renderer {
 
   public setSize(width: number, height: number) {
     this.renderer.setSize(width, height);
-    if (this.renderTargetBack) {
-      this.renderTargetBack.setSize(
-        width * this.qualityFactor,
-        height * this.qualityFactor,
-      );
-    }
-    if (this.renderTargetFront) {
-      this.renderTargetFront.setSize(
+    for (const target of this.renderTargets) {
+      target.setSize(
         width * this.qualityFactor,
         height * this.qualityFactor,
       );
@@ -218,8 +213,9 @@ export class Renderer {
         const meshToDestroy = this.registry.get(el) as THREE.Mesh | undefined;
         if (meshToDestroy) {
           this.scene.remove(meshToDestroy);
-          this.travelersBack.delete(meshToDestroy);
-          this.travelersFront.delete(meshToDestroy);
+          for (const set of this.travelersByLayer) {
+            set.delete(meshToDestroy);
+          }
           this.fixedMeshes.delete(meshToDestroy);
           meshToDestroy.geometry.dispose();
           meshToDestroy.traverse((child) => {
@@ -260,12 +256,9 @@ export class Renderer {
     if (!mesh) {
       const geometry = new THREE.PlaneGeometry(1, 1);
       let material: THREE.MeshBasicMaterial | THREE.Material;
-      const initialTexture =
-        node.travelerLayer === 2
-          ? this.renderTargetFront?.texture
-          : node.isTraveler
-            ? this.renderTargetBack?.texture
-            : this.textureManager.get(node.element);
+      const initialTexture = node.isTraveler
+        ? this.renderTargets[node.captureLayer - 1]?.texture
+        : this.textureManager.get(node.element);
 
       material = Painter.create(
         "BOX",
@@ -289,18 +282,17 @@ export class Renderer {
     this.updateMeshProperties(mesh, node);
     this.updateMeshLayers(mesh, node);
     if (node.isTraveler) {
-      mesh.layers.enable(THREE_LAYERS.SELECTED);
-      if (node.travelerLayer === 2) {
-        this.travelersFront.add(mesh);
-        this.travelersBack.delete(mesh);
-      } else {
-        this.travelersBack.add(mesh);
-        this.travelersFront.delete(mesh);
-        mesh.layers.enable(THREE_LAYERS.getCaptureLayer(2));
+      for (let i = 0; i < ATTR_TRAVEL.MAX_LAYERS; i++) {
+        if (i === node.captureLayer - 1) {
+          this.travelersByLayer[i].add(mesh);
+        } else {
+          this.travelersByLayer[i].delete(mesh);
+        }
       }
     } else {
-      this.travelersBack.delete(mesh);
-      this.travelersFront.delete(mesh);
+      for (const set of this.travelersByLayer) {
+        set.delete(mesh);
+      }
     }
 
     if (node.isFixed) {
@@ -462,11 +454,9 @@ export class Renderer {
       node.rect.width,
       node.rect.height,
       this.qualityFactor,
-      node.travelerLayer === 2
-        ? this.renderTargetFront?.texture
-        : node.isTraveler
-          ? this.renderTargetBack?.texture
-          : this.textureManager.get(node.element),
+      node.isTraveler
+        ? this.renderTargets[node.captureLayer - 1]?.texture
+        : this.textureManager.get(node.element),
     );
   }
 
@@ -474,9 +464,10 @@ export class Renderer {
     const layerNum =
       node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
     mesh.layers.set(layerNum);
-    if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) {
-      mesh.layers.enable(THREE_LAYERS.getCaptureLayer(1));
-      mesh.layers.enable(THREE_LAYERS.getCaptureLayer(2));
+    if (node.visibility & USER_LAYER) {
+      for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS; i++) {
+        mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+      }
     }
   }
 
@@ -545,34 +536,31 @@ export class Renderer {
     this.renderer.setScissorTest(false);
     this.renderer.autoClear = true;
     this.renderer.setRenderTarget(null);
-    this.camera.layers.set(0);
+    this.camera.layers.set(29);
     this.renderer.setClearColor(oldClearColor, oldClearAlpha);
   }
 
   public render() {
-    this.captureRenderTarget(
-      this.travelersBack,
-      THREE_LAYERS.getCaptureLayer(1),
-      this.renderTargetBack,
-    );
-    this.captureRenderTarget(
-      this.travelersFront,
-      THREE_LAYERS.getCaptureLayer(2),
-      this.renderTargetFront,
-    );
+    for (let i = 0; i < ATTR_TRAVEL.MAX_LAYERS; i++) {
+      this.captureRenderTarget(
+        this.travelersByLayer[i],
+        THREE_LAYERS.getCaptureLayer(i+1),
+        this.renderTargets[i],
+      );
+    }
     this.renderer.render(this.scene, this.camera);
   }
 
   // for debugging
   public showScissoredRenderTarget() {
-    if (!this.renderTargetBack) return;
+    if (this.renderTargets.length === 0) return;
 
     const w = this.targetRect.width;
     const h = this.targetRect.height;
 
     const geometry = new THREE.PlaneGeometry(w, h);
     const material = new THREE.MeshBasicMaterial({
-      map: this.renderTargetBack.texture,
+      map: this.renderTargets[0].texture,
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.8,
