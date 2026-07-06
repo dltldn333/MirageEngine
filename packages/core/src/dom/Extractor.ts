@@ -301,8 +301,6 @@ export function extractSceneGraph(
   if (travelData) {
     const travelSet = new Set(travelData.split(/\s+/));
     if (travelSet.has(ATTR_TRAVEL.VALUES.TRAVELER)) {
-      visibleFlag = (visibleFlag & ~SYSTEM_LAYER) as Visibility;
-      visibleFlow = (visibleFlow & ~SYSTEM_LAYER) as Visibility;
       isTraveler = true;
       for (const token of travelSet) {
         const parsed = parseInt(token, 10);

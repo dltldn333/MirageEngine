@@ -35,4 +35,7 @@ export const ATTR_SHADER = {
 export const ATTR_SANDWICH = {
   NAME: "data-mirage-sandwich",
   KEY: "mirageSandwich",
+  VALUES: {
+    FRONT: "front",
+  },
 } as const;
