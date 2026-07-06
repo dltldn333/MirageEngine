@@ -208,6 +208,7 @@ export function extractSceneGraph(
   inheritedFlow: Visibility,
   filterConfig?: FilterConfig,
   captureLayer: number = 1,
+  inheritedZIndex: number = 0,
 ): SceneNode | null {
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {
@@ -250,7 +251,7 @@ export function extractSceneGraph(
           parent && parent.dataset[ATTR_DOM.KEY] === ATTR_DOM.VALUES.HIDE
             ? 1
             : parseFloat(computed.opacity),
-        zIndex: isNaN(parseInt(computed.zIndex)) ? 0 : parseInt(computed.zIndex),
+        zIndex: (isNaN(parseInt(computed.zIndex)) ? 0 : parseInt(computed.zIndex)) + inheritedZIndex,
         borderRadius: "0px",
         borderColor: "transparent",
         borderWidth: "0px",
@@ -387,7 +388,8 @@ export function extractSceneGraph(
     element.setAttribute("data-mid", id);
   }
 
-  const zIndex = parseInt(computed.zIndex);
+  const localZIndex = parseInt(computed.zIndex);
+  const effectiveZIndex = (isNaN(localZIndex) ? 0 : localZIndex) + inheritedZIndex;
   // console.log(`${element.id}: ${computed.background}`);
   // console.log(computed.backgroundImage);
   let imageSrc: string | undefined;
@@ -407,7 +409,7 @@ export function extractSceneGraph(
       element.dataset[ATTR_DOM.KEY] === ATTR_DOM.VALUES.HIDE
         ? 1
         : parseFloat(computed.opacity),
-    zIndex: isNaN(zIndex) ? 0 : zIndex,
+    zIndex: effectiveZIndex,
     borderRadius: computed.borderRadius,
     borderColor: computed.borderColor,
     borderWidth: computed.borderWidth,
@@ -428,6 +430,7 @@ export function extractSceneGraph(
       visibleFlowToPass,
       filterConfig,
       captureLayer,
+      effectiveZIndex,
     );
     if (childNode) {
       children.push(childNode);
