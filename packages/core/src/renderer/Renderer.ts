@@ -464,11 +464,9 @@ export class Renderer {
     const layerNum =
       node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
     mesh.layers.set(layerNum);
-    console.log("레이어", node.captureLayer);
     if (node.visibility & USER_LAYER) {
       for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
         mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
-        console.log(THREE_LAYERS.getCaptureLayer(i));
       }
     }
   }

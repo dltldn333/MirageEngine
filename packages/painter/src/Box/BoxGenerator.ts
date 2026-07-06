@@ -244,7 +244,7 @@ export function setBoxUniforms(
             s.color.b,
             s.alpha,
           );
-          console.log(s.color.r, s.color.g, s.color.b);
+          // console.log(s.color.r, s.color.g, s.color.b);
           material.uniforms.uGradientStops.value[i] = s.stop;
         } else {
           material.uniforms.uGradientColors.value[i].set(0, 0, 0, 0);
