@@ -9,6 +9,10 @@ import {
   USER_LAYER,
   SYSTEM_LAYER,
   ALLOWED_FILTERS,
+  ATTR_DOM,
+  ATTR_FILTER,
+  ATTR_TRAVEL,
+  ATTR_SHADER,
 } from "../types";
 
 import { BoxStyles, TextStyles, ShaderHooks } from "@mirage-engine/painter";
@@ -201,7 +205,7 @@ export function extractSceneGraph(
         backgroundColor: "transparent",
         backgroundImage: "",
         opacity:
-          parent && parent.dataset.mirageDom === "hide"
+          parent && parent.dataset[ATTR_DOM.KEY] === ATTR_DOM.VALUES.HIDE
             ? 1
             : parseFloat(computed.opacity),
         zIndex: 0,
@@ -236,7 +240,7 @@ export function extractSceneGraph(
 
   const element = sourceNode as HTMLElement;
   // [[Filter]] data attribute based filtering
-  const filterData = element.dataset.mirageFilter;
+  const filterData = element.dataset[ATTR_FILTER.KEY];
   let visibleFlow = inheritedFlow;
   let visibleFlag = inheritedFlow;
   if (filterData) {
@@ -251,31 +255,31 @@ export function extractSceneGraph(
       }
     }
 
-    if (filterSet.has("end")) return null;
+    if (filterSet.has(ATTR_FILTER.VALUES.END)) return null;
 
     // error check
-    if (filterSet.has("include-tree") && filterSet.has("exclude-tree")) {
+    if (filterSet.has(ATTR_FILTER.VALUES.INCLUDE_TREE) && filterSet.has(ATTR_FILTER.VALUES.EXCLUDE_TREE)) {
       throw new Error(
         `[MirageEngine] Conflicting filters: 'include-tree' and 'exclude-tree' cannot be used together on the same element.`,
       );
     }
-    if (filterSet.has("include-self") && filterSet.has("exclude-self")) {
+    if (filterSet.has(ATTR_FILTER.VALUES.INCLUDE_SELF) && filterSet.has(ATTR_FILTER.VALUES.EXCLUDE_SELF)) {
       throw new Error(
         `[MirageEngine] Conflicting filters: 'include-self' and 'exclude-self' cannot be used together on the same element.`,
       );
     }
 
-    if (filterSet.has("include-tree")) {
+    if (filterSet.has(ATTR_FILTER.VALUES.INCLUDE_TREE)) {
       visibleFlow = (visibleFlow | USER_LAYER) as Visibility;
-    } else if (filterSet.has("exclude-tree")) {
+    } else if (filterSet.has(ATTR_FILTER.VALUES.EXCLUDE_TREE)) {
       visibleFlow = (visibleFlow & ~USER_LAYER) as Visibility;
     }
 
     visibleFlag = visibleFlow;
 
-    if (filterSet.has("include-self")) {
+    if (filterSet.has(ATTR_FILTER.VALUES.INCLUDE_SELF)) {
       visibleFlag = (visibleFlag | USER_LAYER) as Visibility;
-    } else if (filterSet.has("exclude-self")) {
+    } else if (filterSet.has(ATTR_FILTER.VALUES.EXCLUDE_SELF)) {
       visibleFlag = (visibleFlag & ~USER_LAYER) as Visibility;
     }
   }
@@ -291,20 +295,20 @@ export function extractSceneGraph(
 
   visibleFlag = (visibleFlag | (inheritedFlow & SYSTEM_LAYER)) as Visibility;
 
-  const travelData = element.dataset.mirageTravel;
+  const travelData = element.dataset[ATTR_TRAVEL.KEY];
   let isTraveler = false;
   let travelerType: "front" | "back" | undefined;
   if (travelData) {
     const travelSet = new Set(travelData.split(/\s+/));
-    if (travelSet.has("traveler")) {
+    if (travelSet.has(ATTR_TRAVEL.VALUES.TRAVELER)) {
       visibleFlag = (visibleFlag & ~SYSTEM_LAYER) as Visibility;
       visibleFlow = (visibleFlow & ~SYSTEM_LAYER) as Visibility;
       isTraveler = true;
-      travelerType = travelSet.has("front") ? "front" : "back";
+      travelerType = travelSet.has(ATTR_TRAVEL.VALUES.FRONT) ? "front" : "back";
     }
   }
 
-  const shaderData = element.dataset.mirageShader;
+  const shaderData = element.dataset[ATTR_SHADER.KEY];
   let shaderHooks: ShaderHooks | undefined;
   if (shaderData) {
     shaderHooks = JSON.parse(shaderData) as ShaderHooks;
@@ -344,7 +348,7 @@ export function extractSceneGraph(
     backgroundColor: computed.backgroundColor,
     backgroundImage: computed.backgroundImage,
     opacity:
-      element.dataset.mirageDom === "hide" ? 1 : parseFloat(computed.opacity),
+      element.dataset[ATTR_DOM.KEY] === ATTR_DOM.VALUES.HIDE ? 1 : parseFloat(computed.opacity),
     zIndex: isNaN(zIndex) ? 0 : zIndex,
     borderRadius: computed.borderRadius,
     borderColor: computed.borderColor,

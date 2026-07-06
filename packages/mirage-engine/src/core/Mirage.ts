@@ -1,5 +1,5 @@
 import { MirageConfig } from "@/types";
-import { Engine } from "@mirage-engine/core";
+import { Engine, ATTR_SANDWICH } from "@mirage-engine/core";
 import { SandwichRenderer } from "@mirage-engine/sandwich";
 
 export class Mirage {
@@ -15,7 +15,7 @@ export class Mirage {
     if (config.sandwich !== false) {
       const sandwichOptions = typeof config.sandwich === "object" ? config.sandwich : {};
       this._sandwich = new SandwichRenderer({
-        frontSelector: sandwichOptions.frontSelector || "[data-mirage-sandwich='front']",
+        frontSelector: sandwichOptions.frontSelector || `[${ATTR_SANDWICH.NAME}='${ATTR_SANDWICH.VALUES.FRONT}']`,
       });
       this._sandwich.useTracker(this._engine.getTracker());
     }

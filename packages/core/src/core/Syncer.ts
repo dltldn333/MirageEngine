@@ -2,7 +2,7 @@ import { CoreConfig } from "../types/config";
 import { Renderer } from "../renderer/Renderer";
 import { MeshRegistry } from "../store/MeshRegistry";
 import { extractSceneGraph } from "../dom/Extractor";
-import { Visibility, USER_LAYER, SYSTEM_LAYER } from "../types";
+import { Visibility, USER_LAYER, SYSTEM_LAYER, ATTR_TRAVEL } from "../types";
 import { animateMeshByData, updateFixedMeshesScroll } from "../animation/Animator";
 import { Tracker } from "@mirage-engine/dom-tracker";
 
@@ -34,7 +34,7 @@ export class Syncer {
     // Wire up the hooks
     this.tracker.onLayoutChange.add((pendingMask, pendingDeletions) => {
       const discoveredTraveler =
-        document.querySelector("[data-mirage-travel~='traveler']") !== null;
+        document.querySelector(`[${ATTR_TRAVEL.NAME}~='${ATTR_TRAVEL.VALUES.TRAVELER}']`) !== null;
       if (discoveredTraveler && !this.isTravelEnabled) {
         this.isTravelEnabled = true;
         this.renderer.createRenderTarget();

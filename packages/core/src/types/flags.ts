@@ -1,3 +1,5 @@
+import { ATTR_FILTER } from "./attributes";
+
 //Bitmask Flags
 export const DIRTY_NONE = 0;
 export const DIRTY_RECT = 1 << 0; // 1: x, y, width, height (00000001)
@@ -22,10 +24,4 @@ export const THREE_LAYERS = {
 
 export type Visibility = 0 | 1 | 2 | 3;
 
-export const ALLOWED_FILTERS = [
-  "include-tree",
-  "exclude-tree",
-  "include-self",
-  "exclude-self",
-  "end",
-];
+export const ALLOWED_FILTERS = Object.values(ATTR_FILTER.VALUES);
