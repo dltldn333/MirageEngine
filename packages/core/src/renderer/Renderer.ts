@@ -522,7 +522,7 @@ export class Renderer {
     this.renderer.setScissorTest(false);
     this.renderer.autoClear = true;
     this.renderer.setRenderTarget(null);
-    this.camera.layers.set(1);
+    this.camera.layers.set(0);
     this.renderer.setClearColor(oldClearColor, oldClearAlpha);
   }
 
