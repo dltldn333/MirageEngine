@@ -11,9 +11,8 @@ export const ATTR_TRAVEL = {
   KEY: "mirageTravel",
   VALUES: {
     TRAVELER: "traveler",
-    FRONT: "front",
-    BACK: "back",
   },
+  MAX_LAYERS: 2,
 } as const;
 
 export const ATTR_FILTER = {
@@ -36,7 +35,4 @@ export const ATTR_SHADER = {
 export const ATTR_SANDWICH = {
   NAME: "data-mirage-sandwich",
   KEY: "mirageSandwich",
-  VALUES: {
-    FRONT: "front",
-  },
 } as const;

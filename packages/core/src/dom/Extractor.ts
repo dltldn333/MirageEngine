@@ -228,7 +228,7 @@ export function extractSceneGraph(
       dirtyMask: initialMask,
       visibility: inheritedFlow,
       isTraveler: false,
-      travelerType: undefined,
+      travelerLayer: undefined,
       isFixed: computed.position === "fixed",
       children: [],
     };
@@ -247,7 +247,7 @@ export function extractSceneGraph(
     const filterSet = new Set(filterData.split(/\s+/));
     // error check
     for (const token of filterSet) {
-      if (!ALLOWED_FILTERS.includes(token)) {
+      if (!ALLOWED_FILTERS.includes(token as any)) {
         throw new Error(
           `[MirageEngine] Invalid filter token: '${token}'. ` +
             `Expected one of: 'include-tree', 'exclude-tree', 'include-self', 'exclude-self', 'end'.`,
@@ -297,14 +297,21 @@ export function extractSceneGraph(
 
   const travelData = element.dataset[ATTR_TRAVEL.KEY];
   let isTraveler = false;
-  let travelerType: "front" | "back" | undefined;
+  let travelerLayer: number | undefined;
   if (travelData) {
     const travelSet = new Set(travelData.split(/\s+/));
     if (travelSet.has(ATTR_TRAVEL.VALUES.TRAVELER)) {
       visibleFlag = (visibleFlag & ~SYSTEM_LAYER) as Visibility;
       visibleFlow = (visibleFlow & ~SYSTEM_LAYER) as Visibility;
       isTraveler = true;
-      travelerType = travelSet.has(ATTR_TRAVEL.VALUES.FRONT) ? "front" : "back";
+      for (const token of travelSet) {
+        const parsed = parseInt(token, 10);
+        if (!isNaN(parsed) && parsed >= 1 && parsed <= ATTR_TRAVEL.MAX_LAYERS) {
+          travelerLayer = parsed;
+          break;
+        }
+      }
+      if (!travelerLayer) travelerLayer = 1;
     }
   }
 
@@ -391,7 +398,7 @@ export function extractSceneGraph(
     dirtyMask: initialMask,
     visibility: visibleFlag,
     isTraveler: isTraveler,
-    travelerType,
+    travelerLayer,
     isFixed: computed.position === "fixed",
     children,
     shaderHooks,

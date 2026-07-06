@@ -15,7 +15,7 @@ export class Mirage {
     if (config.sandwich !== false) {
       const sandwichOptions = typeof config.sandwich === "object" ? config.sandwich : {};
       this._sandwich = new SandwichRenderer({
-        frontSelector: sandwichOptions.frontSelector || `[${ATTR_SANDWICH.NAME}='${ATTR_SANDWICH.VALUES.FRONT}']`,
+        frontSelector: sandwichOptions.frontSelector || `[${ATTR_SANDWICH.NAME}='2']`,
       });
       this._sandwich.useTracker(this._engine.getTracker());
     }
