@@ -7,16 +7,17 @@ import {
   SceneNode,
   Visibility,
   USER_LAYER,
+  SELECT_LAYER,
 
   ALLOWED_FILTERS,
   ATTR_DOM,
   ATTR_FILTER,
+  ATTR_SELECT,
   ATTR_TRAVEL,
   ATTR_SHADER,
 } from "../types";
 
 import { BoxStyles, TextStyles, ShaderHooks } from "@mirage-engine/painter";
-import { FilterConfig } from "../types/config";
 
 // Helper function: getTextNodeRect, isValidTextNode, isLeafTextElement, extractTextStyles
 
@@ -206,7 +207,6 @@ export function extractSceneGraph(
     DIRTY_CONTENT |
     DIRTY_STRUCTURE,
   inheritedFlow: Visibility,
-  filterConfig?: FilterConfig,
   captureLayer: number = 1,
   inheritedZIndex: number = 0,
   qualityFactor: number = 2,
@@ -334,14 +334,53 @@ export function extractSceneGraph(
     }
   }
 
-  // [[filter]] class based filtering
-  // [Filter] end
-  // if (filterConfig && filterConfig.end && filterConfig.end.length > 0) {
-  //   const isEnd = filterConfig.end.some((cls) =>
-  //     element.classList.contains(cls),
-  //   );
-  //   if (isEnd) return null;
-  // }
+  // [[Select]] data attribute based selecting
+  const selectData = element.dataset[ATTR_SELECT.KEY];
+  if (selectData) {
+    const selectSet = new Set(selectData.split(/\s+/));
+    // error check
+    for (const token of selectSet) {
+      if (!ALLOWED_FILTERS.includes(token as any)) {
+        throw new Error(
+          `[MirageEngine] Invalid select token: '${token}'. ` +
+            `Expected one of: 'include-tree', 'exclude-tree', 'include-self', 'exclude-self', 'end'.`,
+        );
+      }
+    }
+
+    if (selectSet.has(ATTR_SELECT.VALUES.END)) return null;
+
+    if (
+      selectSet.has(ATTR_SELECT.VALUES.INCLUDE_TREE) &&
+      selectSet.has(ATTR_SELECT.VALUES.EXCLUDE_TREE)
+    ) {
+      throw new Error(
+        `[MirageEngine] Conflicting selects: 'include-tree' and 'exclude-tree' cannot be used together on the same element.`,
+      );
+    }
+    if (
+      selectSet.has(ATTR_SELECT.VALUES.INCLUDE_SELF) &&
+      selectSet.has(ATTR_SELECT.VALUES.EXCLUDE_SELF)
+    ) {
+      throw new Error(
+        `[MirageEngine] Conflicting selects: 'include-self' and 'exclude-self' cannot be used together on the same element.`,
+      );
+    }
+
+    if (selectSet.has(ATTR_SELECT.VALUES.INCLUDE_TREE)) {
+      visibleFlow = (visibleFlow | SELECT_LAYER) as Visibility;
+    } else if (selectSet.has(ATTR_SELECT.VALUES.EXCLUDE_TREE)) {
+      visibleFlow = (visibleFlow & ~SELECT_LAYER) as Visibility;
+    }
+
+    visibleFlag = visibleFlow;
+
+    if (selectSet.has(ATTR_SELECT.VALUES.INCLUDE_SELF)) {
+      visibleFlag = (visibleFlag | SELECT_LAYER) as Visibility;
+    } else if (selectSet.has(ATTR_SELECT.VALUES.EXCLUDE_SELF)) {
+      visibleFlag = (visibleFlag & ~SELECT_LAYER) as Visibility;
+    }
+  }
 
 
 
@@ -467,7 +506,6 @@ export function extractSceneGraph(
         child,
         initialMask,
         visibleFlowToPass,
-        filterConfig,
         captureLayer,
         effectiveZIndex,
         qualityFactor

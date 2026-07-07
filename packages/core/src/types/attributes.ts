@@ -1,3 +1,11 @@
+const filter_values = {
+  INCLUDE_TREE: "include-tree",
+  EXCLUDE_TREE: "exclude-tree",
+  INCLUDE_SELF: "include-self",
+  EXCLUDE_SELF: "exclude-self",
+  END: "end",
+};
+
 export const ATTR_DOM = {
   NAME: "data-mirage-dom",
   KEY: "mirageDom",
@@ -25,13 +33,13 @@ export const ATTR_TRAVEL = {
 export const ATTR_FILTER = {
   NAME: "data-mirage-filter",
   KEY: "mirageFilter",
-  VALUES: {
-    INCLUDE_TREE: "include-tree",
-    EXCLUDE_TREE: "exclude-tree",
-    INCLUDE_SELF: "include-self",
-    EXCLUDE_SELF: "exclude-self",
-    END: "end",
-  },
+  VALUES: filter_values,
+} as const;
+
+export const ATTR_SELECT = {
+  NAME: "data-mirage-select",
+  KEY: "mirageSelect",
+  VALUES: filter_values,
 } as const;
 
 export const ATTR_SHADER = {
