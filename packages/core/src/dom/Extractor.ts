@@ -209,6 +209,7 @@ export function extractSceneGraph(
   filterConfig?: FilterConfig,
   captureLayer: number = 1,
   inheritedZIndex: number = 0,
+  qualityFactor: number = 2,
 ): SceneNode | null {
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {
@@ -395,6 +396,43 @@ export function extractSceneGraph(
   let imageSrc: string | undefined;
   if (element.tagName === "IMG") {
     imageSrc = (element as HTMLImageElement).src;
+  } else if (element.tagName.toLowerCase() === "svg") {
+    const clone = element.cloneNode(true) as SVGSVGElement;
+    
+    const inlineSVGStyles = (orig: Element, cloned: Element) => {
+      const computed = window.getComputedStyle(orig);
+      const clonedHtml = cloned as HTMLElement;
+      
+      if (computed.fill && computed.fill !== "none") clonedHtml.style.fill = computed.fill;
+      if (computed.stroke && computed.stroke !== "none") clonedHtml.style.stroke = computed.stroke;
+      if (computed.strokeWidth && computed.strokeWidth !== "0px") clonedHtml.style.strokeWidth = computed.strokeWidth;
+      if (computed.color) clonedHtml.style.color = computed.color;
+      if (computed.opacity && computed.opacity !== "1") clonedHtml.style.opacity = computed.opacity;
+  
+      for (let i = 0; i < orig.children.length; i++) {
+        inlineSVGStyles(orig.children[i], cloned.children[i]);
+      }
+    };
+  
+    inlineSVGStyles(element, clone);
+  
+    const svgRect = element.getBoundingClientRect();
+    const scale = window.devicePixelRatio * qualityFactor; // High-DPI 대응을 위한 해상도 스케일업
+
+    if (!clone.hasAttribute("viewBox")) {
+      clone.setAttribute("viewBox", `0 0 ${svgRect.width} ${svgRect.height}`);
+    }
+
+    clone.setAttribute("width", (svgRect.width * scale).toString());
+    clone.setAttribute("height", (svgRect.height * scale).toString());
+
+  
+    let svgString = new XMLSerializer().serializeToString(clone);
+    if (!svgString.includes("xmlns=")) {
+      svgString = svgString.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+  
+    imageSrc = `data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`;
   } else if (computed.backgroundImage && computed.backgroundImage !== "none") {
     const match = computed.backgroundImage.match(/url\(['"]?(.*?)['"]?\)/);
     if (match) {
@@ -421,21 +459,24 @@ export function extractSceneGraph(
   let textStyles: TextStyles | undefined;
   const children: SceneNode[] = [];
 
-  Array.from(element.childNodes).forEach((child) => {
-    const visibleFlowToPass =
-      child.nodeType === Node.TEXT_NODE ? visibleFlag : visibleFlow;
-    const childNode = extractSceneGraph(
-      child,
-      initialMask,
-      visibleFlowToPass,
-      filterConfig,
-      captureLayer,
-      effectiveZIndex,
-    );
-    if (childNode) {
-      children.push(childNode);
-    }
-  });
+  if (element.tagName.toLowerCase() !== "svg") {
+    Array.from(element.childNodes).forEach((child) => {
+      const visibleFlowToPass =
+        child.nodeType === Node.TEXT_NODE ? visibleFlag : visibleFlow;
+      const childNode = extractSceneGraph(
+        child,
+        initialMask,
+        visibleFlowToPass,
+        filterConfig,
+        captureLayer,
+        effectiveZIndex,
+        qualityFactor
+      );
+      if (childNode) {
+        children.push(childNode);
+      }
+    });
+  }
 
   return {
     id,

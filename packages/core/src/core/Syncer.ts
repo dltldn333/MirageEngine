@@ -45,6 +45,9 @@ export class Syncer {
         pendingMask,
         USER_LAYER as Visibility,
         this.filter,
+        1,
+        0,
+        this.renderer.qualityFactor
       );
 
       if (sceneGraph) {
