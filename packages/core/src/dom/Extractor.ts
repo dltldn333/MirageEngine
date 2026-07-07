@@ -16,7 +16,6 @@ import {
 } from "../types";
 
 import { BoxStyles, TextStyles, ShaderHooks } from "@mirage-engine/painter";
-import { FilterConfig } from "../types/config";
 
 // Helper function: getTextNodeRect, isValidTextNode, isLeafTextElement, extractTextStyles
 
@@ -206,7 +205,6 @@ export function extractSceneGraph(
     DIRTY_CONTENT |
     DIRTY_STRUCTURE,
   inheritedFlow: Visibility,
-  filterConfig?: FilterConfig,
   captureLayer: number = 1,
   inheritedZIndex: number = 0,
   qualityFactor: number = 2,
@@ -334,14 +332,7 @@ export function extractSceneGraph(
     }
   }
 
-  // [[filter]] class based filtering
-  // [Filter] end
-  // if (filterConfig && filterConfig.end && filterConfig.end.length > 0) {
-  //   const isEnd = filterConfig.end.some((cls) =>
-  //     element.classList.contains(cls),
-  //   );
-  //   if (isEnd) return null;
-  // }
+
 
 
 
@@ -467,7 +458,6 @@ export function extractSceneGraph(
         child,
         initialMask,
         visibleFlowToPass,
-        filterConfig,
         captureLayer,
         effectiveZIndex,
         qualityFactor

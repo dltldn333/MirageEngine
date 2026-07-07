@@ -10,7 +10,6 @@ export class Syncer {
   private target: HTMLElement;
   private renderer: Renderer;
   private registry: MeshRegistry;
-  private filter: CoreConfig["filter"];
   private isTravelEnabled: boolean = false;
   
   public tracker: Tracker;
@@ -24,7 +23,6 @@ export class Syncer {
     this.target = target;
     this.renderer = renderer;
     this.registry = registry;
-    this.filter = config.filter;
 
     // Use Tracker from dom-tracker
     this.tracker = new Tracker(target, {
@@ -44,7 +42,6 @@ export class Syncer {
         this.target,
         pendingMask,
         USER_LAYER as Visibility,
-        this.filter,
         1,
         0,
         this.renderer.qualityFactor
