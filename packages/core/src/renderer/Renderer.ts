@@ -644,26 +644,5 @@ export class Renderer {
     this.renderer.render(this.scene, this.camera);
   }
 
-  // for debugging
-  public showScissoredRenderTarget() {
-    if (this.renderTargets.length === 0) return;
-
-    const w = this.targetRect.width;
-    const h = this.targetRect.height;
-
-    const geometry = new THREE.PlaneGeometry(w, h);
-    const material = new THREE.MeshBasicMaterial({
-      map: this.renderTargets[0].texture,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.8,
-    });
-
-    const debugMesh = new THREE.Mesh(geometry, material);
-
-    debugMesh.position.set(0, 0, 90);
-    debugMesh.layers.set(THREE_LAYERS.SELECTED);
-
-    this.scene.add(debugMesh);
-  }
+  
 }
