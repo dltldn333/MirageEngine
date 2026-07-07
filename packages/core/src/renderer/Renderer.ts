@@ -6,6 +6,7 @@ import {
   CoreConfig,
   MirageMode,
   USER_LAYER,
+  SELECT_LAYER,
   travelerClipArea,
   THREE_LAYERS,
   ATTR_TRAVEL,
@@ -481,6 +482,11 @@ export class Renderer {
     const layerNum =
       node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
     mesh.layers.set(layerNum);
+
+    if (node.visibility & SELECT_LAYER) {
+      mesh.layers.enable(THREE_LAYERS.SELECTED);
+    }
+
     if (node.visibility & USER_LAYER) {
       for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
         mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));

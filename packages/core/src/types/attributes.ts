@@ -1,10 +1,10 @@
 const filter_values = {
-    INCLUDE_TREE: "include-tree",
-    EXCLUDE_TREE: "exclude-tree",
-    INCLUDE_SELF: "include-self",
-    EXCLUDE_SELF: "exclude-self",
-    END: "end",
-}
+  INCLUDE_TREE: "include-tree",
+  EXCLUDE_TREE: "exclude-tree",
+  INCLUDE_SELF: "include-self",
+  EXCLUDE_SELF: "exclude-self",
+  END: "end",
+};
 
 export const ATTR_DOM = {
   NAME: "data-mirage-dom",
@@ -35,7 +35,6 @@ export const ATTR_FILTER = {
   KEY: "mirageFilter",
   VALUES: filter_values,
 } as const;
-
 
 export const ATTR_SELECT = {
   NAME: "data-mirage-select",

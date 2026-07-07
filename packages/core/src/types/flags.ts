@@ -11,6 +11,7 @@ export {
 
 // Filtering Flag
 export const USER_LAYER = 1 << 0;
+export const SELECT_LAYER = 1 << 1;
 export const EXCLUDED = 0;
 
 // Three.js Layer Channels (0 ~ 31)
