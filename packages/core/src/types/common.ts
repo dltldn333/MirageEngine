@@ -29,6 +29,7 @@ export interface SceneNode {
   isTraveler: boolean;
   captureLayer: number;
   nativeLayer?: number;
+  nativeStyles?: BoxStyles | TextStyles;
   isFixed: boolean;
   shaderHooks?: ShaderHooks;
 

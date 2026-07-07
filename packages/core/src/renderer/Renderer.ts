@@ -32,6 +32,7 @@ export class Renderer {
   private mountContainer: HTMLElement;
   private registry: MeshRegistry;
   private targetRect: DOMRect;
+  private nativeMaterialMeshes: Set<THREE.Mesh> = new Set();
 
   private travelersByLayer: Set<THREE.Mesh>[] = Array.from(
     { length: ATTR_TRAVEL.MAX_LAYERS },
@@ -221,9 +222,6 @@ export class Renderer {
 
     this.renderOrder = 0;
 
-    // const activeElements = new Set<HTMLElement>();
-
-    // this.reconcileNode(graphNode, activeElements);
     this.reconcileNode(graphNode);
 
     if (pendingDeletions.size > 0) {
@@ -236,6 +234,13 @@ export class Renderer {
           }
           this.fixedMeshes.delete(meshToDestroy);
           meshToDestroy.geometry.dispose();
+          if (meshToDestroy.userData.nativeMaterial) {
+            if (Array.isArray(meshToDestroy.userData.nativeMaterial)) {
+              meshToDestroy.userData.nativeMaterial.forEach((mat: THREE.Material) => mat.dispose());
+            } else {
+              meshToDestroy.userData.nativeMaterial.dispose();
+            }
+          }
           meshToDestroy.traverse((child) => {
             if (child instanceof THREE.Mesh) {
               if (child.geometry) child.geometry.dispose();
@@ -250,6 +255,7 @@ export class Renderer {
           });
           this.registry.remove(el);
           this.textureManager.unregister(el);
+          this.nativeMaterialMeshes.delete(meshToDestroy);
         }
       });
     }
@@ -267,21 +273,18 @@ export class Renderer {
 
   // private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
   private reconcileNode(node: SceneNode) {
-    // activeElements.add(node.element);
-
-    // let mesh = this.meshMap.get(node.element);
     let mesh = this.registry.get(node.element) as THREE.Mesh | undefined;
+      
     if (!mesh) {
       const geometry = new THREE.PlaneGeometry(1, 1);
-      let material: THREE.MeshBasicMaterial | THREE.Material;
       const initialTexture = node.isTraveler
         ? this.renderTargets[node.captureLayer - 2]?.texture
         : this.textureManager.get(node.element);
 
-      material = Painter.create(
+      const material = Painter.create(
         "BOX",
         node.styles,
-        "",
+        undefined,
         node.rect.width,
         node.rect.height,
         this.qualityFactor,
@@ -291,7 +294,39 @@ export class Renderer {
       mesh = new THREE.Mesh(geometry, material);
       if (node.type === "TEXT") mesh.name = "BG_MESH";
       this.scene.add(mesh);
+      
       this.registry.register(node.element, mesh);
+      mesh.userData.baseMaterial = material;
+    }
+
+    if (node.nativeStyles && node.nativeLayer !== undefined) {
+      const initialTexture = node.isTraveler
+        ? this.renderTargets[node.captureLayer - 2]?.texture
+        : this.textureManager.get(node.element);
+
+      if (!mesh.userData.nativeMaterial) {
+        mesh.userData.nativeMaterial = Painter.create(
+          "BOX",
+          node.nativeStyles,
+          undefined,
+          node.rect.width,
+          node.rect.height,
+          this.qualityFactor,
+          initialTexture,
+          node.shaderHooks,
+        );
+      }
+      mesh.userData.nativeLayer = node.nativeLayer;
+      this.nativeMaterialMeshes.add(mesh);
+    } else if (mesh.userData.nativeMaterial) {
+      if (Array.isArray(mesh.userData.nativeMaterial)) {
+        mesh.userData.nativeMaterial.forEach((m: THREE.Material) => m.dispose());
+      } else {
+        mesh.userData.nativeMaterial.dispose();
+      }
+      mesh.userData.nativeMaterial = undefined;
+      mesh.userData.nativeLayer = undefined;
+      this.nativeMaterialMeshes.delete(mesh);
     }
 
     // [Important] use whene mesh animating with js
@@ -464,37 +499,49 @@ export class Renderer {
     //   -localY + canvasHeight / 2 - rect.height / 2,
     //   styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     // );
-    Painter.update(
-      mesh.material as THREE.Material,
-      "BOX",
-      node.styles,
-      "",
-      node.rect.width,
-      node.rect.height,
-      this.qualityFactor,
-      node.isTraveler
-        ? this.renderTargets[node.captureLayer - 2]?.texture
-        : this.textureManager.get(node.element),
-    );
+    if (mesh.userData.baseMaterial) {
+      Painter.update(
+        mesh.userData.baseMaterial,
+        "BOX",
+        node.styles,
+        "",
+        node.rect.width,
+        node.rect.height,
+        this.qualityFactor,
+        node.isTraveler
+          ? this.renderTargets[node.captureLayer - 2]?.texture
+          : this.textureManager.get(node.element),
+      );
+    }
+    
+    if (mesh.userData.nativeMaterial) {
+      Painter.update(
+        mesh.userData.nativeMaterial,
+        "BOX",
+        node.nativeStyles!,
+        "",
+        node.rect.width,
+        node.rect.height,
+        this.qualityFactor,
+        node.isTraveler
+          ? this.renderTargets[node.captureLayer - 2]?.texture
+          : this.textureManager.get(node.element),
+      );
+    }
   }
 
   private updateMeshLayers(mesh: THREE.Mesh, node: SceneNode) {
-    if (node.nativeLayer !== undefined) {
-      mesh.layers.set(THREE_LAYERS.HIDDEN);
-      mesh.layers.enable(THREE_LAYERS.getCaptureLayer(node.nativeLayer));
-    } else {
-      const layerNum =
-        node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
-      mesh.layers.set(layerNum);
+    const layerNum =
+      node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
+    mesh.layers.set(layerNum);
 
-      if (node.visibility & SELECT_LAYER) {
-        mesh.layers.enable(THREE_LAYERS.SELECTED);
-      }
+    if (node.visibility & SELECT_LAYER) {
+      mesh.layers.enable(THREE_LAYERS.SELECTED);
+    }
 
-      if (node.visibility & USER_LAYER) {
-        for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
-          mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
-        }
+    if (node.visibility & USER_LAYER) {
+      for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+        mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
       }
     }
   }
@@ -569,13 +616,31 @@ export class Renderer {
   }
 
   public render() {
+    for (const mesh of this.nativeMaterialMeshes) {
+      mesh.material = mesh.userData.baseMaterial;
+    }
+
     for (let i = 0; i < ATTR_TRAVEL.MAX_LAYERS; i++) {
+      const currentLayer = i + 1;
+      for (const mesh of this.nativeMaterialMeshes) {
+        if (currentLayer >= mesh.userData.nativeLayer) {
+          mesh.material = mesh.userData.nativeMaterial;
+        } else {
+          mesh.material = mesh.userData.baseMaterial;
+        }
+      }
+
       this.captureRenderTarget(
         this.travelersByLayer[i],
-        THREE_LAYERS.getCaptureLayer(i + 1),
+        THREE_LAYERS.getCaptureLayer(currentLayer),
         this.renderTargets[i],
       );
     }
+
+    for (const mesh of this.nativeMaterialMeshes) {
+      mesh.material = mesh.userData.baseMaterial;
+    }
+
     this.renderer.render(this.scene, this.camera);
   }
 

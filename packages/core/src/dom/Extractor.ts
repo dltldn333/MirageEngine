@@ -383,7 +383,7 @@ export function extractSceneGraph(
 
   const travelData = element.dataset[ATTR_TRAVEL.KEY];
   let isTraveler = false;
-  let travelerStyles: any = {};
+  let nativeParsedStyles: any = {};
   let nativeLayer: number | undefined;
   if (travelData) {
     let explicitLayer = 1;
@@ -399,7 +399,7 @@ export function extractSceneGraph(
       try {
         // 싱글 쿼트를 더블 쿼트로 변경하거나 키에 따옴표가 없는 객체를 지원하기 위해
         // Function을 통한 안전한 객체 평가(또는 JSON.parse)를 사용
-        travelerStyles = new Function("return " + jsonStr)();
+        nativeParsedStyles = new Function("return " + jsonStr)();
       } catch (e) {
         console.warn(`[MirageEngine] Failed to parse travel styles JSON: ${jsonStr}`);
       }
@@ -518,21 +518,23 @@ export function extractSceneGraph(
     }
   }
 
-  const styles: BoxStyles = {
-    backgroundColor: travelerStyles.backgroundColor ?? computed.backgroundColor,
-    backgroundImage: travelerStyles.backgroundImage ?? computed.backgroundImage,
-    opacity: travelerStyles.opacity ?? (
+  // Base node uses pure DOM styles, unpolluted by travelerStyles
+  const baseStyles: BoxStyles = {
+    backgroundColor: computed.backgroundColor,
+    backgroundImage: computed.backgroundImage,
+    opacity:
       element.dataset[ATTR_DOM.KEY] === ATTR_DOM.VALUES.HIDE
         ? 1
-        : parseFloat(computed.opacity)
-    ),
-    zIndex: travelerStyles.zIndex ?? effectiveZIndex,
-    borderRadius: travelerStyles.borderRadius ?? computed.borderRadius,
-    borderColor: travelerStyles.borderColor ?? computed.borderColor,
-    borderWidth: travelerStyles.borderWidth ?? computed.borderWidth,
+        : parseFloat(computed.opacity),
+    zIndex: effectiveZIndex,
+    borderRadius: computed.borderRadius,
+    borderColor: computed.borderColor,
+    borderWidth: computed.borderWidth,
     imageSrc,
-    isTraveler,
+    isTraveler: isTraveler,
   };
+
+  const styles: BoxStyles = baseStyles;
 
   let textContent: string | undefined;
   let textStyles: TextStyles | undefined;
@@ -574,6 +576,17 @@ export function extractSceneGraph(
     isTraveler: isTraveler,
     captureLayer,
     nativeLayer,
+    nativeStyles: nativeLayer !== undefined ? {
+      ...baseStyles,
+      backgroundColor: nativeParsedStyles.backgroundColor ?? baseStyles.backgroundColor,
+      backgroundImage: nativeParsedStyles.backgroundImage ?? baseStyles.backgroundImage,
+      opacity: nativeParsedStyles.opacity ?? baseStyles.opacity,
+      zIndex: nativeParsedStyles.zIndex !== undefined ? nativeParsedStyles.zIndex + effectiveZIndex : baseStyles.zIndex,
+      borderRadius: nativeParsedStyles.borderRadius ?? baseStyles.borderRadius,
+      borderColor: nativeParsedStyles.borderColor ?? baseStyles.borderColor,
+      borderWidth: nativeParsedStyles.borderWidth ?? baseStyles.borderWidth,
+      isTraveler: false,
+    } : undefined,
     isFixed: computed.position === "fixed",
     children,
     shaderHooks,
