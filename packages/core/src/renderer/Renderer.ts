@@ -284,7 +284,7 @@ export class Renderer {
       const material = Painter.create(
         "BOX",
         node.styles,
-        undefined,
+        "",
         node.rect.width,
         node.rect.height,
         this.qualityFactor,
@@ -307,8 +307,8 @@ export class Renderer {
       if (!mesh.userData.nativeMaterial) {
         mesh.userData.nativeMaterial = Painter.create(
           "BOX",
-          node.nativeStyles,
-          undefined,
+          node.nativeStyles!,
+          "",
           node.rect.width,
           node.rect.height,
           this.qualityFactor,
