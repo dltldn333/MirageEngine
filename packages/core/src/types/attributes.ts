@@ -16,6 +16,7 @@ export const ATTR_DOM = {
 
 export const TRAVEL_VALUES = {
   TRAVELER: "traveler",
+  NATIVE: "native",
   CAPTURE_1: "1",
   CAPTURE_2: "2",
   CAPTURE_3: "3",

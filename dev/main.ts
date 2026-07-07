@@ -80,6 +80,10 @@ const traveler2 = document.querySelector("#box-z") as HTMLElement;
 traveler.dataset.mirageShader = JSON.stringify(shader);
 traveler2.dataset.mirageShader = JSON.stringify(shader);
 
+const styleBoxParent = {backgroundColor: "red"}
+const boxParent = document.querySelector("#box-parent") as HTMLElement;
+
+boxParent.dataset.mirageTravel = `native 2 ${JSON.stringify(styleBoxParent)}`
 
 const target = document.querySelector("#root") as HTMLElement;
 // const container = document.querySelector("#space") as HTMLElement;
@@ -88,7 +92,7 @@ const mirageConifg: MirageConfig = {
   quality: "high",
   // mode: "duplicate",
   mode: "overlay",
-  layer: "selected",
+  layer: "base",
   travelerClipArea: "50px",
   // resizeDebounce: {
   //   delay: 200,

@@ -479,17 +479,22 @@ export class Renderer {
   }
 
   private updateMeshLayers(mesh: THREE.Mesh, node: SceneNode) {
-    const layerNum =
-      node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
-    mesh.layers.set(layerNum);
+    if (node.nativeLayer !== undefined) {
+      mesh.layers.set(THREE_LAYERS.HIDDEN);
+      mesh.layers.enable(THREE_LAYERS.getCaptureLayer(node.nativeLayer));
+    } else {
+      const layerNum =
+        node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
+      mesh.layers.set(layerNum);
 
-    if (node.visibility & SELECT_LAYER) {
-      mesh.layers.enable(THREE_LAYERS.SELECTED);
-    }
+      if (node.visibility & SELECT_LAYER) {
+        mesh.layers.enable(THREE_LAYERS.SELECTED);
+      }
 
-    if (node.visibility & USER_LAYER) {
-      for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
-        mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+      if (node.visibility & USER_LAYER) {
+        for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+          mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+        }
       }
     }
   }

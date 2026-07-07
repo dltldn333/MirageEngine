@@ -8,7 +8,6 @@ import {
   Visibility,
   USER_LAYER,
   SELECT_LAYER,
-
   ALLOWED_FILTERS,
   ATTR_DOM,
   ATTR_FILTER,
@@ -21,9 +20,7 @@ import { BoxStyles, TextStyles, ShaderHooks } from "@mirage-engine/painter";
 
 // Helper function: getTextNodeRect, isValidTextNode, isLeafTextElement, extractTextStyles
 
-function extractTextLines(
-  textNode: Text,
-): {
+function extractTextLines(textNode: Text): {
   text: string;
   rect: { left: number; top: number; width: number; height: number };
 }[] {
@@ -252,7 +249,9 @@ export function extractSceneGraph(
           parent && parent.dataset[ATTR_DOM.KEY] === ATTR_DOM.VALUES.HIDE
             ? 1
             : parseFloat(computed.opacity),
-        zIndex: (isNaN(parseInt(computed.zIndex)) ? 0 : parseInt(computed.zIndex)) + inheritedZIndex,
+        zIndex:
+          (isNaN(parseInt(computed.zIndex)) ? 0 : parseInt(computed.zIndex)) +
+          inheritedZIndex,
         borderRadius: "0px",
         borderColor: "transparent",
         borderWidth: "0px",
@@ -382,21 +381,54 @@ export function extractSceneGraph(
     }
   }
 
-
-
   const travelData = element.dataset[ATTR_TRAVEL.KEY];
   let isTraveler = false;
+  let travelerStyles: any = {};
+  let nativeLayer: number | undefined;
   if (travelData) {
-    const tokens = travelData.split(/\s+/);
+    let explicitLayer = 1;
+    
+    // '{' 부터 '}' 까지의 JSON 문자열 추출
+    const jsonStart = travelData.indexOf('{');
+    const jsonEnd = travelData.lastIndexOf('}');
+    
+    let tokensPart = travelData;
+    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+      tokensPart = travelData.substring(0, jsonStart).trim();
+      const jsonStr = travelData.substring(jsonStart, jsonEnd + 1);
+      try {
+        // 싱글 쿼트를 더블 쿼트로 변경하거나 키에 따옴표가 없는 객체를 지원하기 위해
+        // Function을 통한 안전한 객체 평가(또는 JSON.parse)를 사용
+        travelerStyles = new Function("return " + jsonStr)();
+      } catch (e) {
+        console.warn(`[MirageEngine] Failed to parse travel styles JSON: ${jsonStr}`);
+      }
+    }
+
+    const tokens = tokensPart.split(/\s+/);
+    
+    let hasTravelToken = false;
+    
+    // traveler 인 경우
     if (tokens.includes(ATTR_TRAVEL.VALUES.TRAVELER)) {
       isTraveler = true;
-      
-      let explicitLayer = 1;
+      hasTravelToken = true;
       const numToken = tokens.find(t => !isNaN(parseInt(t, 10)));
       if (numToken) {
         explicitLayer = parseInt(numToken, 10);
       }
-      
+    } 
+    // native 인 경우
+    else if (tokens.includes(ATTR_TRAVEL.VALUES.NATIVE)) {
+      isTraveler = false;
+      const numToken = tokens.find(t => !isNaN(parseInt(t, 10)));
+      if (numToken) {
+        nativeLayer = parseInt(numToken, 10);
+      }
+    }
+
+    // traveler만 명시된 레이어에 맞게 captureLayer 컨텍스트를 업데이트해야 함 (계층적 여행)
+    if (hasTravelToken) {
       const targetCaptureLayer = explicitLayer + 1;
       if (targetCaptureLayer < captureLayer) {
         throw new Error(`[MirageEngine] Traveler layer (${explicitLayer}) cannot be smaller than inherited capture layer (${captureLayer - 1}).`);
@@ -429,7 +461,8 @@ export function extractSceneGraph(
   }
 
   const localZIndex = parseInt(computed.zIndex);
-  const effectiveZIndex = (isNaN(localZIndex) ? 0 : localZIndex) + inheritedZIndex;
+  const effectiveZIndex =
+    (isNaN(localZIndex) ? 0 : localZIndex) + inheritedZIndex;
   // console.log(`${element.id}: ${computed.background}`);
   // console.log(computed.backgroundImage);
   let imageSrc: string | undefined;
@@ -437,24 +470,28 @@ export function extractSceneGraph(
     imageSrc = (element as HTMLImageElement).src;
   } else if (element.tagName.toLowerCase() === "svg") {
     const clone = element.cloneNode(true) as SVGSVGElement;
-    
+
     const inlineSVGStyles = (orig: Element, cloned: Element) => {
       const computed = window.getComputedStyle(orig);
       const clonedHtml = cloned as HTMLElement;
-      
-      if (computed.fill && computed.fill !== "none") clonedHtml.style.fill = computed.fill;
-      if (computed.stroke && computed.stroke !== "none") clonedHtml.style.stroke = computed.stroke;
-      if (computed.strokeWidth && computed.strokeWidth !== "0px") clonedHtml.style.strokeWidth = computed.strokeWidth;
+
+      if (computed.fill && computed.fill !== "none")
+        clonedHtml.style.fill = computed.fill;
+      if (computed.stroke && computed.stroke !== "none")
+        clonedHtml.style.stroke = computed.stroke;
+      if (computed.strokeWidth && computed.strokeWidth !== "0px")
+        clonedHtml.style.strokeWidth = computed.strokeWidth;
       if (computed.color) clonedHtml.style.color = computed.color;
-      if (computed.opacity && computed.opacity !== "1") clonedHtml.style.opacity = computed.opacity;
-  
+      if (computed.opacity && computed.opacity !== "1")
+        clonedHtml.style.opacity = computed.opacity;
+
       for (let i = 0; i < orig.children.length; i++) {
         inlineSVGStyles(orig.children[i], cloned.children[i]);
       }
     };
-  
+
     inlineSVGStyles(element, clone);
-  
+
     const svgRect = element.getBoundingClientRect();
     const scale = window.devicePixelRatio * qualityFactor; // High-DPI 대응을 위한 해상도 스케일업
 
@@ -465,12 +502,14 @@ export function extractSceneGraph(
     clone.setAttribute("width", (svgRect.width * scale).toString());
     clone.setAttribute("height", (svgRect.height * scale).toString());
 
-  
     let svgString = new XMLSerializer().serializeToString(clone);
     if (!svgString.includes("xmlns=")) {
-      svgString = svgString.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
+      svgString = svgString.replace(
+        "<svg",
+        '<svg xmlns="http://www.w3.org/2000/svg"',
+      );
     }
-  
+
     imageSrc = `data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`;
   } else if (computed.backgroundImage && computed.backgroundImage !== "none") {
     const match = computed.backgroundImage.match(/url\(['"]?(.*?)['"]?\)/);
@@ -480,16 +519,17 @@ export function extractSceneGraph(
   }
 
   const styles: BoxStyles = {
-    backgroundColor: computed.backgroundColor,
-    backgroundImage: computed.backgroundImage,
-    opacity:
+    backgroundColor: travelerStyles.backgroundColor ?? computed.backgroundColor,
+    backgroundImage: travelerStyles.backgroundImage ?? computed.backgroundImage,
+    opacity: travelerStyles.opacity ?? (
       element.dataset[ATTR_DOM.KEY] === ATTR_DOM.VALUES.HIDE
         ? 1
-        : parseFloat(computed.opacity),
-    zIndex: effectiveZIndex,
-    borderRadius: computed.borderRadius,
-    borderColor: computed.borderColor,
-    borderWidth: computed.borderWidth,
+        : parseFloat(computed.opacity)
+    ),
+    zIndex: travelerStyles.zIndex ?? effectiveZIndex,
+    borderRadius: travelerStyles.borderRadius ?? computed.borderRadius,
+    borderColor: travelerStyles.borderColor ?? computed.borderColor,
+    borderWidth: travelerStyles.borderWidth ?? computed.borderWidth,
     imageSrc,
     isTraveler,
   };
@@ -508,7 +548,7 @@ export function extractSceneGraph(
         visibleFlowToPass,
         captureLayer,
         effectiveZIndex,
-        qualityFactor
+        qualityFactor,
       );
       if (childNode) {
         children.push(childNode);
@@ -533,6 +573,7 @@ export function extractSceneGraph(
     visibility: visibleFlag,
     isTraveler: isTraveler,
     captureLayer,
+    nativeLayer,
     isFixed: computed.position === "fixed",
     children,
     shaderHooks,
