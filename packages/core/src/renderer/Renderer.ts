@@ -103,7 +103,7 @@ export class Renderer {
   private getSceneLayer(): number {
     if (typeof this.targetLayer === "number") {
       return this.targetLayer;
-    } else if (this.targetLayer === "sellected") {
+    } else if (this.targetLayer === "selected") {
       return THREE_LAYERS.SELECTED;
     } else {
       return THREE_LAYERS.BASE;

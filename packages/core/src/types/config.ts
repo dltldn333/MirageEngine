@@ -1,5 +1,5 @@
 export type Quality = "low" | "medium" | "high" | number;
-export type LayerTarget = "base" | "sellected"
+export type LayerTarget = "base" | "selected"
 export type MirageMode = "overlay" | "duplicate";
 export type PxUnit = `${number}px`;
 export type PercentUnit = `${number}%`;

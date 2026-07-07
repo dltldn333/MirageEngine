@@ -37,9 +37,9 @@ export const ATTR_FILTER = {
 } as const;
 
 
-export const ATTR_SELECTED = {
-  NAME: "data-mirage-selected",
-  KEY: "mirageSelected",
+export const ATTR_SELECT = {
+  NAME: "data-mirage-select",
+  KEY: "mirageSelect",
   VALUES: filter_values,
 } as const;
 
