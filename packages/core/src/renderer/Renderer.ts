@@ -21,7 +21,7 @@ export class Renderer {
   private readonly renderer: THREE.WebGLRenderer;
   private renderTargets: THREE.WebGLRenderTarget[] = [];
   private renderOrder: number = 0;
-  private qualityFactor: number = 2;
+  public qualityFactor: number = 2;
   private mode: MirageMode = "overlay";
   private clipArea: travelerClipArea = 1;
 

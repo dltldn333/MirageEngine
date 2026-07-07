@@ -58,22 +58,37 @@ export class TextureLifecycleManager {
     this.loadStatus.set(element, true);
 
     try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const bitmap = await createImageBitmap(blob, { imageOrientation: "flipY" });
+      let textureImage: ImageBitmap | HTMLImageElement;
+
+      if (url.startsWith("data:image/svg+xml")) {
+        textureImage = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = url;
+        });
+      } else {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        textureImage = await createImageBitmap(blob, { imageOrientation: "flipY" });
+      }
 
       // Check if URL changed or element was unregistered while decoding
       if (this.elementUrls.get(element) !== url) {
-        bitmap.close();
+        if ('close' in textureImage) textureImage.close();
         return;
       }
 
-      // Check if element is no longer intersecting (debounced unobserve might have fired)
-      // Actually we just check if it's still observed and has the URL. 
-      // A more robust check for intersection state might be needed, but for now we rely on disposeTexture.
-
-      const texture = new THREE.CanvasTexture(bitmap);
+      const texture = new THREE.Texture(textureImage);
+      // createImageBitmap already flips Y, but HTMLImageElement relies on THREE.js flipY
+      if (!(textureImage instanceof HTMLImageElement)) {
+        texture.flipY = false;
+      }
+      
+      // Inherit CanvasTexture defaults or set them explicitly if needed
+      texture.colorSpace = THREE.LinearSRGBColorSpace; // or adjust according to your pipeline
       texture.needsUpdate = true;
+      
       this.textures.set(element, texture);
       this.onUpdate(element, texture);
     } catch (e) {
