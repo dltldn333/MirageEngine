@@ -1,5 +1,5 @@
 export type Quality = "low" | "medium" | "high" | number;
-export type SceneType = "base" | "allowed"
+export type LayerTarget = "base" | "sellected"
 export type MirageMode = "overlay" | "duplicate";
 export type PxUnit = `${number}px`;
 export type PercentUnit = `${number}%`;
@@ -14,7 +14,7 @@ export interface ResizeConfig {
 
 interface BaseConfig {
   debug?: boolean;
-  scene?: number | SceneType;
+  layer?: number | LayerTarget;
   quality?: Quality;
   style?: {
     zIndex?: string;

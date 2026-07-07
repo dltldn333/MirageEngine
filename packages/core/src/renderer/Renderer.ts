@@ -9,6 +9,7 @@ import {
   travelerClipArea,
   THREE_LAYERS,
   ATTR_TRAVEL,
+  LayerTarget,
 } from "../types";
 import { Painter } from "@mirage-engine/painter";
 import { MeshRegistry } from "../store/MeshRegistry";
@@ -24,6 +25,7 @@ export class Renderer {
   public qualityFactor: number = 2;
   private mode: MirageMode = "overlay";
   private clipArea: travelerClipArea = 1;
+  public targetLayer: number | LayerTarget = "base";
 
   private target: HTMLElement;
   private mountContainer: HTMLElement;
@@ -58,6 +60,7 @@ export class Renderer {
 
     this.mode = config.mode ?? "overlay";
     this.clipArea = config.travelerClipArea ?? 1;
+    this.targetLayer = config.layer ?? "base";
     this.canvas = document.createElement("canvas");
     this.scene = new THREE.Scene();
 
@@ -78,7 +81,7 @@ export class Renderer {
       1000,
     );
     this.camera.position.z = 100;
-    this.camera.layers.set(THREE_LAYERS.BASE);
+    this.camera.layers.set(this.getSceneLayer());
 
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
@@ -96,6 +99,17 @@ export class Renderer {
 
     this.applyTextQuality(config.quality ?? "medium");
   }
+
+  private getSceneLayer(): number {
+    if (typeof this.targetLayer === "number") {
+      return this.targetLayer;
+    } else if (this.targetLayer === "sellected") {
+      return THREE_LAYERS.SELECTED;
+    } else {
+      return THREE_LAYERS.BASE;
+    }
+  }
+
   public createRenderTarget() {
     for (let i = 0; i < ATTR_TRAVEL.MAX_LAYERS; i++) {
       this.renderTargets.push(
@@ -127,6 +141,9 @@ export class Renderer {
         this.qualityFactor = 4;
         break;
       case "medium":
+        // this.qualityFactor = 2;
+        this.qualityFactor = 2;
+        break;  
       default:
         this.qualityFactor = 2;
         break;
@@ -536,7 +553,7 @@ export class Renderer {
     this.renderer.setScissorTest(false);
     this.renderer.autoClear = true;
     this.renderer.setRenderTarget(null);
-    this.camera.layers.set(27);
+    this.camera.layers.set(this.getSceneLayer());
     this.renderer.setClearColor(oldClearColor, oldClearAlpha);
   }
 
