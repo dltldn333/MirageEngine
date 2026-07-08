@@ -221,9 +221,6 @@ export class Renderer {
 
     this.renderOrder = 0;
 
-    // const activeElements = new Set<HTMLElement>();
-
-    // this.reconcileNode(graphNode, activeElements);
     this.reconcileNode(graphNode);
 
     if (pendingDeletions.size > 0) {
@@ -236,6 +233,15 @@ export class Renderer {
           }
           this.fixedMeshes.delete(meshToDestroy);
           meshToDestroy.geometry.dispose();
+          if (meshToDestroy.userData.nativeMesh) {
+            this.scene.remove(meshToDestroy.userData.nativeMesh);
+            if (Array.isArray(meshToDestroy.userData.nativeMesh.material)) {
+              meshToDestroy.userData.nativeMesh.material.forEach((mat: THREE.Material) => mat.dispose());
+            } else {
+              meshToDestroy.userData.nativeMesh.material.dispose();
+            }
+            meshToDestroy.userData.nativeMesh.geometry.dispose();
+          }
           meshToDestroy.traverse((child) => {
             if (child instanceof THREE.Mesh) {
               if (child.geometry) child.geometry.dispose();
@@ -267,18 +273,15 @@ export class Renderer {
 
   // private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
   private reconcileNode(node: SceneNode) {
-    // activeElements.add(node.element);
-
-    // let mesh = this.meshMap.get(node.element);
     let mesh = this.registry.get(node.element) as THREE.Mesh | undefined;
+      
     if (!mesh) {
       const geometry = new THREE.PlaneGeometry(1, 1);
-      let material: THREE.MeshBasicMaterial | THREE.Material;
       const initialTexture = node.isTraveler
         ? this.renderTargets[node.captureLayer - 2]?.texture
         : this.textureManager.get(node.element);
 
-      material = Painter.create(
+      const material = Painter.create(
         "BOX",
         node.styles,
         "",
@@ -288,14 +291,19 @@ export class Renderer {
         initialTexture,
         node.shaderHooks,
       );
+      
       mesh = new THREE.Mesh(geometry, material);
+
       if (node.type === "TEXT") mesh.name = "BG_MESH";
       this.scene.add(mesh);
+      
       this.registry.register(node.element, mesh);
+      mesh.userData.baseMaterial = material;
     }
 
+
+
     // [Important] use whene mesh animating with js
-    mesh.userData.domRect = node.rect;
 
     this.updateMeshProperties(mesh, node);
     this.updateMeshLayers(mesh, node);
@@ -330,16 +338,21 @@ export class Renderer {
         this.reconcileNode(child);
       }
     } else if (node.type === "TEXT") {
-      this.reconcileTextChild(mesh, node);
+      this.reconcileTextChild(mesh, node, false);
+      if (mesh.userData.nativeMesh && node.nativeStyles) {
+        this.reconcileTextChild(mesh.userData.nativeMesh as THREE.Mesh, node, true);
+      }
     }
   }
 
-  private reconcileTextChild(parentMesh: THREE.Mesh, node: SceneNode) {
+  private reconcileTextChild(parentMesh: THREE.Mesh, node: SceneNode, isNative: boolean) {
     const lines = node.textLines || [
       { text: node.textContent || "", rect: node.rect },
     ];
+    
+    const stylesToUse = (isNative ? node.nativeStyles : node.textStyles) as TextStyles;
     const currentStyleHash =
-      JSON.stringify(node.textStyles) +
+      JSON.stringify(stylesToUse) +
       node.textContent +
       lines.map((l) => l.text).join("|");
     const cachedStyleHash = parentMesh.userData?.textChildStyleHash;
@@ -365,7 +378,7 @@ export class Renderer {
       lines.forEach((line, index) => {
         const material = Painter.create(
           "TEXT",
-          node.textStyles!,
+          stylesToUse,
           line.text,
           line.rect.width,
           line.rect.height,
@@ -376,7 +389,6 @@ export class Renderer {
         const textMesh = new THREE.Mesh(geometry, material);
 
         textMesh.name = `TEXT_CHILD_${index}`;
-        this.updateMeshLayers(textMesh, node);
 
         // Parent is already scaled to node.rect.width/height.
         // We counter-scale the child so its absolute size is exactly line.rect.width/height.
@@ -404,6 +416,35 @@ export class Renderer {
 
       parentMesh.userData.textChildStyleHash = currentStyleHash;
     }
+
+    // Always update layers for all text children, as visibility/nativeLayer can change without dirtifying the style
+    parentMesh.children.forEach((child) => {
+      if (!child.name.startsWith("TEXT_CHILD")) return;
+      const textMesh = child as THREE.Mesh;
+      
+      const layerNum = node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
+      textMesh.layers.set(layerNum);
+
+      if (node.visibility & SELECT_LAYER) {
+        textMesh.layers.enable(THREE_LAYERS.SELECTED);
+      }
+
+      if (node.visibility & USER_LAYER) {
+        if (!isNative && node.nativeLayer !== undefined && node.nativeStyles !== undefined) {
+          for (let i = node.captureLayer; i < node.nativeLayer; i++) {
+            textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+          }
+        } else if (isNative && node.nativeLayer !== undefined) {
+          for (let i = Math.max(node.captureLayer, node.nativeLayer); i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+            textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+          }
+        } else {
+          for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+            textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+          }
+        }
+      }
+    });
   }
 
   private updateMeshProperties(mesh: THREE.Mesh, node: SceneNode) {
@@ -412,8 +453,15 @@ export class Renderer {
     const pixelRatio = this.renderer.getPixelRatio();
     const canvasWidth = this.renderer.domElement.width / pixelRatio;
     const canvasHeight = this.renderer.domElement.height / pixelRatio;
-
+    
+    mesh.material = mesh.userData.baseMaterial as THREE.Material;
     mesh.scale.set(rect.width, rect.height, 1);
+
+    mesh.userData.domRect = {
+      ...rect,
+      width: rect.width,
+      height: rect.height,
+    };
 
     const Z_MICRO_OFFSET = 0.001;
     this.renderOrder++;
@@ -465,17 +513,72 @@ export class Renderer {
     //   styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     // );
     Painter.update(
-      mesh.material as THREE.Material,
+      mesh.userData.baseMaterial,
       "BOX",
-      node.styles,
+      styles,
       "",
-      node.rect.width,
-      node.rect.height,
+      rect.width,
+      rect.height,
       this.qualityFactor,
       node.isTraveler
         ? this.renderTargets[node.captureLayer - 2]?.texture
         : this.textureManager.get(node.element),
     );
+
+    if (node.nativeStyles && node.nativeRect) {
+      if (!mesh.userData.nativeMesh) {
+        const nativeMaterial = Painter.create(
+          "BOX",
+          node.nativeStyles,
+          "",
+          node.nativeRect.width,
+          node.nativeRect.height,
+          this.qualityFactor,
+          node.isTraveler
+            ? this.renderTargets[node.captureLayer - 2]?.texture
+            : this.textureManager.get(node.element),
+          node.shaderHooks,
+        );
+        const nativeMesh = new THREE.Mesh(mesh.geometry, nativeMaterial);
+        if (node.type === "TEXT") nativeMesh.name = "BG_MESH";
+        this.scene.add(nativeMesh);
+        mesh.userData.nativeMesh = nativeMesh;
+      }
+
+      const nativeMesh = mesh.userData.nativeMesh as THREE.Mesh;
+      const nativeLocalX = node.nativeRect.x - targetPageX;
+      const nativeLocalY = node.nativeRect.y - targetPageY;
+      const nativeBaseX = nativeLocalX - canvasWidth / 2 + node.nativeRect.width / 2;
+      const nativeBaseY = -nativeLocalY + canvasHeight / 2 - node.nativeRect.height / 2;
+
+      nativeMesh.scale.set(node.nativeRect.width, node.nativeRect.height, 1);
+      nativeMesh.position.set(
+        nativeBaseX,
+        nativeBaseY,
+        node.nativeStyles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
+      );
+
+      Painter.update(
+        nativeMesh.material as THREE.Material,
+        "BOX",
+        node.nativeStyles,
+        "",
+        node.nativeRect.width,
+        node.nativeRect.height,
+        this.qualityFactor,
+        node.isTraveler
+          ? this.renderTargets[node.captureLayer - 2]?.texture
+          : this.textureManager.get(node.element),
+      );
+    } else {
+      if (mesh.userData.nativeMesh) {
+        this.scene.remove(mesh.userData.nativeMesh);
+        if (mesh.userData.nativeMesh.material instanceof THREE.Material) {
+          mesh.userData.nativeMesh.material.dispose();
+        }
+        delete mesh.userData.nativeMesh;
+      }
+    }
   }
 
   private updateMeshLayers(mesh: THREE.Mesh, node: SceneNode) {
@@ -487,9 +590,23 @@ export class Renderer {
       mesh.layers.enable(THREE_LAYERS.SELECTED);
     }
 
-    if (node.visibility & USER_LAYER) {
-      for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
-        mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+    if (mesh.userData.nativeMesh && node.nativeLayer !== undefined) {
+      const nativeMesh = mesh.userData.nativeMesh as THREE.Mesh;
+      nativeMesh.layers.set(THREE_LAYERS.HIDDEN);
+
+      if (node.visibility & USER_LAYER) {
+        for (let i = node.captureLayer; i < node.nativeLayer; i++) {
+          mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+        }
+        for (let i = Math.max(node.captureLayer, node.nativeLayer); i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+          nativeMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+        }
+      }
+    } else {
+      if (node.visibility & USER_LAYER) {
+        for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+          mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+        }
       }
     }
   }
@@ -565,35 +682,17 @@ export class Renderer {
 
   public render() {
     for (let i = 0; i < ATTR_TRAVEL.MAX_LAYERS; i++) {
+      const currentLayer = i + 1;
+
       this.captureRenderTarget(
         this.travelersByLayer[i],
-        THREE_LAYERS.getCaptureLayer(i + 1),
+        THREE_LAYERS.getCaptureLayer(currentLayer),
         this.renderTargets[i],
       );
     }
+
     this.renderer.render(this.scene, this.camera);
   }
 
-  // for debugging
-  public showScissoredRenderTarget() {
-    if (this.renderTargets.length === 0) return;
-
-    const w = this.targetRect.width;
-    const h = this.targetRect.height;
-
-    const geometry = new THREE.PlaneGeometry(w, h);
-    const material = new THREE.MeshBasicMaterial({
-      map: this.renderTargets[0].texture,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.8,
-    });
-
-    const debugMesh = new THREE.Mesh(geometry, material);
-
-    debugMesh.position.set(0, 0, 90);
-    debugMesh.layers.set(THREE_LAYERS.SELECTED);
-
-    this.scene.add(debugMesh);
-  }
+  
 }
