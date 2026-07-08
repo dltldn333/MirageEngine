@@ -207,6 +207,8 @@ export function extractSceneGraph(
   captureLayer: number = 1,
   inheritedZIndex: number = 0,
   qualityFactor: number = 2,
+  inheritedNativeLayer?: number,
+  inheritedNativeStyles?: any,
 ): SceneNode | null {
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {
@@ -273,6 +275,35 @@ export function extractSceneGraph(
       isTraveler: false,
       captureLayer,
       isFixed: computed.position === "fixed",
+      nativeLayer: inheritedNativeLayer,
+      nativeStyles: inheritedNativeStyles
+        ? {
+            backgroundColor: "transparent",
+            backgroundImage: "",
+            opacity:
+              parent && parent.dataset[ATTR_DOM.KEY] === ATTR_DOM.VALUES.HIDE
+                ? 1
+                : parseFloat(computed.opacity),
+            zIndex:
+              (isNaN(parseInt(computed.zIndex))
+                ? 0
+                : parseInt(computed.zIndex)) + inheritedZIndex,
+            borderRadius: "0px",
+            borderColor: "transparent",
+            borderWidth: "0px",
+            isTraveler: false,
+            ...extractTextStyles(computed),
+            ...inheritedNativeStyles,
+          }
+        : undefined,
+      nativeRect: inheritedNativeStyles
+        ? {
+            x: minX + window.scrollX,
+            y: minY + window.scrollY,
+            width: maxX - minX,
+            height: maxY - minY,
+          }
+        : undefined,
       children: [],
     };
   }
@@ -383,15 +414,17 @@ export function extractSceneGraph(
 
   const travelData = element.dataset[ATTR_TRAVEL.KEY];
   let isTraveler = false;
-  let nativeParsedStyles: any = {};
-  let nativeLayer: number | undefined;
+  let nativeParsedStyles: any = inheritedNativeStyles
+    ? { ...inheritedNativeStyles }
+    : {};
+  let nativeLayer: number | undefined = inheritedNativeLayer;
   if (travelData) {
     let explicitLayer = 1;
-    
+
     // '{' 부터 '}' 까지의 JSON 문자열 추출
-    const jsonStart = travelData.indexOf('{');
-    const jsonEnd = travelData.lastIndexOf('}');
-    
+    const jsonStart = travelData.indexOf("{");
+    const jsonEnd = travelData.lastIndexOf("}");
+
     let tokensPart = travelData;
     if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
       tokensPart = travelData.substring(0, jsonStart).trim();
@@ -401,27 +434,29 @@ export function extractSceneGraph(
         // Function을 통한 안전한 객체 평가(또는 JSON.parse)를 사용
         nativeParsedStyles = new Function("return " + jsonStr)();
       } catch (e) {
-        console.warn(`[MirageEngine] Failed to parse travel styles JSON: ${jsonStr}`);
+        console.warn(
+          `[MirageEngine] Failed to parse travel styles JSON: ${jsonStr}`,
+        );
       }
     }
 
     const tokens = tokensPart.split(/\s+/);
-    
+
     let hasTravelToken = false;
-    
+
     // traveler 인 경우
     if (tokens.includes(ATTR_TRAVEL.VALUES.TRAVELER)) {
       isTraveler = true;
       hasTravelToken = true;
-      const numToken = tokens.find(t => !isNaN(parseInt(t, 10)));
+      const numToken = tokens.find((t) => !isNaN(parseInt(t, 10)));
       if (numToken) {
         explicitLayer = parseInt(numToken, 10);
       }
-    } 
+    }
     // native 인 경우
     else if (tokens.includes(ATTR_TRAVEL.VALUES.NATIVE)) {
       isTraveler = false;
-      const numToken = tokens.find(t => !isNaN(parseInt(t, 10)));
+      const numToken = tokens.find((t) => !isNaN(parseInt(t, 10)));
       if (numToken) {
         nativeLayer = parseInt(numToken, 10);
       }
@@ -431,7 +466,9 @@ export function extractSceneGraph(
     if (hasTravelToken) {
       const targetCaptureLayer = explicitLayer + 1;
       if (targetCaptureLayer < captureLayer) {
-        throw new Error(`[MirageEngine] Traveler layer (${explicitLayer}) cannot be smaller than inherited capture layer (${captureLayer - 1}).`);
+        throw new Error(
+          `[MirageEngine] Traveler layer (${explicitLayer}) cannot be smaller than inherited capture layer (${captureLayer - 1}).`,
+        );
       }
       captureLayer = Math.min(targetCaptureLayer, ATTR_TRAVEL.MAX_LAYERS + 1);
     }
@@ -551,6 +588,10 @@ export function extractSceneGraph(
         captureLayer,
         effectiveZIndex,
         qualityFactor,
+        nativeLayer,
+        child.nodeType === Node.TEXT_NODE && Object.keys(nativeParsedStyles).length > 0
+          ? nativeParsedStyles
+          : undefined,
       );
       if (childNode) {
         children.push(childNode);
@@ -576,23 +617,49 @@ export function extractSceneGraph(
     isTraveler: isTraveler,
     captureLayer,
     nativeLayer,
-    nativeStyles: nativeLayer !== undefined ? {
-      ...baseStyles,
-      backgroundColor: nativeParsedStyles.backgroundColor ?? baseStyles.backgroundColor,
-      backgroundImage: nativeParsedStyles.backgroundImage ?? baseStyles.backgroundImage,
-      opacity: nativeParsedStyles.opacity ?? baseStyles.opacity,
-      zIndex: nativeParsedStyles.zIndex !== undefined ? nativeParsedStyles.zIndex + effectiveZIndex : baseStyles.zIndex,
-      borderRadius: nativeParsedStyles.borderRadius ?? baseStyles.borderRadius,
-      borderColor: nativeParsedStyles.borderColor ?? baseStyles.borderColor,
-      borderWidth: nativeParsedStyles.borderWidth ?? baseStyles.borderWidth,
-      isTraveler: false,
-    } : undefined,
-    nativeRect: nativeLayer !== undefined ? {
-      x: nativeParsedStyles.x !== undefined ? parseFloat(nativeParsedStyles.x) : rect.left + window.scrollX,
-      y: nativeParsedStyles.y !== undefined ? parseFloat(nativeParsedStyles.y) : rect.top + window.scrollY,
-      width: nativeParsedStyles.width !== undefined ? parseFloat(nativeParsedStyles.width) : rect.width,
-      height: nativeParsedStyles.height !== undefined ? parseFloat(nativeParsedStyles.height) : rect.height,
-    } : undefined,
+    nativeStyles:
+      nativeLayer !== undefined
+        ? {
+            ...baseStyles,
+            backgroundColor:
+              nativeParsedStyles.backgroundColor ?? baseStyles.backgroundColor,
+            backgroundImage:
+              nativeParsedStyles.backgroundImage ?? baseStyles.backgroundImage,
+            opacity: nativeParsedStyles.opacity ?? baseStyles.opacity,
+            zIndex:
+              nativeParsedStyles.zIndex !== undefined
+                ? nativeParsedStyles.zIndex + effectiveZIndex
+                : baseStyles.zIndex,
+            borderRadius:
+              nativeParsedStyles.borderRadius ?? baseStyles.borderRadius,
+            borderColor:
+              nativeParsedStyles.borderColor ?? baseStyles.borderColor,
+            borderWidth:
+              nativeParsedStyles.borderWidth ?? baseStyles.borderWidth,
+            isTraveler: baseStyles.isTraveler,
+          }
+        : undefined,
+    nativeRect:
+      nativeLayer !== undefined
+        ? {
+            x:
+              nativeParsedStyles.x !== undefined
+                ? parseFloat(nativeParsedStyles.x)
+                : rect.left + window.scrollX,
+            y:
+              nativeParsedStyles.y !== undefined
+                ? parseFloat(nativeParsedStyles.y)
+                : rect.top + window.scrollY,
+            width:
+              nativeParsedStyles.width !== undefined
+                ? parseFloat(nativeParsedStyles.width)
+                : rect.width,
+            height:
+              nativeParsedStyles.height !== undefined
+                ? parseFloat(nativeParsedStyles.height)
+                : rect.height,
+          }
+        : undefined,
     isFixed: computed.position === "fixed",
     children,
     shaderHooks,

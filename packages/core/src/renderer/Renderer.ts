@@ -338,16 +338,21 @@ export class Renderer {
         this.reconcileNode(child);
       }
     } else if (node.type === "TEXT") {
-      this.reconcileTextChild(mesh, node);
+      this.reconcileTextChild(mesh, node, false);
+      if (mesh.userData.nativeMesh && node.nativeStyles) {
+        this.reconcileTextChild(mesh.userData.nativeMesh as THREE.Mesh, node, true);
+      }
     }
   }
 
-  private reconcileTextChild(parentMesh: THREE.Mesh, node: SceneNode) {
+  private reconcileTextChild(parentMesh: THREE.Mesh, node: SceneNode, isNative: boolean) {
     const lines = node.textLines || [
       { text: node.textContent || "", rect: node.rect },
     ];
+    
+    const stylesToUse = (isNative ? node.nativeStyles : node.textStyles) as TextStyles;
     const currentStyleHash =
-      JSON.stringify(node.textStyles) +
+      JSON.stringify(stylesToUse) +
       node.textContent +
       lines.map((l) => l.text).join("|");
     const cachedStyleHash = parentMesh.userData?.textChildStyleHash;
@@ -373,7 +378,7 @@ export class Renderer {
       lines.forEach((line, index) => {
         const material = Painter.create(
           "TEXT",
-          node.textStyles!,
+          stylesToUse,
           line.text,
           line.rect.width,
           line.rect.height,
@@ -384,7 +389,6 @@ export class Renderer {
         const textMesh = new THREE.Mesh(geometry, material);
 
         textMesh.name = `TEXT_CHILD_${index}`;
-        this.updateMeshLayers(textMesh, node);
 
         // Parent is already scaled to node.rect.width/height.
         // We counter-scale the child so its absolute size is exactly line.rect.width/height.
@@ -412,6 +416,35 @@ export class Renderer {
 
       parentMesh.userData.textChildStyleHash = currentStyleHash;
     }
+
+    // Always update layers for all text children, as visibility/nativeLayer can change without dirtifying the style
+    parentMesh.children.forEach((child) => {
+      if (!child.name.startsWith("TEXT_CHILD")) return;
+      const textMesh = child as THREE.Mesh;
+      
+      const layerNum = node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
+      textMesh.layers.set(layerNum);
+
+      if (node.visibility & SELECT_LAYER) {
+        textMesh.layers.enable(THREE_LAYERS.SELECTED);
+      }
+
+      if (node.visibility & USER_LAYER) {
+        if (!isNative && node.nativeLayer !== undefined && node.nativeStyles !== undefined) {
+          for (let i = node.captureLayer; i < node.nativeLayer; i++) {
+            textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+          }
+        } else if (isNative && node.nativeLayer !== undefined) {
+          for (let i = Math.max(node.captureLayer, node.nativeLayer); i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+            textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+          }
+        } else {
+          for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+            textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+          }
+        }
+      }
+    });
   }
 
   private updateMeshProperties(mesh: THREE.Mesh, node: SceneNode) {
@@ -421,43 +454,13 @@ export class Renderer {
     const canvasWidth = this.renderer.domElement.width / pixelRatio;
     const canvasHeight = this.renderer.domElement.height / pixelRatio;
     
-    let activeStyles: any = styles;
-    let activeRect = rect;
-    let activeMaterial = mesh.userData.baseMaterial as THREE.Material;
-
-    if (node.nativeStyles && node.nativeRect) {
-      activeStyles = node.nativeStyles;
-      activeRect = node.nativeRect;
-      
-      if (!mesh.userData.nativeMaterial) {
-        mesh.userData.nativeMaterial = Painter.create(
-          node.textContent ? "TEXT" : "BOX",
-          activeStyles,
-          node.textContent || "",
-          activeRect.width,
-          activeRect.height,
-          this.qualityFactor,
-          node.isTraveler
-            ? this.renderTargets[node.captureLayer - 2]?.texture
-            : this.textureManager.get(node.element),
-          node.shaderHooks,
-        );
-      }
-      activeMaterial = mesh.userData.nativeMaterial;
-    }
-
-    if (mesh.material !== activeMaterial) {
-      mesh.material = activeMaterial;
-    }
-
-    const scaleW = activeRect.width;
-    const scaleH = activeRect.height;
-    mesh.scale.set(scaleW, scaleH, 1);
+    mesh.material = mesh.userData.baseMaterial as THREE.Material;
+    mesh.scale.set(rect.width, rect.height, 1);
 
     mesh.userData.domRect = {
       ...rect,
-      width: scaleW,
-      height: scaleH,
+      width: rect.width,
+      height: rect.height,
     };
 
     const Z_MICRO_OFFSET = 0.001;
@@ -509,19 +512,72 @@ export class Renderer {
     //   -localY + canvasHeight / 2 - rect.height / 2,
     //   styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     // );
-    if (activeMaterial) {
+    Painter.update(
+      mesh.userData.baseMaterial,
+      "BOX",
+      styles,
+      "",
+      rect.width,
+      rect.height,
+      this.qualityFactor,
+      node.isTraveler
+        ? this.renderTargets[node.captureLayer - 2]?.texture
+        : this.textureManager.get(node.element),
+    );
+
+    if (node.nativeStyles && node.nativeRect) {
+      if (!mesh.userData.nativeMesh) {
+        const nativeMaterial = Painter.create(
+          "BOX",
+          node.nativeStyles,
+          "",
+          node.nativeRect.width,
+          node.nativeRect.height,
+          this.qualityFactor,
+          node.isTraveler
+            ? this.renderTargets[node.captureLayer - 2]?.texture
+            : this.textureManager.get(node.element),
+          node.shaderHooks,
+        );
+        const nativeMesh = new THREE.Mesh(mesh.geometry, nativeMaterial);
+        if (node.type === "TEXT") nativeMesh.name = "BG_MESH";
+        this.scene.add(nativeMesh);
+        mesh.userData.nativeMesh = nativeMesh;
+      }
+
+      const nativeMesh = mesh.userData.nativeMesh as THREE.Mesh;
+      const nativeLocalX = node.nativeRect.x - targetPageX;
+      const nativeLocalY = node.nativeRect.y - targetPageY;
+      const nativeBaseX = nativeLocalX - canvasWidth / 2 + node.nativeRect.width / 2;
+      const nativeBaseY = -nativeLocalY + canvasHeight / 2 - node.nativeRect.height / 2;
+
+      nativeMesh.scale.set(node.nativeRect.width, node.nativeRect.height, 1);
+      nativeMesh.position.set(
+        nativeBaseX,
+        nativeBaseY,
+        node.nativeStyles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
+      );
+
       Painter.update(
-        activeMaterial,
+        nativeMesh.material as THREE.Material,
         "BOX",
-        activeStyles,
+        node.nativeStyles,
         "",
-        activeRect.width,
-        activeRect.height,
+        node.nativeRect.width,
+        node.nativeRect.height,
         this.qualityFactor,
         node.isTraveler
           ? this.renderTargets[node.captureLayer - 2]?.texture
           : this.textureManager.get(node.element),
       );
+    } else {
+      if (mesh.userData.nativeMesh) {
+        this.scene.remove(mesh.userData.nativeMesh);
+        if (mesh.userData.nativeMesh.material instanceof THREE.Material) {
+          mesh.userData.nativeMesh.material.dispose();
+        }
+        delete mesh.userData.nativeMesh;
+      }
     }
   }
 
@@ -534,9 +590,23 @@ export class Renderer {
       mesh.layers.enable(THREE_LAYERS.SELECTED);
     }
 
-    if (node.visibility & USER_LAYER) {
-      for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
-        mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+    if (mesh.userData.nativeMesh && node.nativeLayer !== undefined) {
+      const nativeMesh = mesh.userData.nativeMesh as THREE.Mesh;
+      nativeMesh.layers.set(THREE_LAYERS.HIDDEN);
+
+      if (node.visibility & USER_LAYER) {
+        for (let i = node.captureLayer; i < node.nativeLayer; i++) {
+          mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+        }
+        for (let i = Math.max(node.captureLayer, node.nativeLayer); i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+          nativeMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+        }
+      }
+    } else {
+      if (node.visibility & USER_LAYER) {
+        for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+          mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+        }
       }
     }
   }
