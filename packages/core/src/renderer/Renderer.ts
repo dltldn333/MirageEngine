@@ -308,7 +308,7 @@ export class Renderer {
         );
         const nativeMesh = new THREE.Mesh(geometry, nativeMaterial);
         
-        // 테스트를 위해 기존 매쉬 대신 네이티브 매쉬를 사용하려면 아래 주석을 해제하세요.
+        // test code
         mesh = nativeMesh; 
       }
       // ------------------------------------
@@ -323,7 +323,11 @@ export class Renderer {
 
 
     // [Important] use whene mesh animating with js
-    mesh.userData.domRect = node.rect;
+    mesh.userData.domRect = {
+      ...node.rect,
+      width: node.nativeRect ? node.nativeRect.width : node.rect.width,
+      height: node.nativeRect ? node.nativeRect.height : node.rect.height,
+    };
 
     this.updateMeshProperties(mesh, node);
     this.updateMeshLayers(mesh, node);
@@ -440,8 +444,10 @@ export class Renderer {
     const pixelRatio = this.renderer.getPixelRatio();
     const canvasWidth = this.renderer.domElement.width / pixelRatio;
     const canvasHeight = this.renderer.domElement.height / pixelRatio;
-
-    mesh.scale.set(rect.width, rect.height, 1);
+    if(node.nativeRect) console.log(node.nativeRect, node.rect)
+    const scaleW = node.nativeRect ? node.nativeRect.width : rect.width;
+    const scaleH = node.nativeRect ? node.nativeRect.height : rect.height;
+    mesh.scale.set(scaleW, scaleH, 1);
 
     const Z_MICRO_OFFSET = 0.001;
     this.renderOrder++;
@@ -492,14 +498,15 @@ export class Renderer {
     //   -localY + canvasHeight / 2 - rect.height / 2,
     //   styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     // );
+    const stylesToUse = node.nativeStyles || node.styles;
     if (mesh.userData.baseMaterial) {
       Painter.update(
         mesh.userData.baseMaterial,
         "BOX",
-        node.styles,
+        stylesToUse,
         "",
-        node.rect.width,
-        node.rect.height,
+        scaleW,
+        scaleH,
         this.qualityFactor,
         node.isTraveler
           ? this.renderTargets[node.captureLayer - 2]?.texture

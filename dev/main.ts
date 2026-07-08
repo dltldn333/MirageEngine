@@ -1,5 +1,6 @@
 import { Mirage } from "mirage-engine";
 import { MirageConfig } from "mirage-engine";
+
 const shader = {
   uvModifier: /* glsl */ `
     float textureZoom = 1.0;
@@ -80,10 +81,14 @@ const traveler2 = document.querySelector("#box-z") as HTMLElement;
 traveler.dataset.mirageShader = JSON.stringify(shader);
 traveler2.dataset.mirageShader = JSON.stringify(shader);
 
-const styleBoxParent = {backgroundColor: "blue", height: "120px"}
+const styleBoxParent = { backgroundColor: "blue", height: "80px" };
 const native = document.querySelector(".native") as HTMLElement;
 
-native.dataset.mirageTravel = `native 2 ${JSON.stringify(styleBoxParent)}`
+native.dataset.mirageTravel = `native 2 ${JSON.stringify(styleBoxParent)}`;
+
+setTimeout(() => {
+  native.dataset.mirageTravel = ``;
+}, 2000);
 
 const target = document.querySelector("#root") as HTMLElement;
 // const container = document.querySelector("#space") as HTMLElement;
