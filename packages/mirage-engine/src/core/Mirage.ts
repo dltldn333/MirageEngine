@@ -44,6 +44,10 @@ export class Mirage {
     return this._engine.getCanvas();
   }
 
+  public updateUniforms(element: HTMLElement, uniforms: Record<string, any>) {
+    this._engine.updateUniforms(element, uniforms);
+  }
+
   public test(): void {
     this._engine.test();
   }

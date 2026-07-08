@@ -176,6 +176,31 @@ export class Renderer {
     }
   }
 
+  public updateUniforms(element: HTMLElement, uniforms: Record<string, any>) {
+    const mesh = this.registry.get(element);
+    if (!mesh) return;
+
+    mesh.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).material) {
+        Painter.forceUpdateUniforms(
+          (child as THREE.Mesh).material as THREE.ShaderMaterial,
+          uniforms,
+        );
+      }
+    });
+
+    if (mesh.userData.nativeMesh) {
+      mesh.userData.nativeMesh.traverse((child: THREE.Object3D) => {
+        if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).material) {
+          Painter.forceUpdateUniforms(
+            (child as THREE.Mesh).material as THREE.ShaderMaterial,
+            uniforms,
+          );
+        }
+      });
+    }
+  }
+
   public dispose() {
     this.renderer.dispose();
     this.canvas.remove();

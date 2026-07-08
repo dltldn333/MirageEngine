@@ -2,8 +2,11 @@ import { Mirage } from "mirage-engine";
 import { MirageConfig } from "mirage-engine";
 
 const shader = {
+  uniforms: {
+    uTextureZoom: 1.0,
+  },
   uvModifier: /* glsl */ `
-    float textureZoom = 1.0;
+    float textureZoom = uTextureZoom;
 
     vec2 xRadii_uv = mix(uBorderRadius.xw, uBorderRadius.yz, step(0.0, p.x));
     float r_uv = mix(xRadii_uv.y, xRadii_uv.x, step(0.0, p.y));
@@ -159,3 +162,12 @@ mirage.start();
 // const box2 = document.querySelector("#box2");
 
 mirage.test();
+
+// Animate the uTextureZoom uniform for traveler elements
+const animateUniform = (time: number) => {
+  const zoomValue = 1.0 + Math.sin(time / 500) * 0.5; // Oscillates between 0.5 and 1.5
+  mirage.updateUniforms(traveler, { uTextureZoom: zoomValue });
+  mirage.updateUniforms(traveler2, { uTextureZoom: zoomValue });
+  requestAnimationFrame(animateUniform);
+};
+requestAnimationFrame(animateUniform);
