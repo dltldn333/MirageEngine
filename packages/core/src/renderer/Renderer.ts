@@ -294,25 +294,6 @@ export class Renderer {
       
       mesh = new THREE.Mesh(geometry, material);
 
-      // --- 테스트용 네이티브 매쉬 생성 로직 ---
-      if (node.nativeStyles && node.nativeRect) {
-        const nativeMaterial = Painter.create(
-          node.textContent ? "TEXT" : "BOX",
-          node.nativeStyles,
-          node.textContent || "",
-          node.nativeRect.width,
-          node.nativeRect.height,
-          this.qualityFactor,
-          initialTexture ?? null,
-          node.shaderHooks,
-        );
-        const nativeMesh = new THREE.Mesh(geometry, nativeMaterial);
-        
-        // test code
-        mesh = nativeMesh; 
-      }
-      // ------------------------------------
-
       if (node.type === "TEXT") mesh.name = "BG_MESH";
       this.scene.add(mesh);
       
@@ -323,11 +304,6 @@ export class Renderer {
 
 
     // [Important] use whene mesh animating with js
-    mesh.userData.domRect = {
-      ...node.rect,
-      width: node.nativeRect ? node.nativeRect.width : node.rect.width,
-      height: node.nativeRect ? node.nativeRect.height : node.rect.height,
-    };
 
     this.updateMeshProperties(mesh, node);
     this.updateMeshLayers(mesh, node);
@@ -444,10 +420,45 @@ export class Renderer {
     const pixelRatio = this.renderer.getPixelRatio();
     const canvasWidth = this.renderer.domElement.width / pixelRatio;
     const canvasHeight = this.renderer.domElement.height / pixelRatio;
-    if(node.nativeRect) console.log(node.nativeRect, node.rect)
-    const scaleW = node.nativeRect ? node.nativeRect.width : rect.width;
-    const scaleH = node.nativeRect ? node.nativeRect.height : rect.height;
+    
+    let activeStyles: any = styles;
+    let activeRect = rect;
+    let activeMaterial = mesh.userData.baseMaterial as THREE.Material;
+
+    if (node.nativeStyles && node.nativeRect) {
+      activeStyles = node.nativeStyles;
+      activeRect = node.nativeRect;
+      
+      if (!mesh.userData.nativeMaterial) {
+        mesh.userData.nativeMaterial = Painter.create(
+          node.textContent ? "TEXT" : "BOX",
+          activeStyles,
+          node.textContent || "",
+          activeRect.width,
+          activeRect.height,
+          this.qualityFactor,
+          node.isTraveler
+            ? this.renderTargets[node.captureLayer - 2]?.texture
+            : this.textureManager.get(node.element),
+          node.shaderHooks,
+        );
+      }
+      activeMaterial = mesh.userData.nativeMaterial;
+    }
+
+    if (mesh.material !== activeMaterial) {
+      mesh.material = activeMaterial;
+    }
+
+    const scaleW = activeRect.width;
+    const scaleH = activeRect.height;
     mesh.scale.set(scaleW, scaleH, 1);
+
+    mesh.userData.domRect = {
+      ...rect,
+      width: scaleW,
+      height: scaleH,
+    };
 
     const Z_MICRO_OFFSET = 0.001;
     this.renderOrder++;
@@ -498,30 +509,14 @@ export class Renderer {
     //   -localY + canvasHeight / 2 - rect.height / 2,
     //   styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     // );
-    const stylesToUse = node.nativeStyles || node.styles;
-    if (mesh.userData.baseMaterial) {
+    if (activeMaterial) {
       Painter.update(
-        mesh.userData.baseMaterial,
+        activeMaterial,
         "BOX",
-        stylesToUse,
+        activeStyles,
         "",
-        scaleW,
-        scaleH,
-        this.qualityFactor,
-        node.isTraveler
-          ? this.renderTargets[node.captureLayer - 2]?.texture
-          : this.textureManager.get(node.element),
-      );
-    }
-    
-    if (mesh.userData.nativeMaterial) {
-      Painter.update(
-        mesh.userData.nativeMaterial,
-        "BOX",
-        node.nativeStyles!,
-        "",
-        node.rect.width,
-        node.rect.height,
+        activeRect.width,
+        activeRect.height,
         this.qualityFactor,
         node.isTraveler
           ? this.renderTargets[node.captureLayer - 2]?.texture

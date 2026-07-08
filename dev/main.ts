@@ -88,7 +88,7 @@ native.dataset.mirageTravel = `native 2 ${JSON.stringify(styleBoxParent)}`;
 
 setTimeout(() => {
   native.dataset.mirageTravel = ``;
-}, 2000);
+}, 10000);
 
 const target = document.querySelector("#root") as HTMLElement;
 // const container = document.querySelector("#space") as HTMLElement;
