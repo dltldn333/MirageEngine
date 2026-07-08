@@ -83,6 +83,10 @@ traveler2.dataset.mirageShader = JSON.stringify(shader);
 
 
 //====================native test====================//
+const nativeSvgStyle = {color: "red"}
+const nativeSvg = document.querySelector("#native-svg") as HTMLElement;
+nativeSvg.dataset.mirageTravel = `native 1 ${JSON.stringify(nativeSvgStyle)}`;
+
 const boxTestStyle = {color: "red"}
 const boxTest = document.querySelector("#box-test") as HTMLElement;
 boxTest.dataset.mirageTravel = `native 1 ${JSON.stringify(boxTestStyle)}`;

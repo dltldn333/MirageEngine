@@ -508,19 +508,32 @@ export function extractSceneGraph(
   } else if (element.tagName.toLowerCase() === "svg") {
     const clone = element.cloneNode(true) as SVGSVGElement;
 
+    const overrideColor = nativeParsedStyles?.color;
+    const overrideFill = nativeParsedStyles?.fill;
+    const overrideStroke = nativeParsedStyles?.stroke;
+    const overrideOpacity = nativeParsedStyles?.opacity;
+
     const inlineSVGStyles = (orig: Element, cloned: Element) => {
       const computed = window.getComputedStyle(orig);
       const clonedHtml = cloned as HTMLElement;
 
-      if (computed.fill && computed.fill !== "none")
-        clonedHtml.style.fill = computed.fill;
-      if (computed.stroke && computed.stroke !== "none")
-        clonedHtml.style.stroke = computed.stroke;
+      const isCurrentColorFill = computed.fill === computed.color;
+      const isCurrentColorStroke = computed.stroke === computed.color;
+
+      const fill = overrideFill || (isCurrentColorFill ? overrideColor : undefined) || computed.fill;
+      if (fill && fill !== "none") clonedHtml.style.fill = fill;
+
+      const stroke = overrideStroke || (isCurrentColorStroke ? overrideColor : undefined) || computed.stroke;
+      if (stroke && stroke !== "none") clonedHtml.style.stroke = stroke;
+
       if (computed.strokeWidth && computed.strokeWidth !== "0px")
         clonedHtml.style.strokeWidth = computed.strokeWidth;
-      if (computed.color) clonedHtml.style.color = computed.color;
-      if (computed.opacity && computed.opacity !== "1")
-        clonedHtml.style.opacity = computed.opacity;
+
+      const color = overrideColor || computed.color;
+      if (color) clonedHtml.style.color = color;
+
+      const opacity = overrideOpacity || computed.opacity;
+      if (opacity && opacity !== "1") clonedHtml.style.opacity = opacity;
 
       for (let i = 0; i < orig.children.length; i++) {
         inlineSVGStyles(orig.children[i], cloned.children[i]);
