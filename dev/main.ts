@@ -80,7 +80,7 @@ const traveler2 = document.querySelector("#box-z") as HTMLElement;
 traveler.dataset.mirageShader = JSON.stringify(shader);
 traveler2.dataset.mirageShader = JSON.stringify(shader);
 
-const styleBoxParent = {backgroundColor: "red", height: "30px"}
+const styleBoxParent = {backgroundColor: "blue", height: "120px"}
 const native = document.querySelector(".native") as HTMLElement;
 
 native.dataset.mirageTravel = `native 2 ${JSON.stringify(styleBoxParent)}`

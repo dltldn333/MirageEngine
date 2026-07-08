@@ -30,6 +30,7 @@ export interface SceneNode {
   captureLayer: number;
   nativeLayer?: number;
   nativeStyles?: BoxStyles | TextStyles;
+  nativeRect?: NodeRect;
   isFixed: boolean;
   shaderHooks?: ShaderHooks;
 

@@ -587,6 +587,12 @@ export function extractSceneGraph(
       borderWidth: nativeParsedStyles.borderWidth ?? baseStyles.borderWidth,
       isTraveler: false,
     } : undefined,
+    nativeRect: nativeLayer !== undefined ? {
+      x: rect.left + window.scrollX,
+      y: rect.top + window.scrollY,
+      width: rect.width,
+      height: rect.height,
+    } : undefined,
     isFixed: computed.position === "fixed",
     children,
     shaderHooks,

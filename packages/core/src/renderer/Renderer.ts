@@ -32,7 +32,6 @@ export class Renderer {
   private mountContainer: HTMLElement;
   private registry: MeshRegistry;
   private targetRect: DOMRect;
-  private nativeMaterialMeshes: Set<THREE.Mesh> = new Set();
 
   private travelersByLayer: Set<THREE.Mesh>[] = Array.from(
     { length: ATTR_TRAVEL.MAX_LAYERS },
@@ -234,12 +233,14 @@ export class Renderer {
           }
           this.fixedMeshes.delete(meshToDestroy);
           meshToDestroy.geometry.dispose();
-          if (meshToDestroy.userData.nativeMaterial) {
-            if (Array.isArray(meshToDestroy.userData.nativeMaterial)) {
-              meshToDestroy.userData.nativeMaterial.forEach((mat: THREE.Material) => mat.dispose());
+          if (meshToDestroy.userData.nativeMesh) {
+            this.scene.remove(meshToDestroy.userData.nativeMesh);
+            if (Array.isArray(meshToDestroy.userData.nativeMesh.material)) {
+              meshToDestroy.userData.nativeMesh.material.forEach((mat: THREE.Material) => mat.dispose());
             } else {
-              meshToDestroy.userData.nativeMaterial.dispose();
+              meshToDestroy.userData.nativeMesh.material.dispose();
             }
+            meshToDestroy.userData.nativeMesh.geometry.dispose();
           }
           meshToDestroy.traverse((child) => {
             if (child instanceof THREE.Mesh) {
@@ -255,7 +256,6 @@ export class Renderer {
           });
           this.registry.remove(el);
           this.textureManager.unregister(el);
-          this.nativeMaterialMeshes.delete(meshToDestroy);
         }
       });
     }
@@ -291,7 +291,28 @@ export class Renderer {
         initialTexture,
         node.shaderHooks,
       );
+      
       mesh = new THREE.Mesh(geometry, material);
+
+      // --- 테스트용 네이티브 매쉬 생성 로직 ---
+      if (node.nativeStyles && node.nativeRect) {
+        const nativeMaterial = Painter.create(
+          node.textContent ? "TEXT" : "BOX",
+          node.nativeStyles,
+          node.textContent || "",
+          node.nativeRect.width,
+          node.nativeRect.height,
+          this.qualityFactor,
+          initialTexture ?? null,
+          node.shaderHooks,
+        );
+        const nativeMesh = new THREE.Mesh(geometry, nativeMaterial);
+        
+        // 테스트를 위해 기존 매쉬 대신 네이티브 매쉬를 사용하려면 아래 주석을 해제하세요.
+        mesh = nativeMesh; 
+      }
+      // ------------------------------------
+
       if (node.type === "TEXT") mesh.name = "BG_MESH";
       this.scene.add(mesh);
       
@@ -299,35 +320,7 @@ export class Renderer {
       mesh.userData.baseMaterial = material;
     }
 
-    if (node.nativeStyles && node.nativeLayer !== undefined) {
-      const initialTexture = node.isTraveler
-        ? this.renderTargets[node.captureLayer - 2]?.texture
-        : this.textureManager.get(node.element);
 
-      if (!mesh.userData.nativeMaterial) {
-        mesh.userData.nativeMaterial = Painter.create(
-          "BOX",
-          node.nativeStyles!,
-          "",
-          node.rect.width,
-          node.rect.height,
-          this.qualityFactor,
-          initialTexture,
-          node.shaderHooks,
-        );
-      }
-      mesh.userData.nativeLayer = node.nativeLayer;
-      this.nativeMaterialMeshes.add(mesh);
-    } else if (mesh.userData.nativeMaterial) {
-      if (Array.isArray(mesh.userData.nativeMaterial)) {
-        mesh.userData.nativeMaterial.forEach((m: THREE.Material) => m.dispose());
-      } else {
-        mesh.userData.nativeMaterial.dispose();
-      }
-      mesh.userData.nativeMaterial = undefined;
-      mesh.userData.nativeLayer = undefined;
-      this.nativeMaterialMeshes.delete(mesh);
-    }
 
     // [Important] use whene mesh animating with js
     mesh.userData.domRect = node.rect;
@@ -616,29 +609,14 @@ export class Renderer {
   }
 
   public render() {
-    for (const mesh of this.nativeMaterialMeshes) {
-      mesh.material = mesh.userData.baseMaterial;
-    }
-
     for (let i = 0; i < ATTR_TRAVEL.MAX_LAYERS; i++) {
       const currentLayer = i + 1;
-      for (const mesh of this.nativeMaterialMeshes) {
-        if (currentLayer >= mesh.userData.nativeLayer) {
-          mesh.material = mesh.userData.nativeMaterial;
-        } else {
-          mesh.material = mesh.userData.baseMaterial;
-        }
-      }
 
       this.captureRenderTarget(
         this.travelersByLayer[i],
         THREE_LAYERS.getCaptureLayer(currentLayer),
         this.renderTargets[i],
       );
-    }
-
-    for (const mesh of this.nativeMaterialMeshes) {
-      mesh.material = mesh.userData.baseMaterial;
     }
 
     this.renderer.render(this.scene, this.camera);
