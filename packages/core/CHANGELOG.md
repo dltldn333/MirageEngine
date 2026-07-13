@@ -1,5 +1,14 @@
 # @mirage-engine/core
 
+## 0.3.1
+
+### Patch Changes
+
+- 91922e4: pnpm bug fix
+- Updated dependencies [91922e4]
+  - @mirage-engine/dom-tracker@0.3.4
+  - @mirage-engine/painter@1.0.2
+
 ## 0.3.0
 
 ### Minor Changes

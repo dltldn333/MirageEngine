@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 1.0.2
+
+### Patch Changes
+
+- 91922e4: pnpm bug fix
+
 ## 1.0.1
 
 ### Patch Changes
