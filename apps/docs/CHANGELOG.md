@@ -4,6 +4,12 @@
 
 ### Patch Changes
 
+- mirage-engine@0.3.2
+
+## 1.0.11
+
+### Patch Changes
+
 - Updated dependencies [91922e4]
   - mirage-engine@0.3.1
 
