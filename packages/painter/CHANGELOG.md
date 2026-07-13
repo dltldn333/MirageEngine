@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 1.0.1
+
+### Patch Changes
+
+- 11f77b6: update seven craft
+
 ## 1.0.0
 
 ### Major Changes

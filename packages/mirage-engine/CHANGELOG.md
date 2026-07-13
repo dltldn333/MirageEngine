@@ -1,5 +1,18 @@
 # mirage-engine
 
+## 0.3.0
+
+### Minor Changes
+
+- 11f77b6: update seven craft
+
+### Patch Changes
+
+- Updated dependencies [11f77b6]
+  - @mirage-engine/sandwich@0.2.0
+  - @mirage-engine/core@0.3.0
+  - @mirage-engine/painter@1.0.1
+
 ## 0.2.18
 
 ### Patch Changes
