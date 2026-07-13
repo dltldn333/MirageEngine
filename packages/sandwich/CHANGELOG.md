@@ -1,5 +1,13 @@
 # @mirage-engine/sandwich
 
+## 0.2.3
+
+### Patch Changes
+
+- bd14659: new update
+- Updated dependencies [bd14659]
+  - @mirage-engine/dom-tracker@0.3.5
+
 ## 0.2.2
 
 ### Patch Changes

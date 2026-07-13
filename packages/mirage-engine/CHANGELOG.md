@@ -1,5 +1,13 @@
 # mirage-engine
 
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [bd14659]
+  - @mirage-engine/sandwich@0.2.3
+  - @mirage-engine/core@0.3.2
+
 ## 0.3.1
 
 ### Patch Changes
