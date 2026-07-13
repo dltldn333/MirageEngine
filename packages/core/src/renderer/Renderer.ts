@@ -12,7 +12,7 @@ import {
   ATTR_TRAVEL,
   LayerTarget,
 } from "../types";
-import { Painter } from "@mirage-engine/painter";
+import { Painter, TextStyles, BoxStyles } from "@mirage-engine/painter";
 import { MeshRegistry } from "../store/MeshRegistry";
 import { TextureLifecycleManager } from "../store/TextureLifecycleManager";
 
@@ -580,7 +580,7 @@ export class Renderer {
       nativeMesh.position.set(
         nativeBaseX,
         nativeBaseY,
-        node.nativeStyles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
+        (node.nativeStyles as BoxStyles).zIndex + this.renderOrder * Z_MICRO_OFFSET,
       );
 
       Painter.update(

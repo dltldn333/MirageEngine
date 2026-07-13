@@ -165,7 +165,7 @@ mirage.test();
 
 // Animate the uTextureZoom uniform for traveler elements
 const animateUniform = (time: number) => {
-  const zoomValue = 1.0 + Math.sin(time / 500) * 0.5; // Oscillates between 0.5 and 1.5
+  const zoomValue = 1.0 + Math.sin(time / 500) * 0.1; 
   mirage.updateUniforms(traveler, { uTextureZoom: zoomValue });
   mirage.updateUniforms(traveler2, { uTextureZoom: zoomValue });
   requestAnimationFrame(animateUniform);
