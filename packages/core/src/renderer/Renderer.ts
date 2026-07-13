@@ -12,7 +12,7 @@ import {
   ATTR_TRAVEL,
   LayerTarget,
 } from "../types";
-import { Painter } from "@mirage-engine/painter";
+import { Painter, TextStyles, BoxStyles } from "@mirage-engine/painter";
 import { MeshRegistry } from "../store/MeshRegistry";
 import { TextureLifecycleManager } from "../store/TextureLifecycleManager";
 
@@ -173,6 +173,31 @@ export class Renderer {
       this.canvas.style.top = `${this.target.offsetTop}px`;
       this.canvas.style.left = `${this.target.offsetLeft}px`;
       this.canvas.style.display = "block";
+    }
+  }
+
+  public updateUniforms(element: HTMLElement, uniforms: Record<string, any>) {
+    const mesh = this.registry.get(element);
+    if (!mesh) return;
+
+    mesh.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).material) {
+        Painter.forceUpdateUniforms(
+          (child as THREE.Mesh).material as THREE.ShaderMaterial,
+          uniforms,
+        );
+      }
+    });
+
+    if (mesh.userData.nativeMesh) {
+      mesh.userData.nativeMesh.traverse((child: THREE.Object3D) => {
+        if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).material) {
+          Painter.forceUpdateUniforms(
+            (child as THREE.Mesh).material as THREE.ShaderMaterial,
+            uniforms,
+          );
+        }
+      });
     }
   }
 
@@ -555,7 +580,7 @@ export class Renderer {
       nativeMesh.position.set(
         nativeBaseX,
         nativeBaseY,
-        node.nativeStyles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
+        (node.nativeStyles as BoxStyles).zIndex + this.renderOrder * Z_MICRO_OFFSET,
       );
 
       Painter.update(

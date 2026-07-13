@@ -63,6 +63,10 @@ export class Engine {
     return this.syncer.tracker;
   }
 
+  public updateUniforms(element: HTMLElement, uniforms: Record<string, any>) {
+    this.renderer.updateUniforms(element, uniforms);
+  }
+
   public getCanvas() {
     return this.renderer.canvas;
   }
