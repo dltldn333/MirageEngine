@@ -25,5 +25,6 @@ export interface BoxStyles {
 export interface ShaderHooks {
   uvModifier?: string; 
   colorModifier?: string; 
+  uniforms?: Record<string, any>;
 }
 

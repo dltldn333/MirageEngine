@@ -26,7 +26,8 @@
   },
   "dependencies": {
     "@mirage-engine/painter": "workspace:*",
-    "@mirage-engine/core": "workspace:*"
+    "@mirage-engine/core": "workspace:*",
+    "@mirage-engine/sandwich": "workspace:*"
   },
   "peerDependencies": {
     "three": "^0.160.0"

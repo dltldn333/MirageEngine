@@ -2,8 +2,11 @@ import { Mirage } from "mirage-engine";
 import { MirageConfig } from "mirage-engine";
 
 const shader = {
+  uniforms: {
+    uTextureZoom: 1.0,
+  },
   uvModifier: /* glsl */ `
-    float textureZoom = 1.0;
+    float textureZoom = uTextureZoom;
 
     vec2 xRadii_uv = mix(uBorderRadius.xw, uBorderRadius.yz, step(0.0, p.x));
     float r_uv = mix(xRadii_uv.y, xRadii_uv.x, step(0.0, p.y));
@@ -76,7 +79,32 @@ const shader = {
 };
 
 const traveler = document.querySelector("#box2") as HTMLElement;
+const traveler2 = document.querySelector("#box-z") as HTMLElement;
+
 traveler.dataset.mirageShader = JSON.stringify(shader);
+traveler2.dataset.mirageShader = JSON.stringify(shader);
+
+
+//====================native test====================//
+const nativeSvgStyle = {color: "red"}
+const nativeSvg = document.querySelector("#native-svg") as HTMLElement;
+nativeSvg.dataset.mirageTravel = `native 1 ${JSON.stringify(nativeSvgStyle)}`;
+
+const boxTestStyle = {color: "red"}
+const boxTest = document.querySelector("#box-test") as HTMLElement;
+boxTest.dataset.mirageTravel = `native 1 ${JSON.stringify(boxTestStyle)}`;
+
+const styleBoxParent = { backgroundColor: "blue", height: "80px" };
+const native = document.querySelector(".native") as HTMLElement;
+native.dataset.mirageTravel = `native 2 ${JSON.stringify(styleBoxParent)}`;
+
+setTimeout(() => {
+  native.dataset.mirageTravel = ``;
+  boxTest.dataset.mirageTravel = ``;  
+}, 10000);
+//====================native test====================//
+
+
 
 const target = document.querySelector("#root") as HTMLElement;
 // const container = document.querySelector("#space") as HTMLElement;
@@ -85,6 +113,7 @@ const mirageConifg: MirageConfig = {
   quality: "high",
   // mode: "duplicate",
   mode: "overlay",
+  layer: "selected",
   travelerClipArea: "50px",
   // resizeDebounce: {
   //   delay: 200,
@@ -103,9 +132,11 @@ const mirageConifg: MirageConfig = {
   // },
 };
 const mirage = new Mirage(target, mirageConifg);
-// console.log(mirageConifg.filter);
+console.log(mirageConifg.filter);
 
+// mirage.start();
 mirage.start();
+
 // while (true) {
 //   setTimeout(() => {
 //     mirage.destroy();
@@ -131,3 +162,12 @@ mirage.start();
 // const box2 = document.querySelector("#box2");
 
 mirage.test();
+
+// Animate the uTextureZoom uniform for traveler elements
+const animateUniform = (time: number) => {
+  const zoomValue = 1.0 + Math.sin(time / 500) * 0.1; 
+  mirage.updateUniforms(traveler, { uTextureZoom: zoomValue });
+  mirage.updateUniforms(traveler2, { uTextureZoom: zoomValue });
+  requestAnimationFrame(animateUniform);
+};
+requestAnimationFrame(animateUniform);

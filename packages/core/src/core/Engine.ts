@@ -1,4 +1,4 @@
-import { CoreConfig } from "../types";
+import { CoreConfig, ATTR_DOM } from "../types";
 import { Renderer } from "../renderer/Renderer";
 import { Syncer } from "./Syncer";
 import { MeshRegistry } from "../store/MeshRegistry";
@@ -17,7 +17,7 @@ export class Engine {
       const style = document.createElement("style");
       style.id = "mirage-engine-styles";
       style.textContent = `
-        [data-mirage-dom="hide"] {
+        [${ATTR_DOM.NAME}="${ATTR_DOM.VALUES.HIDE}"] {
           opacity: 0 !important;
         }
       `;
@@ -57,6 +57,18 @@ export class Engine {
   public dispose() {
     this.syncer.stop();
     this.renderer.dispose();
+  }
+
+  public getTracker() {
+    return this.syncer.tracker;
+  }
+
+  public updateUniforms(element: HTMLElement, uniforms: Record<string, any>) {
+    this.renderer.updateUniforms(element, uniforms);
+  }
+
+  public getCanvas() {
+    return this.renderer.canvas;
   }
 
   public test() {

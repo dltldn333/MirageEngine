@@ -1,6 +1,6 @@
-import { StyleData } from "../types";
+import { StyleData } from "@mirage-engine/dom-tracker";
 import { MeshRegistry } from "../store/MeshRegistry";
-import { Painter, parseColor } from "@mirage-engine/painter";
+import { Painter } from "@mirage-engine/painter";
 import * as THREE from "three";
 
 export function animateMeshByData(
@@ -21,9 +21,6 @@ export function animateMeshByData(
     const widthDiff = currentW - baseW;
     const heightDiff = currentH - baseH;
 
-    // --- Capture and Lock Transform Origin (Performance & Accuracy) ---
-    // We capture the origin on the very first frame of change (> 0.1px) 
-    // to ensure perfect sync from the start of the first animation.
     if (
       styleData.width !== undefined &&
       mesh.userData.originRatioX === undefined &&
@@ -33,8 +30,6 @@ export function animateMeshByData(
       const tx = styleData.x ?? 0;
       const baseTx = mesh.userData.baseTransform?.x ?? 0;
       const scrollOffsetX = mesh.userData.isFixed ? 0 : window.scrollX;
-      // rect.left already includes GSAP transform (tx).
-      // We subtract tx to strip the animation, then add baseTx to match baseDOM's initial state.
       const currentPageX = rect.left + scrollOffsetX - tx + baseTx;
       const deltaX = currentPageX - mesh.userData.baseDOM.x;
       
@@ -66,20 +61,15 @@ export function animateMeshByData(
       mesh.userData.originRatioY = ratioY;
     }
 
-    // --- Calculate Mesh Position using Measured Origin ---
     const ratioX = mesh.userData.originRatioX ?? 0.5;
     const ratioY = mesh.userData.originRatioY ?? 0.5;
 
-    // Since Three.js meshes expand from center, we offset the center based on the locked origin ratio
     const moveX = widthDiff * (0.5 - ratioX);
     const moveY = heightDiff * (0.5 - ratioY);
 
-    // --- Calculate Delta Movement ---
-    // Extract baseTransform stored during syncScene
     const baseTx = mesh.userData.baseTransform?.x ?? 0;
     const baseTy = mesh.userData.baseTransform?.y ?? 0;
     
-    // We only want to apply the DIFFERENCE in transform since the base extraction.
     const deltaTx = (styleData.x ?? baseTx) - baseTx;
     const deltaTy = (styleData.y ?? baseTy) - baseTy;
 
@@ -97,10 +87,6 @@ export function animateMeshByData(
     });
   });
 }
-export function animateMeshByAttribute(
-  _target: HTMLElement,
-  _options: { duration: number; easing?: string },
-) {}
 
 export function updateFixedMeshesScroll(
   fixedMeshes: Set<THREE.Mesh>,
@@ -119,45 +105,4 @@ export function updateFixedMeshesScroll(
       mesh.position.y = mesh.userData.basePosition.y;
     }
   });
-}
-
-export function extractFromStyle(style: CSSStyleDeclaration): StyleData {
-  const styleObject: StyleData = {};
-
-  if (style.opacity) {
-    styleObject.opacity = parseFloat(style.opacity);
-  }
-
-  if (style.backgroundColor && style.backgroundColor !== "rgba(0, 0, 0, 0)") {
-    const parsed = parseColor(style.backgroundColor);
-    styleObject.backgroundColor = [parsed.color.r, parsed.color.g, parsed.color.b];
-  }
-
-  if (style.backgroundImage) {
-    styleObject.backgroundImage = style.backgroundImage;
-  } else if (style.background) {
-    styleObject.backgroundImage = style.background;
-  }
-
-  if (style.borderRadius) {
-    styleObject.borderRadius = parseFloat(style.borderRadius);
-  }
-  if (style.width) {
-    styleObject.width = parseFloat(style.width);
-  }
-  if (style.height) {
-    styleObject.height = parseFloat(style.height);
-  }
-  if (style.transform && style.transform !== "none") {
-    const matrix = new DOMMatrix(style.transform);
-
-    styleObject.x = matrix.m41;
-    styleObject.y = matrix.m42;
-    styleObject.z = matrix.m43;
-
-    // [TODO] direct matrix data pipeline to webGL
-    // styleObject.matrix = matrix.toFloat32Array();
-  }
-
-  return styleObject;
 }

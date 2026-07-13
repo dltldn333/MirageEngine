@@ -6,10 +6,13 @@ import {
   CoreConfig,
   MirageMode,
   USER_LAYER,
-  SYSTEM_LAYER,
+  SELECT_LAYER,
   travelerClipArea,
+  THREE_LAYERS,
+  ATTR_TRAVEL,
+  LayerTarget,
 } from "../types";
-import { Painter } from "@mirage-engine/painter";
+import { Painter, TextStyles, BoxStyles } from "@mirage-engine/painter";
 import { MeshRegistry } from "../store/MeshRegistry";
 import { TextureLifecycleManager } from "../store/TextureLifecycleManager";
 
@@ -18,18 +21,22 @@ export class Renderer {
   private readonly scene: THREE.Scene;
   private readonly camera: THREE.OrthographicCamera;
   private readonly renderer: THREE.WebGLRenderer;
-  private renderTarget: THREE.WebGLRenderTarget | null = null;
+  private renderTargets: THREE.WebGLRenderTarget[] = [];
   private renderOrder: number = 0;
-  private qualityFactor: number = 2;
+  public qualityFactor: number = 2;
   private mode: MirageMode = "overlay";
   private clipArea: travelerClipArea = 1;
+  public targetLayer: number | LayerTarget = "base";
 
   private target: HTMLElement;
   private mountContainer: HTMLElement;
   private registry: MeshRegistry;
   private targetRect: DOMRect;
 
-  private travelers: Set<THREE.Mesh> = new Set();
+  private travelersByLayer: Set<THREE.Mesh>[] = Array.from(
+    { length: ATTR_TRAVEL.MAX_LAYERS },
+    () => new Set(),
+  );
   private textureManager: TextureLifecycleManager;
   // private meshMap: Map<HTMLElement, THREE.Mesh> = new Map();
 
@@ -44,7 +51,7 @@ export class Renderer {
     this.target = target;
     this.mountContainer = mountContainer;
     this.registry = registry;
-    
+
     this.textureManager = new TextureLifecycleManager((el, texture) => {
       const mesh = this.registry.get(el);
       if (mesh && mesh.material instanceof THREE.ShaderMaterial) {
@@ -54,6 +61,7 @@ export class Renderer {
 
     this.mode = config.mode ?? "overlay";
     this.clipArea = config.travelerClipArea ?? 1;
+    this.targetLayer = config.layer ?? "base";
     this.canvas = document.createElement("canvas");
     this.scene = new THREE.Scene();
 
@@ -74,8 +82,7 @@ export class Renderer {
       1000,
     );
     this.camera.position.z = 100;
-    this.camera.layers.set(0);
-
+    this.camera.layers.set(this.getSceneLayer());
 
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
@@ -85,29 +92,41 @@ export class Renderer {
       // premultipliedAlpha: true
     });
 
-     
     THREE.ColorManagement.enabled = false;
     this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-
 
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(width, height);
 
     this.applyTextQuality(config.quality ?? "medium");
   }
+
+  private getSceneLayer(): number {
+    if (typeof this.targetLayer === "number") {
+      return this.targetLayer;
+    } else if (this.targetLayer === "selected") {
+      return THREE_LAYERS.SELECTED;
+    } else {
+      return THREE_LAYERS.BASE;
+    }
+  }
+
   public createRenderTarget() {
-    this.renderTarget = new THREE.WebGLRenderTarget(
-      this.targetRect.width * this.qualityFactor,
-      this.targetRect.height * this.qualityFactor,
-      {
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.LinearFilter,
-        format: THREE.RGBAFormat,
-        stencilBuffer: false,
-        depthBuffer: true,
-        // samples: 0.7,
-      },
-    );
+    for (let i = 0; i < ATTR_TRAVEL.MAX_LAYERS; i++) {
+      this.renderTargets.push(
+        new THREE.WebGLRenderTarget(
+          this.targetRect.width * this.qualityFactor,
+          this.targetRect.height * this.qualityFactor,
+          {
+            minFilter: THREE.LinearFilter,
+            magFilter: THREE.LinearFilter,
+            format: THREE.RGBAFormat,
+            stencilBuffer: false,
+            depthBuffer: true,
+          },
+        ),
+      );
+    }
   }
 
   private applyTextQuality(quality: Quality) {
@@ -123,6 +142,9 @@ export class Renderer {
         this.qualityFactor = 4;
         break;
       case "medium":
+        // this.qualityFactor = 2;
+        this.qualityFactor = 2;
+        break;  
       default:
         this.qualityFactor = 2;
         break;
@@ -154,6 +176,31 @@ export class Renderer {
     }
   }
 
+  public updateUniforms(element: HTMLElement, uniforms: Record<string, any>) {
+    const mesh = this.registry.get(element);
+    if (!mesh) return;
+
+    mesh.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).material) {
+        Painter.forceUpdateUniforms(
+          (child as THREE.Mesh).material as THREE.ShaderMaterial,
+          uniforms,
+        );
+      }
+    });
+
+    if (mesh.userData.nativeMesh) {
+      mesh.userData.nativeMesh.traverse((child: THREE.Object3D) => {
+        if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).material) {
+          Painter.forceUpdateUniforms(
+            (child as THREE.Mesh).material as THREE.ShaderMaterial,
+            uniforms,
+          );
+        }
+      });
+    }
+  }
+
   public dispose() {
     this.renderer.dispose();
     this.canvas.remove();
@@ -163,11 +210,8 @@ export class Renderer {
 
   public setSize(width: number, height: number) {
     this.renderer.setSize(width, height);
-    if (this.renderTarget) {
-      this.renderTarget.setSize(
-        width * this.qualityFactor,
-        height * this.qualityFactor,
-      );
+    for (const target of this.renderTargets) {
+      target.setSize(width * this.qualityFactor, height * this.qualityFactor);
     }
     this.camera.left = width / -2;
     this.camera.right = width / 2;
@@ -202,9 +246,6 @@ export class Renderer {
 
     this.renderOrder = 0;
 
-    // const activeElements = new Set<HTMLElement>();
-
-    // this.reconcileNode(graphNode, activeElements);
     this.reconcileNode(graphNode);
 
     if (pendingDeletions.size > 0) {
@@ -212,9 +253,20 @@ export class Renderer {
         const meshToDestroy = this.registry.get(el) as THREE.Mesh | undefined;
         if (meshToDestroy) {
           this.scene.remove(meshToDestroy);
-          this.travelers.delete(meshToDestroy);
+          for (const set of this.travelersByLayer) {
+            set.delete(meshToDestroy);
+          }
           this.fixedMeshes.delete(meshToDestroy);
           meshToDestroy.geometry.dispose();
+          if (meshToDestroy.userData.nativeMesh) {
+            this.scene.remove(meshToDestroy.userData.nativeMesh);
+            if (Array.isArray(meshToDestroy.userData.nativeMesh.material)) {
+              meshToDestroy.userData.nativeMesh.material.forEach((mat: THREE.Material) => mat.dispose());
+            } else {
+              meshToDestroy.userData.nativeMesh.material.dispose();
+            }
+            meshToDestroy.userData.nativeMesh.geometry.dispose();
+          }
           meshToDestroy.traverse((child) => {
             if (child instanceof THREE.Mesh) {
               if (child.geometry) child.geometry.dispose();
@@ -246,16 +298,15 @@ export class Renderer {
 
   // private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
   private reconcileNode(node: SceneNode) {
-    // activeElements.add(node.element);
-
-    // let mesh = this.meshMap.get(node.element);
     let mesh = this.registry.get(node.element) as THREE.Mesh | undefined;
+      
     if (!mesh) {
       const geometry = new THREE.PlaneGeometry(1, 1);
-      let material: THREE.MeshBasicMaterial | THREE.Material;
-      const initialTexture = node.isTraveler ? this.renderTarget?.texture : this.textureManager.get(node.element);
+      const initialTexture = node.isTraveler
+        ? this.renderTargets[node.captureLayer - 2]?.texture
+        : this.textureManager.get(node.element);
 
-      material = Painter.create(
+      const material = Painter.create(
         "BOX",
         node.styles,
         "",
@@ -265,23 +316,34 @@ export class Renderer {
         initialTexture,
         node.shaderHooks,
       );
+      
       mesh = new THREE.Mesh(geometry, material);
+
       if (node.type === "TEXT") mesh.name = "BG_MESH";
       this.scene.add(mesh);
+      
       this.registry.register(node.element, mesh);
+      mesh.userData.baseMaterial = material;
     }
 
+
+
     // [Important] use whene mesh animating with js
-    mesh.userData.domRect = node.rect;
 
     this.updateMeshProperties(mesh, node);
     this.updateMeshLayers(mesh, node);
     if (node.isTraveler) {
-      mesh.layers.enable(28);
-      this.travelers.add(mesh);
+      for (let i = 0; i < ATTR_TRAVEL.MAX_LAYERS; i++) {
+        if (i === node.captureLayer - 2) {
+          this.travelersByLayer[i].add(mesh);
+        } else {
+          this.travelersByLayer[i].delete(mesh);
+        }
+      }
     } else {
-      mesh.layers.disable(28);
-      this.travelers.delete(mesh);
+      for (const set of this.travelersByLayer) {
+        set.delete(mesh);
+      }
     }
 
     if (node.isFixed) {
@@ -301,22 +363,33 @@ export class Renderer {
         this.reconcileNode(child);
       }
     } else if (node.type === "TEXT") {
-      this.reconcileTextChild(mesh, node);
+      this.reconcileTextChild(mesh, node, false);
+      if (mesh.userData.nativeMesh && node.nativeStyles) {
+        this.reconcileTextChild(mesh.userData.nativeMesh as THREE.Mesh, node, true);
+      }
     }
   }
 
-  private reconcileTextChild(parentMesh: THREE.Mesh, node: SceneNode) {
-    const lines = node.textLines || [{ text: node.textContent || "", rect: node.rect }];
-    const currentStyleHash = JSON.stringify(node.textStyles) + node.textContent + lines.map(l => l.text).join("|");
+  private reconcileTextChild(parentMesh: THREE.Mesh, node: SceneNode, isNative: boolean) {
+    const lines = node.textLines || [
+      { text: node.textContent || "", rect: node.rect },
+    ];
+    
+    const stylesToUse = (isNative ? node.nativeStyles : node.textStyles) as TextStyles;
+    const currentStyleHash =
+      JSON.stringify(stylesToUse) +
+      node.textContent +
+      lines.map((l) => l.text).join("|");
     const cachedStyleHash = parentMesh.userData?.textChildStyleHash;
     const isDirty =
-      node.dirtyMask & DIRTY_CONTENT ||
-      currentStyleHash !== cachedStyleHash;
+      node.dirtyMask & DIRTY_CONTENT || currentStyleHash !== cachedStyleHash;
 
     if (isDirty) {
       // Remove all existing TEXT_CHILD meshes
-      const existingChildren = parentMesh.children.filter(c => c.name.startsWith("TEXT_CHILD"));
-      existingChildren.forEach(child => {
+      const existingChildren = parentMesh.children.filter((c) =>
+        c.name.startsWith("TEXT_CHILD"),
+      );
+      existingChildren.forEach((child) => {
         const textMesh = child as THREE.Mesh;
         (textMesh.material as THREE.MeshBasicMaterial).map?.dispose();
         textMesh.geometry.dispose();
@@ -330,7 +403,7 @@ export class Renderer {
       lines.forEach((line, index) => {
         const material = Painter.create(
           "TEXT",
-          node.textStyles!,
+          stylesToUse,
           line.text,
           line.rect.width,
           line.rect.height,
@@ -341,12 +414,13 @@ export class Renderer {
         const textMesh = new THREE.Mesh(geometry, material);
 
         textMesh.name = `TEXT_CHILD_${index}`;
-        this.updateMeshLayers(textMesh, node);
 
-        // Parent is already scaled to node.rect.width/height. 
+        // Parent is already scaled to node.rect.width/height.
         // We counter-scale the child so its absolute size is exactly line.rect.width/height.
-        const scaleX = node.rect.width === 0 ? 1 : line.rect.width / node.rect.width;
-        const scaleY = node.rect.height === 0 ? 1 : line.rect.height / node.rect.height;
+        const scaleX =
+          node.rect.width === 0 ? 1 : line.rect.width / node.rect.width;
+        const scaleY =
+          node.rect.height === 0 ? 1 : line.rect.height / node.rect.height;
         textMesh.scale.set(scaleX, scaleY, 1);
 
         const textCenterX = line.rect.x + line.rect.width / 2;
@@ -359,7 +433,7 @@ export class Renderer {
         textMesh.position.set(
           node.rect.width === 0 ? 0 : offsetX / node.rect.width,
           node.rect.height === 0 ? 0 : offsetY / node.rect.height,
-          0.005
+          0.005,
         );
 
         parentMesh.add(textMesh);
@@ -367,6 +441,35 @@ export class Renderer {
 
       parentMesh.userData.textChildStyleHash = currentStyleHash;
     }
+
+    // Always update layers for all text children, as visibility/nativeLayer can change without dirtifying the style
+    parentMesh.children.forEach((child) => {
+      if (!child.name.startsWith("TEXT_CHILD")) return;
+      const textMesh = child as THREE.Mesh;
+      
+      const layerNum = node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
+      textMesh.layers.set(layerNum);
+
+      if (node.visibility & SELECT_LAYER) {
+        textMesh.layers.enable(THREE_LAYERS.SELECTED);
+      }
+
+      if (node.visibility & USER_LAYER) {
+        if (!isNative && node.nativeLayer !== undefined && node.nativeStyles !== undefined) {
+          for (let i = node.captureLayer; i < node.nativeLayer; i++) {
+            textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+          }
+        } else if (isNative && node.nativeLayer !== undefined) {
+          for (let i = Math.max(node.captureLayer, node.nativeLayer); i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+            textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+          }
+        } else {
+          for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+            textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+          }
+        }
+      }
+    });
   }
 
   private updateMeshProperties(mesh: THREE.Mesh, node: SceneNode) {
@@ -375,8 +478,15 @@ export class Renderer {
     const pixelRatio = this.renderer.getPixelRatio();
     const canvasWidth = this.renderer.domElement.width / pixelRatio;
     const canvasHeight = this.renderer.domElement.height / pixelRatio;
-
+    
+    mesh.material = mesh.userData.baseMaterial as THREE.Material;
     mesh.scale.set(rect.width, rect.height, 1);
+
+    mesh.userData.domRect = {
+      ...rect,
+      width: rect.width,
+      height: rect.height,
+    };
 
     const Z_MICRO_OFFSET = 0.001;
     this.renderOrder++;
@@ -401,15 +511,18 @@ export class Renderer {
     mesh.userData.basePosition = { x: baseX, y: baseY };
     mesh.userData.originalBasePosition = { x: baseX, y: baseY };
     mesh.userData.baseSize = { width: rect.width, height: rect.height };
-    // ✨ 추가: 역산을 위한 순수 DOM 초기 좌표 저장
+
     mesh.userData.baseDOM = { x: pureDOM_X, y: pureDOM_Y };
     mesh.userData.isFixed = node.isFixed;
     mesh.userData.initialScroll = { x: window.scrollX, y: window.scrollY };
 
-    // ✨ 추가: 초기 transform 상태를 저장하여 애니메이션 시 delta 값만 적용하도록 함 (이중 적용 방지)
-    const targetEl = node.element.nodeType === Node.TEXT_NODE ? node.element.parentElement! : node.element;
+    const targetEl =
+      node.element.nodeType === Node.TEXT_NODE
+        ? node.element.parentElement!
+        : node.element;
     const computed = window.getComputedStyle(targetEl);
-    let baseTx = 0, baseTy = 0;
+    let baseTx = 0,
+      baseTy = 0;
     if (computed.transform && computed.transform !== "none") {
       const matrix = new DOMMatrix(computed.transform);
       baseTx = matrix.m41;
@@ -417,7 +530,6 @@ export class Renderer {
     }
     mesh.userData.baseTransform = { x: baseTx, y: baseTy };
 
-    // ✨ 추가: 애니메이션이 끝나고 씬이 갱신되면 비율 캐시 초기화!
     delete mesh.userData.originRatioX;
     delete mesh.userData.originRatioY;
     // mesh.position.set(
@@ -426,42 +538,127 @@ export class Renderer {
     //   styles.zIndex + this.renderOrder * Z_MICRO_OFFSET,
     // );
     Painter.update(
-      mesh.material as THREE.Material,
+      mesh.userData.baseMaterial,
       "BOX",
-      node.styles,
+      styles,
       "",
-      node.rect.width,
-      node.rect.height,
+      rect.width,
+      rect.height,
       this.qualityFactor,
-      node.isTraveler ? this.renderTarget?.texture : this.textureManager.get(node.element),
+      node.isTraveler
+        ? this.renderTargets[node.captureLayer - 2]?.texture
+        : this.textureManager.get(node.element),
     );
+
+    if (node.nativeStyles && node.nativeRect) {
+      if (!mesh.userData.nativeMesh) {
+        const nativeMaterial = Painter.create(
+          "BOX",
+          node.nativeStyles,
+          "",
+          node.nativeRect.width,
+          node.nativeRect.height,
+          this.qualityFactor,
+          node.isTraveler
+            ? this.renderTargets[node.captureLayer - 2]?.texture
+            : this.textureManager.get(node.element),
+          node.shaderHooks,
+        );
+        const nativeMesh = new THREE.Mesh(mesh.geometry, nativeMaterial);
+        if (node.type === "TEXT") nativeMesh.name = "BG_MESH";
+        this.scene.add(nativeMesh);
+        mesh.userData.nativeMesh = nativeMesh;
+      }
+
+      const nativeMesh = mesh.userData.nativeMesh as THREE.Mesh;
+      const nativeLocalX = node.nativeRect.x - targetPageX;
+      const nativeLocalY = node.nativeRect.y - targetPageY;
+      const nativeBaseX = nativeLocalX - canvasWidth / 2 + node.nativeRect.width / 2;
+      const nativeBaseY = -nativeLocalY + canvasHeight / 2 - node.nativeRect.height / 2;
+
+      nativeMesh.scale.set(node.nativeRect.width, node.nativeRect.height, 1);
+      nativeMesh.position.set(
+        nativeBaseX,
+        nativeBaseY,
+        (node.nativeStyles as BoxStyles).zIndex + this.renderOrder * Z_MICRO_OFFSET,
+      );
+
+      Painter.update(
+        nativeMesh.material as THREE.Material,
+        "BOX",
+        node.nativeStyles,
+        "",
+        node.nativeRect.width,
+        node.nativeRect.height,
+        this.qualityFactor,
+        node.isTraveler
+          ? this.renderTargets[node.captureLayer - 2]?.texture
+          : this.textureManager.get(node.element),
+      );
+    } else {
+      if (mesh.userData.nativeMesh) {
+        this.scene.remove(mesh.userData.nativeMesh);
+        if (mesh.userData.nativeMesh.material instanceof THREE.Material) {
+          mesh.userData.nativeMesh.material.dispose();
+        }
+        delete mesh.userData.nativeMesh;
+      }
+    }
   }
 
   private updateMeshLayers(mesh: THREE.Mesh, node: SceneNode) {
-    const layerNum = (1 - (node.visibility & USER_LAYER)) * 30;
+    const layerNum =
+      node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
     mesh.layers.set(layerNum);
-    if (node.visibility === (USER_LAYER | SYSTEM_LAYER)) mesh.layers.enable(29);
+
+    if (node.visibility & SELECT_LAYER) {
+      mesh.layers.enable(THREE_LAYERS.SELECTED);
+    }
+
+    if (mesh.userData.nativeMesh && node.nativeLayer !== undefined) {
+      const nativeMesh = mesh.userData.nativeMesh as THREE.Mesh;
+      nativeMesh.layers.set(THREE_LAYERS.HIDDEN);
+
+      if (node.visibility & USER_LAYER) {
+        for (let i = node.captureLayer; i < node.nativeLayer; i++) {
+          mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+        }
+        for (let i = Math.max(node.captureLayer, node.nativeLayer); i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+          nativeMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+        }
+      }
+    } else {
+      if (node.visibility & USER_LAYER) {
+        for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+          mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+        }
+      }
+    }
   }
 
-  private captureRenderTarget() {
+  private captureRenderTarget(
+    travelers: Set<THREE.Mesh>,
+    targetLayer: number,
+    renderTarget: THREE.WebGLRenderTarget | null,
+  ) {
     // [Problem] this method called on requestAnimationFrame
     // => this logic travers all meshes every frame, need optimization
 
     // if (travelers.length === 0) return;
-    if (this.travelers.size === 0) return;
+    if (travelers.size === 0 || !renderTarget) return;
 
     const oldClearColor = new THREE.Color();
     const oldClearAlpha = this.renderer.getClearAlpha();
     this.renderer.getClearColor(oldClearColor);
 
     this.renderer.setClearColor(0x000000, 0);
-    this.renderer.setRenderTarget(this.renderTarget);
+    this.renderer.setRenderTarget(renderTarget);
 
     this.renderer.clear();
 
     this.renderer.autoClear = false;
     this.renderer.setScissorTest(true);
-    this.camera.layers.set(29);
+    this.camera.layers.set(targetLayer);
 
     const vector = new THREE.Vector3();
     const canvasWidth = this.targetRect.width;
@@ -469,7 +666,7 @@ export class Renderer {
 
     const pixelRatio = this.renderer.getPixelRatio();
 
-    for (const traveler of this.travelers) {
+    for (const traveler of travelers) {
       vector.setFromMatrixPosition(traveler.matrixWorld);
       vector.project(this.camera);
 
@@ -504,35 +701,23 @@ export class Renderer {
     this.renderer.setScissorTest(false);
     this.renderer.autoClear = true;
     this.renderer.setRenderTarget(null);
-    this.camera.layers.set(0);
+    this.camera.layers.set(this.getSceneLayer());
     this.renderer.setClearColor(oldClearColor, oldClearAlpha);
   }
 
   public render() {
-    if (this.renderTarget) this.captureRenderTarget();
+    for (let i = 0; i < ATTR_TRAVEL.MAX_LAYERS; i++) {
+      const currentLayer = i + 1;
+
+      this.captureRenderTarget(
+        this.travelersByLayer[i],
+        THREE_LAYERS.getCaptureLayer(currentLayer),
+        this.renderTargets[i],
+      );
+    }
+
     this.renderer.render(this.scene, this.camera);
   }
 
-  // for debugging
-  public showScissoredRenderTarget() {
-    if (!this.renderTarget) return;
-
-    const w = this.targetRect.width;
-    const h = this.targetRect.height;
-
-    const geometry = new THREE.PlaneGeometry(w, h);
-    const material = new THREE.MeshBasicMaterial({
-      map: this.renderTarget.texture,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.8,
-    });
-
-    const debugMesh = new THREE.Mesh(geometry, material);
-
-    debugMesh.position.set(0, 0, 90);
-    debugMesh.layers.set(28);
-
-    this.scene.add(debugMesh);
-  }
+  
 }

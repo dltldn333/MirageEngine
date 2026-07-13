@@ -16,7 +16,33 @@ export function createBoxMaterial(
 ): THREE.ShaderMaterial {
   const hasTexture = texture !== null || !!styles.imageSrc;
 
-  const declChunk = hasTexture ? BoxChunk.declChunk : "";
+  let customUniformsCode = "";
+  const customUniforms: any = {};
+  
+  if (hooks?.uniforms) {
+    for (const [key, value] of Object.entries(hooks.uniforms)) {
+      if (typeof value === "number") {
+        customUniformsCode += `uniform float ${key};\n`;
+        customUniforms[key] = { value };
+      } else if (Array.isArray(value)) {
+        if (value.length === 2) {
+          customUniformsCode += `uniform vec2 ${key};\n`;
+          customUniforms[key] = { value: new THREE.Vector2(...value) };
+        } else if (value.length === 3) {
+          customUniformsCode += `uniform vec3 ${key};\n`;
+          customUniforms[key] = { value: new THREE.Vector3(...value) };
+        } else if (value.length === 4) {
+          customUniformsCode += `uniform vec4 ${key};\n`;
+          customUniforms[key] = { value: new THREE.Vector4(...value) };
+        }
+      } else {
+        customUniformsCode += `uniform float ${key};\n`;
+        customUniforms[key] = { value };
+      }
+    }
+  }
+
+  const declChunk = (hasTexture ? BoxChunk.declChunk : "") + "\n" + customUniformsCode;
   const baseUvCode = styles.isTraveler ? BoxChunk.uvChunk : "vec2 resultUv = vUv * uTextureRepeat + uTextureOffset;\n";
   const uvChunk = hasTexture ? baseUvCode + (hooks?.uvModifier || "") : "";
   const baseColorChunk = hasTexture ? BoxChunk.baseColorChunk : "";
@@ -71,7 +97,7 @@ export function createBoxMaterial(
   }
 
   const material = new THREE.ShaderMaterial({
-    uniforms: uniforms,
+    uniforms: { ...uniforms, ...customUniforms },
     vertexShader: BoxShader.vertexShader,
     fragmentShader: fragmentShader,
     transparent: true,
@@ -119,6 +145,7 @@ export interface BoxUniformValues {
   borderOpacity?: number;
   texture?: THREE.Texture | null;
   backgroundImage?: string;
+  [key: string]: any;
 }
 
 export function setBoxUniforms(
@@ -244,7 +271,7 @@ export function setBoxUniforms(
             s.color.b,
             s.alpha,
           );
-          console.log(s.color.r, s.color.g, s.color.b);
+          // console.log(s.color.r, s.color.g, s.color.b);
           material.uniforms.uGradientStops.value[i] = s.stop;
         } else {
           material.uniforms.uGradientColors.value[i].set(0, 0, 0, 0);
@@ -253,6 +280,43 @@ export function setBoxUniforms(
       }
     } else {
       material.uniforms.uGradientCount.value = 0;
+    }
+  }
+
+  // Update dynamic custom uniforms
+  for (const key of Object.keys(values)) {
+    if (
+      key !== "width" &&
+      key !== "height" &&
+      key !== "borderRadius" &&
+      key !== "borderWidth" &&
+      key !== "backgroundColor" &&
+      key !== "borderColor" &&
+      key !== "opacity" &&
+      key !== "bgOpacity" &&
+      key !== "borderOpacity" &&
+      key !== "texture" &&
+      key !== "backgroundImage"
+    ) {
+      if (material.uniforms[key] !== undefined) {
+        if (
+          material.uniforms[key].value !== undefined &&
+          material.uniforms[key].value !== null &&
+          typeof material.uniforms[key].value.set === "function"
+        ) {
+          if (Array.isArray(values[key])) {
+            material.uniforms[key].value.set(...values[key]);
+          } else if (values[key] !== undefined) {
+            if (values[key].copy) {
+              material.uniforms[key].value.copy(values[key]);
+            } else {
+              material.uniforms[key].value = values[key];
+            }
+          }
+        } else {
+          material.uniforms[key].value = values[key];
+        }
+      }
     }
   }
 }

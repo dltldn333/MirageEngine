@@ -1,31 +1,26 @@
 export type Quality = "low" | "medium" | "high" | number;
+export type LayerTarget = "base" | "selected"
 export type MirageMode = "overlay" | "duplicate";
 export type PxUnit = `${number}px`;
 export type PercentUnit = `${number}%`;
 export type travelerClipArea = PxUnit | PercentUnit | number;
-export interface FilterConfig {
-  includeTree?: string[];
-  excludeTree?: string[];
-  includeSelf?: string[];
-  excludeSelf?: string[];
-  end?: string[];
-}
-
 export interface ResizeConfig {
   delay?: number;
   onStart?: () => void;
   onEnd?: () => void;
 }
 
+
+
 interface BaseConfig {
   debug?: boolean;
+  layer?: number | LayerTarget;
   quality?: Quality;
   style?: {
     zIndex?: string;
   };
-  filter?: FilterConfig;
   resizeDebounce?: boolean | ResizeConfig;
-  travelerClipArea? : travelerClipArea;
+  travelerClipArea?: travelerClipArea;
 }
 
 export interface OverlayConfig extends BaseConfig {

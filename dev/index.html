@@ -88,7 +88,7 @@
     >
       loading...
     </div>
-    <div id="root" data-mirage-filter="exclude-self">
+    <div id="root" data-mirage-filter="">
       <div id="css-test">
         <span>TEST</span>
       </div>
@@ -97,12 +97,15 @@
         <span style="color: darkorange">(not-included)</span>
       </h1>
       <button id="test-btn" onclick="alert('test')">Test Button</button>
-      <h3>BOX test</h3>
+      <h3 id="box-test" style="color: #1e3a8a;">BOX test</h3>
 
       <div
+        id="box-parent"
+        class="native"
         style="
           display: flex;
           gap: 20px;
+          color: red;
           background: lightgrey;
           padding: 20px;
           border-radius: 10px;
@@ -111,10 +114,14 @@
         data-mirage-filter="include-tree"
       >
         <div
+          id="box-z"
           class="box"
-          style="background-color: darkorchid; color: white; text-align: center"
+          style="background-color: rgba(255, 255, 255, 0.8); text-align: center"
+          data-mirage-select="include-tree"
+          data-mirage-travel="traveler 1"
+          data-mirage-dom="hide"
         >
-          (not-exclude)
+          <div data-mirage-sandwich="" data-mirage-filter="">(not-exclude)</div>
         </div>
         <div
           id="box1"
@@ -148,9 +155,11 @@
             border-radius: 50px;
             height: 100px;
             width: 150px;
+            z-index: 5;
             /*box-shadow:;
             0 4px 6px -1px rgba(0, 0, 0, 0.4);*/
             background-color: rgba(0, 0, 0, 0.2);
+            cursor: pointer;
             /* background: linear-gradient( */
             /* rgba(0, 0, 0, 0.98) 0%, */
             /* rgba(0, 0, 0, 0.93) 40%, */
@@ -158,14 +167,52 @@
             /* rgba(0, 0, 0, 0.1) 100% */
             /* ); */
           "
-          data-mirage-travel="traveler"
-          data-mirage-filter="exclude-self"
+          data-mirage-select="include-tree"
+          data-mirage-travel="traveler 2"
           data-mirage-dom="hide"
         >
-          <div id="box2-child" style="height: 20px; text-align: center"></div>
+          <div
+            id="box2-child"
+            data-mirage-sandwich="front"
+            data-mirage-filter="end"
+            style="
+              height: 20px;
+              text-align: center;
+              color: black;
+              position: relative;
+              z-index: 1;
+              font-weight: bold;
+            "
+          >
+            Hello Sandwich
+          </div>
         </div>
       </div>
-
+      <div style="margin-top: 20px; text-align: center">
+        <svg
+          class="icon-test"
+          id="native-svg"
+          viewBox="0 0 100 100"
+          style="
+            width: 150px;
+            height: 150px;
+            color: #1e3a8a;
+            fill: currentColor;
+          "
+        >
+          <circle cx="50" cy="50" r="40" />
+          <text
+            x="50"
+            y="50"
+            fill="black"
+            font-size="20"
+            text-anchor="middle"
+            dominant-baseline="middle"
+          >
+            SVG
+          </text>
+        </svg>
+      </div>
       <div
         id="box-gsap"
         class="box"
