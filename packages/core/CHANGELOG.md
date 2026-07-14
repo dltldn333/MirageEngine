@@ -1,5 +1,11 @@
 # @mirage-engine/core
 
+## 0.3.3
+
+### Patch Changes
+
+- ef9f40d: release
+
 ## 0.3.2
 
 ### Patch Changes
