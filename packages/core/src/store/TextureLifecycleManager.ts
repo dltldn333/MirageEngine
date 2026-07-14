@@ -6,27 +6,29 @@ export type TextureReadyCallback = (
 ) => void;
 
 export class TextureLifecycleManager {
-  private observer: IntersectionObserver;
+  private observer?: IntersectionObserver;
   private textures: WeakMap<HTMLElement, THREE.Texture> = new WeakMap();
   private loadStatus: WeakMap<HTMLElement, boolean> = new WeakMap();
   private elementUrls: WeakMap<HTMLElement, string> = new WeakMap();
   private onUpdate: TextureReadyCallback;
 
-  constructor(onUpdate: TextureReadyCallback) {
+  constructor(onUpdate: TextureReadyCallback, enableCulling: boolean = true) {
     this.onUpdate = onUpdate;
-    this.observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          const el = entry.target as HTMLElement;
-          if (entry.isIntersecting) {
-            this.loadTexture(el);
-          } else {
-            this.disposeTexture(el);
+    if (enableCulling) {
+      this.observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            const el = entry.target as HTMLElement;
+            if (entry.isIntersecting) {
+              this.loadTexture(el);
+            } else {
+              this.disposeTexture(el);
+            }
           }
-        }
-      },
-      { rootMargin: "300px" },
-    );
+        },
+        { rootMargin: "300px" },
+      );
+    }
   }
 
   public register(element: HTMLElement, url: string) {
@@ -35,13 +37,17 @@ export class TextureLifecycleManager {
     if (currentUrl !== url) {
       this.elementUrls.set(element, url);
       // Restart observation to trigger intersecting check
-      this.observer.unobserve(element);
-      this.observer.observe(element);
+      if (this.observer) {
+        this.observer.unobserve(element);
+        this.observer.observe(element);
+      } else {
+        this.loadTexture(element);
+      }
     }
   }
 
   public unregister(element: HTMLElement) {
-    if (element.nodeType === Node.ELEMENT_NODE) {
+    if (element.nodeType === Node.ELEMENT_NODE && this.observer) {
       this.observer.unobserve(element);
     }
     this.disposeTexture(element);
@@ -118,7 +124,9 @@ export class TextureLifecycleManager {
   }
 
   public disposeAll() {
-    this.observer.disconnect();
+    if (this.observer) {
+      this.observer.disconnect();
+    }
     // Assuming WeakMap handles GC of remaining textures, but in WebGL we must explicitly delete.
     // However, WeakMap is not iterable, so we can't easily iterate and delete. 
     // The renderer should unregister nodes upon pendingDeletions.
