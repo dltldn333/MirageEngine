@@ -58,17 +58,18 @@ export class Renderer {
     this.mountContainer = mountContainer;
     this.registry = registry;
 
+    this.mode = config.mode ?? "overlay";
+    this.canvasSize = (config as any).canvasSize ?? "viewport";
+    this.clipArea = config.travelerClipArea ?? 1;
+    this.targetLayer = config.layer ?? "base";
+
     this.textureManager = new TextureLifecycleManager((el, texture) => {
       const mesh = this.registry.get(el);
       if (mesh && mesh.material instanceof THREE.ShaderMaterial) {
         Painter.forceUpdateUniforms(mesh.material, { texture: texture });
       }
-    });
+    }, this.isViewport);
 
-    this.mode = config.mode ?? "overlay";
-    this.canvasSize = (config as any).canvasSize ?? "viewport";
-    this.clipArea = config.travelerClipArea ?? 1;
-    this.targetLayer = config.layer ?? "base";
     this.canvas = document.createElement("canvas");
     this.scene = new THREE.Scene();
 
