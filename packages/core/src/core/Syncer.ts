@@ -54,6 +54,7 @@ export class Syncer {
 
     this.tracker.onScrollChange.add((scrollX, scrollY) => {
       updateFixedMeshesScroll(this.renderer.fixedMeshes, scrollX, scrollY);
+      this.renderer.updateCameraScroll(scrollX, scrollY);
     });
 
     this.tracker.onStyleChange.add((pendingStyles) => {
@@ -67,6 +68,8 @@ export class Syncer {
 
   public start() {
     this.tracker.start();
+    updateFixedMeshesScroll(this.renderer.fixedMeshes, window.scrollX, window.scrollY);
+    this.renderer.updateCameraScroll(window.scrollX, window.scrollY);
   }
 
   public stop() {

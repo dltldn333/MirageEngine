@@ -25,8 +25,14 @@ export class Renderer {
   private renderOrder: number = 0;
   public qualityFactor: number = 2;
   private mode: MirageMode = "overlay";
+  private canvasSize: "viewport" | "document" = "viewport";
   private clipArea: travelerClipArea = 1;
   public targetLayer: number | LayerTarget = "base";
+  private readonly overscan: number = 200;
+
+  private get isViewport(): boolean {
+    return this.mode === "overlay" && this.canvasSize === "viewport";
+  }
 
   private target: HTMLElement;
   private mountContainer: HTMLElement;
@@ -52,22 +58,24 @@ export class Renderer {
     this.mountContainer = mountContainer;
     this.registry = registry;
 
+    this.mode = config.mode ?? "overlay";
+    this.canvasSize = (config as any).canvasSize ?? "viewport";
+    this.clipArea = config.travelerClipArea ?? 1;
+    this.targetLayer = config.layer ?? "base";
+
     this.textureManager = new TextureLifecycleManager((el, texture) => {
       const mesh = this.registry.get(el);
       if (mesh && mesh.material instanceof THREE.ShaderMaterial) {
         Painter.forceUpdateUniforms(mesh.material, { texture: texture });
       }
-    });
+    }, this.isViewport);
 
-    this.mode = config.mode ?? "overlay";
-    this.clipArea = config.travelerClipArea ?? 1;
-    this.targetLayer = config.layer ?? "base";
     this.canvas = document.createElement("canvas");
     this.scene = new THREE.Scene();
 
     this.targetRect = this.target.getBoundingClientRect();
-    const width = this.targetRect.width;
-    const height = this.targetRect.height;
+    const width = this.isViewport ? window.innerWidth + this.overscan * 2 : this.targetRect.width;
+    const height = this.isViewport ? window.innerHeight + this.overscan * 2 : this.targetRect.height;
 
     // target duplicate mode
     // const width = target.parentElement!.clientWidth;
@@ -113,10 +121,12 @@ export class Renderer {
 
   public createRenderTarget() {
     for (let i = 0; i < ATTR_TRAVEL.MAX_LAYERS; i++) {
+      const width = this.isViewport ? window.innerWidth + this.overscan * 2 : this.targetRect.width;
+      const height = this.isViewport ? window.innerHeight + this.overscan * 2 : this.targetRect.height;
       this.renderTargets.push(
         new THREE.WebGLRenderTarget(
-          this.targetRect.width * this.qualityFactor,
-          this.targetRect.height * this.qualityFactor,
+          width * this.qualityFactor,
+          height * this.qualityFactor,
           {
             minFilter: THREE.LinearFilter,
             magFilter: THREE.LinearFilter,
@@ -160,8 +170,10 @@ export class Renderer {
   }
 
   private updateCanvasLayout() {
-    this.canvas.style.width = `${this.targetRect.width}px`;
-    this.canvas.style.height = `${this.targetRect.height}px`;
+    const width = this.isViewport ? window.innerWidth + this.overscan * 2 : this.targetRect.width;
+    const height = this.isViewport ? window.innerHeight + this.overscan * 2 : this.targetRect.height;
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
 
     if (this.mode === "duplicate") {
       this.canvas.style.position = "";
@@ -169,9 +181,9 @@ export class Renderer {
       this.canvas.style.left = "";
       this.canvas.style.display = "block";
     } else {
-      this.canvas.style.position = "absolute";
-      this.canvas.style.top = `${this.target.offsetTop}px`;
-      this.canvas.style.left = `${this.target.offsetLeft}px`;
+      this.canvas.style.position = this.isViewport ? "fixed" : "absolute";
+      this.canvas.style.top = this.isViewport ? `-${this.overscan}px` : `${this.target.offsetTop}px`;
+      this.canvas.style.left = this.isViewport ? `-${this.overscan}px` : `${this.target.offsetLeft}px`;
       this.canvas.style.display = "block";
     }
   }
@@ -222,10 +234,14 @@ export class Renderer {
 
   public syncScene(graphNode: SceneNode, pendingDeletions: Set<HTMLElement>) {
     const newRect = this.target.getBoundingClientRect();
+    const newWidth = this.isViewport ? window.innerWidth + this.overscan * 2 : newRect.width;
+    const newHeight = this.isViewport ? window.innerHeight + this.overscan * 2 : newRect.height;
+    const oldWidth = this.isViewport ? this.canvas.clientWidth : this.targetRect.width;
+    const oldHeight = this.isViewport ? this.canvas.clientHeight : this.targetRect.height;
 
     const isResized =
-      Math.abs(newRect.width - this.targetRect.width) > 0.1 ||
-      Math.abs(newRect.height - this.targetRect.height) > 0.1;
+      Math.abs(newWidth - oldWidth) > 0.1 ||
+      Math.abs(newHeight - oldHeight) > 0.1;
 
     const isMoved =
       this.mode === "overlay" &&
@@ -234,7 +250,7 @@ export class Renderer {
 
     if (isResized) {
       this.targetRect = newRect;
-      this.setSize(this.targetRect.width, this.targetRect.height);
+      this.setSize(newWidth, newHeight);
 
       this.updateCanvasLayout();
     } else if (isMoved) {
@@ -494,11 +510,16 @@ export class Renderer {
     const targetPageX = this.targetRect.left + window.scrollX;
     const targetPageY = this.targetRect.top + window.scrollY;
 
-    const localX = rect.x - targetPageX;
-    const localY = rect.y - targetPageY;
-
-    const baseX = localX - canvasWidth / 2 + rect.width / 2;
-    const baseY = -localY + canvasHeight / 2 - rect.height / 2;
+    let baseX: number, baseY: number;
+    if (this.isViewport) {
+      baseX = rect.x - window.innerWidth / 2 + rect.width / 2;
+      baseY = -rect.y + window.innerHeight / 2 - rect.height / 2;
+    } else {
+      const localX = rect.x - targetPageX;
+      const localY = rect.y - targetPageY;
+      baseX = localX - canvasWidth / 2 + rect.width / 2;
+      baseY = -localY + canvasHeight / 2 - rect.height / 2;
+    }
 
     mesh.position.set(
       baseX,
@@ -571,10 +592,16 @@ export class Renderer {
       }
 
       const nativeMesh = mesh.userData.nativeMesh as THREE.Mesh;
-      const nativeLocalX = node.nativeRect.x - targetPageX;
-      const nativeLocalY = node.nativeRect.y - targetPageY;
-      const nativeBaseX = nativeLocalX - canvasWidth / 2 + node.nativeRect.width / 2;
-      const nativeBaseY = -nativeLocalY + canvasHeight / 2 - node.nativeRect.height / 2;
+      let nativeBaseX: number, nativeBaseY: number;
+      if (this.isViewport) {
+        nativeBaseX = node.nativeRect.x - window.innerWidth / 2 + node.nativeRect.width / 2;
+        nativeBaseY = -node.nativeRect.y + window.innerHeight / 2 - node.nativeRect.height / 2;
+      } else {
+        const nativeLocalX = node.nativeRect.x - targetPageX;
+        const nativeLocalY = node.nativeRect.y - targetPageY;
+        nativeBaseX = nativeLocalX - canvasWidth / 2 + node.nativeRect.width / 2;
+        nativeBaseY = -nativeLocalY + canvasHeight / 2 - node.nativeRect.height / 2;
+      }
 
       nativeMesh.scale.set(node.nativeRect.width, node.nativeRect.height, 1);
       nativeMesh.position.set(
@@ -661,8 +688,8 @@ export class Renderer {
     this.camera.layers.set(targetLayer);
 
     const vector = new THREE.Vector3();
-    const canvasWidth = this.targetRect.width;
-    const canvasHeight = this.targetRect.height;
+    const canvasWidth = this.isViewport ? window.innerWidth + this.overscan * 2 : this.targetRect.width;
+    const canvasHeight = this.isViewport ? window.innerHeight + this.overscan * 2 : this.targetRect.height;
 
     const pixelRatio = this.renderer.getPixelRatio();
 
@@ -719,5 +746,11 @@ export class Renderer {
     this.renderer.render(this.scene, this.camera);
   }
 
-  
+  public updateCameraScroll(scrollX: number, scrollY: number) {
+    if (this.isViewport) {
+      this.camera.position.x = scrollX;
+      this.camera.position.y = -scrollY;
+      this.camera.updateMatrixWorld();
+    }
+  }
 }

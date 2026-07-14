@@ -25,6 +25,15 @@ interface BaseConfig {
 
 export interface OverlayConfig extends BaseConfig {
   mode?: "overlay";
+  /**
+   * Defines the render size of the canvas and camera behavior.
+   * 'viewport' (default) is optimized for long scrollable pages by allocating canvas size 
+   * to the current screen viewport only, significantly improving performance (60fps).
+   * 'document' allocates the canvas size to match the full height of the target element,
+   * which can cause performance drops on very tall documents but might be necessary 
+   * for specific visual needs.
+   */
+  canvasSize?: "viewport" | "document";
 }
 
 export interface DuplicateConfig extends BaseConfig {
