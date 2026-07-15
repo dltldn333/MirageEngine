@@ -84,6 +84,9 @@ export class Tracker {
             currentMask |= DIRTY_RECT | DIRTY_STYLE;
           } else if (mutation.attributeName && mutation.attributeName.startsWith("data-")) {
             currentMask |= DIRTY_RECT | DIRTY_STYLE;
+            if (mutation.attributeName.startsWith("data-mirage")) {
+              currentMask |= DIRTY_STRUCTURE;
+            }
           }
         } else if (mutation.type === "characterData") {
           currentMask |= DIRTY_CONTENT | DIRTY_RECT;

@@ -83,6 +83,12 @@ const traveler2 = document.querySelector("#box-z") as HTMLElement;
 
 traveler.dataset.mirageShader = JSON.stringify(shader);
 traveler2.dataset.mirageShader = JSON.stringify(shader);
+setTimeout(() => {
+  traveler.dataset.mirageShader = "";
+  traveler.dataset.mirageSelect = "";
+  traveler.dataset.mirageDom = "show";
+  console.log("now!!")
+}, 10000);
 
 
 //====================native test====================//
