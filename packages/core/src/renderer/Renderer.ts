@@ -340,6 +340,7 @@ export class Renderer {
       
       this.registry.register(node.element, mesh);
       mesh.userData.baseMaterial = material;
+      mesh.userData.domElement = node.element;
     }
 
 
@@ -499,7 +500,8 @@ export class Renderer {
     mesh.scale.set(rect.width, rect.height, 1);
 
     mesh.userData.domRect = {
-      ...rect,
+      x: rect.x,
+      y: rect.y,
       width: rect.width,
       height: rect.height,
     };
@@ -746,11 +748,72 @@ export class Renderer {
     this.renderer.render(this.scene, this.camera);
   }
 
-  public updateCameraScroll(scrollX: number, scrollY: number) {
-    if (this.isViewport) {
-      this.camera.position.x = scrollX;
-      this.camera.position.y = -scrollY;
-      this.camera.updateMatrixWorld();
-    }
+  public syncMeshesByDOM() {
+    // If not in viewport mode, we must account for page scroll in absolute positions.
+    const targetPageX = this.targetRect.left + window.scrollX;
+    const targetPageY = this.targetRect.top + window.scrollY;
+
+    const pixelRatio = this.renderer.getPixelRatio();
+    const canvasWidth = this.renderer.domElement.width / pixelRatio;
+    const canvasHeight = this.renderer.domElement.height / pixelRatio;
+
+    this.scene.children.forEach((child) => {
+      const mesh = child as THREE.Mesh;
+      if (!mesh.userData || !mesh.userData.domElement) return;
+
+      const element = mesh.userData.domElement as HTMLElement;
+      let rect: DOMRect;
+      if (element.nodeType === Node.TEXT_NODE) {
+        const range = document.createRange();
+        range.selectNode(element);
+        rect = range.getBoundingClientRect();
+      } else {
+        rect = element.getBoundingClientRect();
+      }
+      const cached = mesh.userData.domRect;
+
+      // Update if position or size changed by more than 0.5px
+      if (
+        !cached ||
+        Math.abs(rect.x - cached.x) > 0.5 ||
+        Math.abs(rect.y - cached.y) > 0.5 ||
+        Math.abs(rect.width - cached.width) > 0.5 ||
+        Math.abs(rect.height - cached.height) > 0.5
+      ) {
+        mesh.userData.domRect = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+
+        let baseX: number, baseY: number;
+        if (this.isViewport) {
+          baseX = rect.x - window.innerWidth / 2 + rect.width / 2;
+          baseY = -rect.y + window.innerHeight / 2 - rect.height / 2;
+        } else {
+          const localX = rect.x - targetPageX;
+          const localY = rect.y - targetPageY;
+          baseX = localX - canvasWidth / 2 + rect.width / 2;
+          baseY = -localY + canvasHeight / 2 - rect.height / 2;
+        }
+
+        // Apply new position and scale
+        mesh.position.setX(baseX);
+        mesh.position.setY(baseY);
+        mesh.scale.set(rect.width, rect.height, 1);
+
+        // Update uniforms so shader-based drawing (like border-radius) doesn't stretch
+        if (mesh.material instanceof THREE.ShaderMaterial) {
+          Painter.forceUpdateUniforms(mesh.material, {
+            width: rect.width,
+            height: rect.height,
+          });
+        }
+
+        // Update native mesh if exists
+        if (mesh.userData.nativeMesh) {
+          const nativeMesh = mesh.userData.nativeMesh as THREE.Mesh;
+          nativeMesh.position.setX(baseX);
+          nativeMesh.position.setY(baseY);
+          nativeMesh.scale.set(rect.width, rect.height, 1);
+        }
+      }
+    });
   }
 }

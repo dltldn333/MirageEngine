@@ -31,3 +31,4 @@ yarn-error.log*
 
 .VSCodeCounter/
 native_troubleshooting.md
+cbrs_troubleshooting.md

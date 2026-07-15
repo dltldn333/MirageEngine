@@ -3,7 +3,7 @@ import { Renderer } from "../renderer/Renderer";
 import { MeshRegistry } from "../store/MeshRegistry";
 import { extractSceneGraph } from "../dom/Extractor";
 import { Visibility, USER_LAYER, ATTR_TRAVEL } from "../types";
-import { animateMeshByData, updateFixedMeshesScroll } from "../animation/Animator";
+import { animateMeshByData } from "../animation/Animator";
 import { Tracker } from "@mirage-engine/dom-tracker";
 
 export class Syncer {
@@ -52,24 +52,18 @@ export class Syncer {
       }
     });
 
-    this.tracker.onScrollChange.add((scrollX, scrollY) => {
-      updateFixedMeshesScroll(this.renderer.fixedMeshes, scrollX, scrollY);
-      this.renderer.updateCameraScroll(scrollX, scrollY);
-    });
-
     this.tracker.onStyleChange.add((pendingStyles) => {
       animateMeshByData(this.registry, pendingStyles);
     });
 
     this.tracker.onRender.add(() => {
+      this.renderer.syncMeshesByDOM();
       this.renderer.render();
     });
   }
 
   public start() {
     this.tracker.start();
-    updateFixedMeshesScroll(this.renderer.fixedMeshes, window.scrollX, window.scrollY);
-    this.renderer.updateCameraScroll(window.scrollX, window.scrollY);
   }
 
   public stop() {

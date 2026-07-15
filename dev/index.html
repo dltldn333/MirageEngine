@@ -17,6 +17,17 @@
         background-color: #f0f0f0;
         color: #333;
         overscroll-behavior: none;
+        overflow: hidden;
+        height: 100vh;
+      }
+      
+      .showcase {
+        height: 100vh;
+        overflow-y: auto;
+      }
+
+      .showcase-content {
+        min-height: 200vh;
       }
 
       #root {
@@ -69,6 +80,8 @@
     </style>
   </head>
   <body>
+    <div class="showcase">
+      <div class="showcase-content">
     <!-- <div id="root" class="exclude"> -->
     <div
       id="loading"
@@ -257,7 +270,9 @@
         alt="Test Image"
       />
     </div>
-    <div id="space"></div>
+    <div id="space" style="height: 1500px;"></div>
+      </div>
+    </div>
 
     <script type="module" src="./main.ts"></script>
 
@@ -309,8 +324,10 @@
         });
       }, 6000);
 
-      // Initialize Lenis for Virtual Scroll testing
+      // Initialize Lenis for Virtual Scroll testing on a specific wrapper
       const lenis = new Lenis({
+        wrapper: document.querySelector('.showcase'),
+        content: document.querySelector('.showcase-content'),
         autoRaf: true,
         duration: 1.2,
         syncTouch: true,
