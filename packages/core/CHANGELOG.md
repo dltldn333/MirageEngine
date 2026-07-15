@@ -1,5 +1,11 @@
 # @mirage-engine/core
 
+## 0.3.4
+
+### Patch Changes
+
+- 78f598f: for lenis
+
 ## 0.3.3
 
 ### Patch Changes

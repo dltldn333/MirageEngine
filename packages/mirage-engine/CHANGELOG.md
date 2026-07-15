@@ -1,5 +1,13 @@
 # mirage-engine
 
+## 0.3.4
+
+### Patch Changes
+
+- 78f598f: for lenis
+- Updated dependencies [78f598f]
+  - @mirage-engine/core@0.3.4
+
 ## 0.3.3
 
 ### Patch Changes
