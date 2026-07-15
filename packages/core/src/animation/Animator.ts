@@ -17,8 +17,18 @@ export function animateMeshByData(
       backgroundColor: styleData.backgroundColor,
       backgroundImage: styleData.backgroundImage,
       opacity: styleData.opacity,
-      borderRadius: styleData.borderRadius ?? mesh.userData.baseStyles?.borderRadius,
+      borderRadius:
+        styleData.borderRadius ?? mesh.userData.baseStyles?.borderRadius,
       // width and height are no longer updated here, they are updated in syncMeshesByDOM
     });
+
+    if (mesh.userData.nativeMesh) {
+      Painter.forceUpdateUniforms((mesh.userData.nativeMesh as THREE.Mesh).material as THREE.ShaderMaterial, {
+        backgroundColor: styleData.backgroundColor,
+        backgroundImage: styleData.backgroundImage,
+        opacity: styleData.opacity,
+        borderRadius: styleData.borderRadius ?? mesh.userData.baseStyles?.borderRadius,
+      });
+    }
   });
 }
