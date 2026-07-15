@@ -316,6 +316,16 @@ export class Renderer {
   private reconcileNode(node: SceneNode) {
     let mesh = this.registry.get(node.element) as THREE.Mesh | undefined;
       
+    const currentShaderHash = JSON.stringify(node.shaderHooks || null);
+
+    if (mesh && mesh.userData.shaderHash !== currentShaderHash) {
+      this.scene.remove(mesh);
+      mesh.geometry.dispose();
+      if (mesh.material instanceof THREE.Material) mesh.material.dispose();
+      this.registry.remove(node.element);
+      mesh = undefined;
+    }
+
     if (!mesh) {
       const geometry = new THREE.PlaneGeometry(1, 1);
       const initialTexture = node.isTraveler
@@ -341,6 +351,7 @@ export class Renderer {
       this.registry.register(node.element, mesh);
       mesh.userData.baseMaterial = material;
       mesh.userData.domElement = node.element;
+      mesh.userData.shaderHash = currentShaderHash;
     }
 
 

@@ -11,6 +11,7 @@ export const ATTR_DOM = {
   KEY: "mirageDom",
   VALUES: {
     HIDE: "hide",
+    SHOW: "show",
   },
 } as const;
 
