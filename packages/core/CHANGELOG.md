@@ -1,5 +1,13 @@
 # @mirage-engine/core
 
+## 0.3.5
+
+### Patch Changes
+
+- 78a5aaf: hot fix
+- Updated dependencies [78a5aaf]
+  - @mirage-engine/dom-tracker@0.3.6
+
 ## 0.3.4
 
 ### Patch Changes
