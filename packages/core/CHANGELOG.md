@@ -1,5 +1,13 @@
 # @mirage-engine/core
 
+## 0.3.7
+
+### Patch Changes
+
+- facec8a: hot fix
+- Updated dependencies [facec8a]
+  - @mirage-engine/dom-tracker@0.3.8
+
 ## 0.3.6
 
 ### Patch Changes
