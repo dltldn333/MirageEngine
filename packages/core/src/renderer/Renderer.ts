@@ -773,6 +773,7 @@ export class Renderer {
       if (!mesh.userData || !mesh.userData.domElement) return;
 
       const element = mesh.userData.domElement as HTMLElement;
+      if (!element.isConnected) return;
       let rect: DOMRect;
       if (element.nodeType === Node.TEXT_NODE) {
         const range = document.createRange();
