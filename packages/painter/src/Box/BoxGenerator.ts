@@ -233,8 +233,8 @@ export function setBoxUniforms(
 
   const currentTex = values.texture !== undefined ? values.texture : material.uniforms.uTexture?.value;
   if (currentTex && (currentTex.image instanceof ImageBitmap || currentTex.image instanceof HTMLImageElement || currentTex.image instanceof HTMLCanvasElement)) {
-    const imgWidth = currentTex.image.width;
-    const imgHeight = currentTex.image.height;
+    const imgWidth = (currentTex.image as HTMLImageElement).naturalWidth || currentTex.image.videoWidth || currentTex.image.width;
+    const imgHeight = (currentTex.image as HTMLImageElement).naturalHeight || currentTex.image.videoHeight || currentTex.image.height;
     const domWidth = values.width ?? material.uniforms.uSize.value.x;
     const domHeight = values.height ?? material.uniforms.uSize.value.y;
     
