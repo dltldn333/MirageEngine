@@ -1,5 +1,14 @@
 # mirage-engine
 
+## 0.3.6
+
+### Patch Changes
+
+- d602c91: hot fix
+- Updated dependencies [d602c91]
+  - @mirage-engine/core@0.3.6
+  - @mirage-engine/sandwich@0.2.5
+
 ## 0.3.5
 
 ### Patch Changes
