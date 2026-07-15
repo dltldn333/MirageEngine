@@ -74,8 +74,12 @@ export class Renderer {
     this.scene = new THREE.Scene();
 
     this.targetRect = this.target.getBoundingClientRect();
-    const width = this.isViewport ? window.innerWidth + this.overscan * 2 : this.targetRect.width;
-    const height = this.isViewport ? window.innerHeight + this.overscan * 2 : this.targetRect.height;
+    const width = this.isViewport
+      ? window.innerWidth + this.overscan * 2
+      : this.targetRect.width;
+    const height = this.isViewport
+      ? window.innerHeight + this.overscan * 2
+      : this.targetRect.height;
 
     // target duplicate mode
     // const width = target.parentElement!.clientWidth;
@@ -121,8 +125,12 @@ export class Renderer {
 
   public createRenderTarget() {
     for (let i = 0; i < ATTR_TRAVEL.MAX_LAYERS; i++) {
-      const width = this.isViewport ? window.innerWidth + this.overscan * 2 : this.targetRect.width;
-      const height = this.isViewport ? window.innerHeight + this.overscan * 2 : this.targetRect.height;
+      const width = this.isViewport
+        ? window.innerWidth + this.overscan * 2
+        : this.targetRect.width;
+      const height = this.isViewport
+        ? window.innerHeight + this.overscan * 2
+        : this.targetRect.height;
       this.renderTargets.push(
         new THREE.WebGLRenderTarget(
           width * this.qualityFactor,
@@ -154,7 +162,7 @@ export class Renderer {
       case "medium":
         // this.qualityFactor = 2;
         this.qualityFactor = 2;
-        break;  
+        break;
       default:
         this.qualityFactor = 2;
         break;
@@ -170,8 +178,12 @@ export class Renderer {
   }
 
   private updateCanvasLayout() {
-    const width = this.isViewport ? window.innerWidth + this.overscan * 2 : this.targetRect.width;
-    const height = this.isViewport ? window.innerHeight + this.overscan * 2 : this.targetRect.height;
+    const width = this.isViewport
+      ? window.innerWidth + this.overscan * 2
+      : this.targetRect.width;
+    const height = this.isViewport
+      ? window.innerHeight + this.overscan * 2
+      : this.targetRect.height;
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
 
@@ -182,8 +194,12 @@ export class Renderer {
       this.canvas.style.display = "block";
     } else {
       this.canvas.style.position = this.isViewport ? "fixed" : "absolute";
-      this.canvas.style.top = this.isViewport ? `-${this.overscan}px` : `${this.target.offsetTop}px`;
-      this.canvas.style.left = this.isViewport ? `-${this.overscan}px` : `${this.target.offsetLeft}px`;
+      this.canvas.style.top = this.isViewport
+        ? `-${this.overscan}px`
+        : `${this.target.offsetTop}px`;
+      this.canvas.style.left = this.isViewport
+        ? `-${this.overscan}px`
+        : `${this.target.offsetLeft}px`;
       this.canvas.style.display = "block";
     }
   }
@@ -234,10 +250,18 @@ export class Renderer {
 
   public syncScene(graphNode: SceneNode, pendingDeletions: Set<HTMLElement>) {
     const newRect = this.target.getBoundingClientRect();
-    const newWidth = this.isViewport ? window.innerWidth + this.overscan * 2 : newRect.width;
-    const newHeight = this.isViewport ? window.innerHeight + this.overscan * 2 : newRect.height;
-    const oldWidth = this.isViewport ? this.canvas.clientWidth : this.targetRect.width;
-    const oldHeight = this.isViewport ? this.canvas.clientHeight : this.targetRect.height;
+    const newWidth = this.isViewport
+      ? window.innerWidth + this.overscan * 2
+      : newRect.width;
+    const newHeight = this.isViewport
+      ? window.innerHeight + this.overscan * 2
+      : newRect.height;
+    const oldWidth = this.isViewport
+      ? this.canvas.clientWidth
+      : this.targetRect.width;
+    const oldHeight = this.isViewport
+      ? this.canvas.clientHeight
+      : this.targetRect.height;
 
     const isResized =
       Math.abs(newWidth - oldWidth) > 0.1 ||
@@ -277,7 +301,9 @@ export class Renderer {
           if (meshToDestroy.userData.nativeMesh) {
             this.scene.remove(meshToDestroy.userData.nativeMesh);
             if (Array.isArray(meshToDestroy.userData.nativeMesh.material)) {
-              meshToDestroy.userData.nativeMesh.material.forEach((mat: THREE.Material) => mat.dispose());
+              meshToDestroy.userData.nativeMesh.material.forEach(
+                (mat: THREE.Material) => mat.dispose(),
+              );
             } else {
               meshToDestroy.userData.nativeMesh.material.dispose();
             }
@@ -315,7 +341,7 @@ export class Renderer {
   // private reconcileNode(node: SceneNode, activeElements: Set<HTMLElement>) {
   private reconcileNode(node: SceneNode) {
     let mesh = this.registry.get(node.element) as THREE.Mesh | undefined;
-      
+
     const currentShaderHash = JSON.stringify(node.shaderHooks || null);
 
     if (mesh && mesh.userData.shaderHash !== currentShaderHash) {
@@ -342,19 +368,17 @@ export class Renderer {
         initialTexture,
         node.shaderHooks,
       );
-      
+
       mesh = new THREE.Mesh(geometry, material);
 
       if (node.type === "TEXT") mesh.name = "BG_MESH";
       this.scene.add(mesh);
-      
+
       this.registry.register(node.element, mesh);
       mesh.userData.baseMaterial = material;
       mesh.userData.domElement = node.element;
       mesh.userData.shaderHash = currentShaderHash;
     }
-
-
 
     // [Important] use whene mesh animating with js
 
@@ -393,17 +417,27 @@ export class Renderer {
     } else if (node.type === "TEXT") {
       this.reconcileTextChild(mesh, node, false);
       if (mesh.userData.nativeMesh && node.nativeStyles) {
-        this.reconcileTextChild(mesh.userData.nativeMesh as THREE.Mesh, node, true);
+        this.reconcileTextChild(
+          mesh.userData.nativeMesh as THREE.Mesh,
+          node,
+          true,
+        );
       }
     }
   }
 
-  private reconcileTextChild(parentMesh: THREE.Mesh, node: SceneNode, isNative: boolean) {
+  private reconcileTextChild(
+    parentMesh: THREE.Mesh,
+    node: SceneNode,
+    isNative: boolean,
+  ) {
     const lines = node.textLines || [
       { text: node.textContent || "", rect: node.rect },
     ];
-    
-    const stylesToUse = (isNative ? node.nativeStyles : node.textStyles) as TextStyles;
+
+    const stylesToUse = (
+      isNative ? node.nativeStyles : node.textStyles
+    ) as TextStyles;
     const currentStyleHash =
       JSON.stringify(stylesToUse) +
       node.textContent +
@@ -474,8 +508,9 @@ export class Renderer {
     parentMesh.children.forEach((child) => {
       if (!child.name.startsWith("TEXT_CHILD")) return;
       const textMesh = child as THREE.Mesh;
-      
-      const layerNum = node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
+
+      const layerNum =
+        node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
       textMesh.layers.set(layerNum);
 
       if (node.visibility & SELECT_LAYER) {
@@ -483,16 +518,28 @@ export class Renderer {
       }
 
       if (node.visibility & USER_LAYER) {
-        if (!isNative && node.nativeLayer !== undefined && node.nativeStyles !== undefined) {
+        if (
+          !isNative &&
+          node.nativeLayer !== undefined &&
+          node.nativeStyles !== undefined
+        ) {
           for (let i = node.captureLayer; i < node.nativeLayer; i++) {
             textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
           }
         } else if (isNative && node.nativeLayer !== undefined) {
-          for (let i = Math.max(node.captureLayer, node.nativeLayer); i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+          for (
+            let i = Math.max(node.captureLayer, node.nativeLayer);
+            i <= ATTR_TRAVEL.MAX_LAYERS + 1;
+            i++
+          ) {
             textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
           }
         } else {
-          for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+          for (
+            let i = node.captureLayer;
+            i <= ATTR_TRAVEL.MAX_LAYERS + 1;
+            i++
+          ) {
             textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
           }
         }
@@ -506,7 +553,7 @@ export class Renderer {
     const pixelRatio = this.renderer.getPixelRatio();
     const canvasWidth = this.renderer.domElement.width / pixelRatio;
     const canvasHeight = this.renderer.domElement.height / pixelRatio;
-    
+
     mesh.material = mesh.userData.baseMaterial as THREE.Material;
     mesh.scale.set(rect.width, rect.height, 1);
 
@@ -607,20 +654,27 @@ export class Renderer {
       const nativeMesh = mesh.userData.nativeMesh as THREE.Mesh;
       let nativeBaseX: number, nativeBaseY: number;
       if (this.isViewport) {
-        nativeBaseX = node.nativeRect.x - window.innerWidth / 2 + node.nativeRect.width / 2;
-        nativeBaseY = -node.nativeRect.y + window.innerHeight / 2 - node.nativeRect.height / 2;
+        nativeBaseX =
+          node.nativeRect.x - window.innerWidth / 2 + node.nativeRect.width / 2;
+        nativeBaseY =
+          -node.nativeRect.y +
+          window.innerHeight / 2 -
+          node.nativeRect.height / 2;
       } else {
         const nativeLocalX = node.nativeRect.x - targetPageX;
         const nativeLocalY = node.nativeRect.y - targetPageY;
-        nativeBaseX = nativeLocalX - canvasWidth / 2 + node.nativeRect.width / 2;
-        nativeBaseY = -nativeLocalY + canvasHeight / 2 - node.nativeRect.height / 2;
+        nativeBaseX =
+          nativeLocalX - canvasWidth / 2 + node.nativeRect.width / 2;
+        nativeBaseY =
+          -nativeLocalY + canvasHeight / 2 - node.nativeRect.height / 2;
       }
 
       nativeMesh.scale.set(node.nativeRect.width, node.nativeRect.height, 1);
       nativeMesh.position.set(
         nativeBaseX,
         nativeBaseY,
-        (node.nativeStyles as BoxStyles).zIndex + this.renderOrder * Z_MICRO_OFFSET,
+        (node.nativeStyles as BoxStyles).zIndex +
+          this.renderOrder * Z_MICRO_OFFSET,
       );
 
       Painter.update(
@@ -663,7 +717,11 @@ export class Renderer {
         for (let i = node.captureLayer; i < node.nativeLayer; i++) {
           mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
         }
-        for (let i = Math.max(node.captureLayer, node.nativeLayer); i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+        for (
+          let i = Math.max(node.captureLayer, node.nativeLayer);
+          i <= ATTR_TRAVEL.MAX_LAYERS + 1;
+          i++
+        ) {
           nativeMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
         }
       }
@@ -701,8 +759,12 @@ export class Renderer {
     this.camera.layers.set(targetLayer);
 
     const vector = new THREE.Vector3();
-    const canvasWidth = this.isViewport ? window.innerWidth + this.overscan * 2 : this.targetRect.width;
-    const canvasHeight = this.isViewport ? window.innerHeight + this.overscan * 2 : this.targetRect.height;
+    const canvasWidth = this.isViewport
+      ? window.innerWidth + this.overscan * 2
+      : this.targetRect.width;
+    const canvasHeight = this.isViewport
+      ? window.innerHeight + this.overscan * 2
+      : this.targetRect.height;
 
     const pixelRatio = this.renderer.getPixelRatio();
 
@@ -773,7 +835,6 @@ export class Renderer {
       if (!mesh.userData || !mesh.userData.domElement) return;
 
       const element = mesh.userData.domElement as HTMLElement;
-      if (!element.isConnected) return;
       let rect: DOMRect;
       if (element.nodeType === Node.TEXT_NODE) {
         const range = document.createRange();
@@ -792,7 +853,12 @@ export class Renderer {
         Math.abs(rect.width - cached.width) > 0.5 ||
         Math.abs(rect.height - cached.height) > 0.5
       ) {
-        mesh.userData.domRect = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+        mesh.userData.domRect = {
+          x: rect.x,
+          y: rect.y,
+          width: rect.width,
+          height: rect.height,
+        };
 
         let baseX: number, baseY: number;
         if (this.isViewport) {
