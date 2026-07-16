@@ -1,5 +1,14 @@
 # @mirage-engine/core
 
+## 0.3.8
+
+### Patch Changes
+
+- 5ff6ac0: bug fix
+- Updated dependencies [5ff6ac0]
+  - @mirage-engine/dom-tracker@0.3.9
+  - @mirage-engine/painter@1.0.3
+
 ## 0.3.7
 
 ### Patch Changes

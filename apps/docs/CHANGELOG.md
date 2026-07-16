@@ -1,5 +1,12 @@
 # docs
 
+## 1.0.17
+
+### Patch Changes
+
+- Updated dependencies [5ff6ac0]
+  - mirage-engine@0.3.8
+
 ## 1.0.16
 
 ### Patch Changes
