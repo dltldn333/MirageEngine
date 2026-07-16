@@ -1,5 +1,12 @@
 # docs
 
+## 1.0.20
+
+### Patch Changes
+
+- Updated dependencies [e28064f]
+  - mirage-engine@0.3.11
+
 ## 1.0.19
 
 ### Patch Changes
