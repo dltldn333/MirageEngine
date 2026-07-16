@@ -1,5 +1,13 @@
 # mirage-engine
 
+## 0.3.10
+
+### Patch Changes
+
+- 12fe09b: hot fix
+- Updated dependencies [12fe09b]
+  - @mirage-engine/core@0.3.10
+
 ## 0.3.9
 
 ### Patch Changes
