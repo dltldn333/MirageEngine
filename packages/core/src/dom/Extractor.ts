@@ -607,7 +607,7 @@ export function extractSceneGraph(
         captureLayer,
         effectiveZIndex,
         qualityFactor,
-        nativeLayer,
+        child.nodeType === Node.TEXT_NODE ? nativeLayer : undefined,
         child.nodeType === Node.TEXT_NODE && Object.keys(nativeParsedStyles).length > 0
           ? nativeParsedStyles
           : undefined,
