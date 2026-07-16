@@ -1,5 +1,15 @@
 # mirage-engine
 
+## 0.3.8
+
+### Patch Changes
+
+- 5ff6ac0: bug fix
+- Updated dependencies [5ff6ac0]
+  - @mirage-engine/sandwich@0.2.7
+  - @mirage-engine/painter@1.0.3
+  - @mirage-engine/core@0.3.8
+
 ## 0.3.7
 
 ### Patch Changes
