@@ -1,5 +1,11 @@
 # @mirage-engine/dom-tracker
 
+## 0.3.10
+
+### Patch Changes
+
+- 371f29d: native
+
 ## 0.3.9
 
 ### Patch Changes

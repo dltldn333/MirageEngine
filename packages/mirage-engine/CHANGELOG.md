@@ -1,5 +1,15 @@
 # mirage-engine
 
+## 0.3.9
+
+### Patch Changes
+
+- 371f29d: native
+- Updated dependencies [371f29d]
+  - @mirage-engine/sandwich@0.2.8
+  - @mirage-engine/painter@1.0.4
+  - @mirage-engine/core@0.3.9
+
 ## 0.3.8
 
 ### Patch Changes
