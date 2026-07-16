@@ -23,6 +23,11 @@ export const TRAVEL_VALUES = {
   CAPTURE_3: "3",
   CAPTURE_4: "4",
   CAPTURE_5: "5",
+  CAPTURE_6: "6",
+  CAPTURE_7: "7",
+  CAPTURE_8: "8",
+  CAPTURE_9: "9",
+  CAPTURE_10: "10",
 } as const;
 
 export const ATTR_TRAVEL = {
