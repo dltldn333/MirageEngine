@@ -1,5 +1,11 @@
 # @mirage-engine/core
 
+## 0.3.10
+
+### Patch Changes
+
+- 12fe09b: hot fix
+
 ## 0.3.9
 
 ### Patch Changes

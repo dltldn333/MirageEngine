@@ -1,6 +1,6 @@
 {
   "name": "mirage-engine",
-  "version": "0.3.9",
+  "version": "0.3.10",
   "description": "An engine that mirrors HTML DOM elements to a WebGL scene in real-time.",
   "type": "module",
   "types": "./dist/index.d.ts",
