@@ -656,6 +656,7 @@ export function extractSceneGraph(
             borderWidth:
               nativeParsedStyles.borderWidth ?? baseStyles.borderWidth,
             isTraveler: baseStyles.isTraveler,
+            transform: nativeParsedStyles.transform,
           }
         : undefined,
     nativeRect:
