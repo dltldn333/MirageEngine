@@ -923,7 +923,23 @@ export class Renderer {
               if (tyStr.includes("%")) ty = (ty / 100) * rect.height;
               
               nPosX += tx;
-              nPosY -= ty; // Three.js Y is up, so subtract positive Y translation to move down
+              nPosY -= ty;
+            }
+
+            const translateXMatch = transformStr.match(/translateX\(([^)]+)\)/);
+            if (translateXMatch) {
+              const txStr = translateXMatch[1].trim();
+              let tx = parseFloat(txStr);
+              if (txStr.includes("%")) tx = (tx / 100) * rect.width;
+              nPosX += tx;
+            }
+
+            const translateYMatch = transformStr.match(/translateY\(([^)]+)\)/);
+            if (translateYMatch) {
+              const tyStr = translateYMatch[1].trim();
+              let ty = parseFloat(tyStr);
+              if (tyStr.includes("%")) ty = (ty / 100) * rect.height;
+              nPosY -= ty;
             }
           }
 
