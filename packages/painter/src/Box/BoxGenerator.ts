@@ -42,10 +42,12 @@ export function createBoxMaterial(
     }
   }
 
-  const declChunk = (hasTexture ? BoxChunk.declChunk : "") + "\n" + customUniformsCode;
-  const baseUvCode = styles.isTraveler ? BoxChunk.uvChunk : "vec2 resultUv = vUv * uTextureRepeat + uTextureOffset;\n";
-  const uvChunk = hasTexture ? baseUvCode + (hooks?.uvModifier || "") : "";
-  const baseColorChunk = hasTexture ? BoxChunk.baseColorChunk : "";
+  const hasHooks = hooks !== undefined;
+  const declChunk = (hasTexture || hasHooks ? BoxChunk.declChunk : "") + "\n" + customUniformsCode;
+  const screenUvDecl = "vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;\n";
+  const baseUvCode = styles.isTraveler ? "vec2 resultUv = screenUv;\n" : "vec2 resultUv = vUv * uTextureRepeat + uTextureOffset;\n";
+  const uvChunk = (hasTexture || hasHooks) ? screenUvDecl + baseUvCode + (hooks?.uvModifier || "") : "";
+  const baseColorChunk = (hasTexture || hasHooks) ? BoxChunk.baseColorChunk : "";
   const colorModChunk = hooks?.colorModifier || "";
 
   const fragmentShader = BoxShader.fragmentShader

@@ -102,7 +102,7 @@ boxTest.dataset.mirageTravel = `native 1 ${JSON.stringify(boxTestStyle)}`;
 
 const styleBoxParent = { backgroundColor: "blue", height: "80px" };
 const native = document.querySelector(".native") as HTMLElement;
-native.dataset.mirageTravel = `native 2 ${JSON.stringify(styleBoxParent)}`;
+traveler2.dataset.mirageTravel = `native 2 ${JSON.stringify(styleBoxParent)}`;
 
 setTimeout(() => {
   native.dataset.mirageTravel = ``;

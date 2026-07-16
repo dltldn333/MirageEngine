@@ -444,21 +444,27 @@ export function extractSceneGraph(
 
     let hasTravelToken = false;
 
-    // traveler 인 경우
-    if (tokens.includes(ATTR_TRAVEL.VALUES.TRAVELER)) {
+    const travelerIdx = tokens.indexOf(ATTR_TRAVEL.VALUES.TRAVELER);
+    if (travelerIdx !== -1) {
       isTraveler = true;
       hasTravelToken = true;
-      const numToken = tokens.find((t) => !isNaN(parseInt(t, 10)));
-      if (numToken) {
-        explicitLayer = parseInt(numToken, 10);
+      const nextToken = tokens[travelerIdx + 1];
+      if (nextToken && !isNaN(parseInt(nextToken, 10))) {
+        explicitLayer = parseInt(nextToken, 10);
+      } else {
+        const numToken = tokens.find((t) => !isNaN(parseInt(t, 10)));
+        if (numToken) explicitLayer = parseInt(numToken, 10);
       }
     }
-    // native 인 경우
-    else if (tokens.includes(ATTR_TRAVEL.VALUES.NATIVE)) {
-      isTraveler = false;
-      const numToken = tokens.find((t) => !isNaN(parseInt(t, 10)));
-      if (numToken) {
-        nativeLayer = parseInt(numToken, 10);
+
+    const nativeIdx = tokens.indexOf(ATTR_TRAVEL.VALUES.NATIVE);
+    if (nativeIdx !== -1) {
+      const nextToken = tokens[nativeIdx + 1];
+      if (nextToken && !isNaN(parseInt(nextToken, 10))) {
+        nativeLayer = parseInt(nextToken, 10);
+      } else if (!isTraveler) {
+        const numToken = tokens.find((t) => !isNaN(parseInt(t, 10)));
+        if (numToken) nativeLayer = parseInt(numToken, 10);
       }
     }
 
