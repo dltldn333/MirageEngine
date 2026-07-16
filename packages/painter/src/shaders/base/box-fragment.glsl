@@ -81,6 +81,18 @@ void main() {
   vec2 p = (vUv - 0.5) * uSize;
   vec2 halfSize = uSize * 0.5;
 
+  // CSS Proportional Border-Radius Clamping
+  float tl = uBorderRadius.x;
+  float tr = uBorderRadius.y;
+  float br = uBorderRadius.z;
+  float bl = uBorderRadius.w;
+  float fTop = uSize.x / max(tl + tr, 0.0001);
+  float fBottom = uSize.x / max(bl + br, 0.0001);
+  float fLeft = uSize.y / max(tl + bl, 0.0001);
+  float fRight = uSize.y / max(tr + br, 0.0001);
+  float f = min(1.0, min(min(fTop, fBottom), min(fLeft, fRight)));
+  vec4 clampedRadius = uBorderRadius * f;
+
   #INJECT_UV_MODIFIER
 
   // color decision pipeline
@@ -94,9 +106,8 @@ void main() {
   #INJECT_BASE_COLOR
 
   // Hybrid SDF
-  vec2 xRadii = mix(uBorderRadius.xw, uBorderRadius.yz, step(0.0, p.x));
+  vec2 xRadii = mix(clampedRadius.xw, clampedRadius.yz, step(0.0, p.x));
   float r = mix(xRadii.y, xRadii.x, step(0.0, p.y));
-  r = min(r, min(halfSize.x, halfSize.y));
 
   float d = sdRoundedBox(p, halfSize, r);
 
