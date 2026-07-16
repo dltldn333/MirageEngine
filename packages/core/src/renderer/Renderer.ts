@@ -675,10 +675,55 @@ export class Renderer {
           -nativeLocalY + canvasHeight / 2 - node.nativeRect.height / 2;
       }
 
-      nativeMesh.scale.set(node.nativeRect.width, node.nativeRect.height, 1);
+      let nScaleX = node.nativeRect.width;
+      let nScaleY = node.nativeRect.height;
+      let nPosX = nativeBaseX;
+      let nPosY = nativeBaseY;
+
+      if (node.nativeStyles.transform) {
+        const transformStr = node.nativeStyles.transform;
+        
+        const scaleMatch = transformStr.match(/scale\(([\d.]+%?)\)/);
+        if (scaleMatch) {
+          let scaleVal = parseFloat(scaleMatch[1]);
+          if (scaleMatch[1].includes("%")) scaleVal /= 100;
+          nScaleX *= scaleVal;
+          nScaleY *= scaleVal;
+        }
+
+        const translateMatch = transformStr.match(/translate\(([^,]+),\s*([^)]+)\)/);
+        if (translateMatch) {
+          const txStr = translateMatch[1].trim();
+          const tyStr = translateMatch[2].trim();
+          let tx = parseFloat(txStr);
+          if (txStr.includes("%")) tx = (tx / 100) * node.nativeRect.width;
+          let ty = parseFloat(tyStr);
+          if (tyStr.includes("%")) ty = (ty / 100) * node.nativeRect.height;
+          nPosX += tx;
+          nPosY -= ty;
+        }
+
+        const translateXMatch = transformStr.match(/translateX\(([^)]+)\)/);
+        if (translateXMatch) {
+          const txStr = translateXMatch[1].trim();
+          let tx = parseFloat(txStr);
+          if (txStr.includes("%")) tx = (tx / 100) * node.nativeRect.width;
+          nPosX += tx;
+        }
+
+        const translateYMatch = transformStr.match(/translateY\(([^)]+)\)/);
+        if (translateYMatch) {
+          const tyStr = translateYMatch[1].trim();
+          let ty = parseFloat(tyStr);
+          if (tyStr.includes("%")) ty = (ty / 100) * node.nativeRect.height;
+          nPosY -= ty;
+        }
+      }
+
+      nativeMesh.scale.set(nScaleX, nScaleY, 1);
       nativeMesh.position.set(
-        nativeBaseX,
-        nativeBaseY,
+        nPosX,
+        nPosY,
         (node.nativeStyles as BoxStyles).zIndex +
           this.renderOrder * Z_MICRO_OFFSET,
       );
