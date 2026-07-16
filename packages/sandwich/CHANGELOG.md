@@ -1,5 +1,13 @@
 # @mirage-engine/sandwich
 
+## 0.2.8
+
+### Patch Changes
+
+- 371f29d: native
+- Updated dependencies [371f29d]
+  - @mirage-engine/dom-tracker@0.3.10
+
 ## 0.2.7
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @mirage-engine/core
 
+## 0.3.9
+
+### Patch Changes
+
+- 371f29d: native
+- Updated dependencies [371f29d]
+  - @mirage-engine/dom-tracker@0.3.10
+  - @mirage-engine/painter@1.0.4
+
 ## 0.3.8
 
 ### Patch Changes
