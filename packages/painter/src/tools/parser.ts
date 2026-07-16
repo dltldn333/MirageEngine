@@ -1,8 +1,12 @@
 import * as THREE from "three";
 
-export function parsePixelValue(value: string | number): number {
+export function parsePixelValue(value: string | number, baseSize: number = 0): number {
   if (typeof value === "number") return value;
-  return parseFloat(value) || 0;
+  const num = parseFloat(value) || 0;
+  if (typeof value === "string" && value.includes("%")) {
+    return (num / 100) * baseSize;
+  }
+  return num;
 }
 
 export function parseColor(colorStr: string) {
