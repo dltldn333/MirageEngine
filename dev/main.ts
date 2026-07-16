@@ -100,7 +100,7 @@ const boxTestStyle = {color: "red"}
 const boxTest = document.querySelector("#box-test") as HTMLElement;
 boxTest.dataset.mirageTravel = `native 1 ${JSON.stringify(boxTestStyle)}`;
 
-const styleBoxParent = { backgroundColor: "blue", height: "80px" };
+const styleBoxParent = { backgroundColor: "blue", transform: "scale(0.5)  "};
 const native = document.querySelector(".native") as HTMLElement;
 traveler2.dataset.mirageTravel = `native 2 ${JSON.stringify(styleBoxParent)}`;
 

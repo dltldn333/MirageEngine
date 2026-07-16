@@ -8,6 +8,7 @@ export interface TextStyles {
   direction: CanvasDirection;
   lineHeight: number; // px
   letterSpacing: number; // px
+  transform?: string;
 }
 
 export interface BoxStyles {
@@ -20,6 +21,7 @@ export interface BoxStyles {
   borderRadius: string;
   borderColor: string;
   borderWidth: string;
+  transform?: string;
 }
 
 export interface ShaderHooks {

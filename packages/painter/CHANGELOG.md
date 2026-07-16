@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 1.0.3
+
+### Patch Changes
+
+- 5ff6ac0: bug fix
+
 ## 1.0.2
 
 ### Patch Changes

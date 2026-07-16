@@ -1,5 +1,11 @@
 # @mirage-engine/dom-tracker
 
+## 0.3.9
+
+### Patch Changes
+
+- 5ff6ac0: bug fix
+
 ## 0.3.8
 
 ### Patch Changes

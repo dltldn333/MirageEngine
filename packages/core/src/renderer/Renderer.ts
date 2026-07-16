@@ -379,6 +379,12 @@ export class Renderer {
       mesh.userData.domElement = node.element;
       mesh.userData.shaderHash = currentShaderHash;
     }
+    
+    if (node.nativeStyles?.transform) {
+      mesh.userData.nativeTransform = node.nativeStyles.transform;
+    } else {
+      mesh.userData.nativeTransform = undefined;
+    }
 
     // [Important] use whene mesh animating with js
 
@@ -889,9 +895,41 @@ export class Renderer {
         // Update native mesh if exists
         if (mesh.userData.nativeMesh) {
           const nativeMesh = mesh.userData.nativeMesh as THREE.Mesh;
-          nativeMesh.position.setX(baseX);
-          nativeMesh.position.setY(baseY);
-          nativeMesh.scale.set(rect.width, rect.height, 1);
+          let nScaleX = rect.width;
+          let nScaleY = rect.height;
+          let nPosX = baseX;
+          let nPosY = baseY;
+
+          if (mesh.userData.nativeTransform) {
+            const transformStr = mesh.userData.nativeTransform as string;
+            
+            const scaleMatch = transformStr.match(/scale\(([\d.]+%?)\)/);
+            if (scaleMatch) {
+              let scaleVal = parseFloat(scaleMatch[1]);
+              if (scaleMatch[1].includes("%")) scaleVal /= 100;
+              nScaleX *= scaleVal;
+              nScaleY *= scaleVal;
+            }
+
+            const translateMatch = transformStr.match(/translate\(([^,]+),\s*([^)]+)\)/);
+            if (translateMatch) {
+              const txStr = translateMatch[1].trim();
+              const tyStr = translateMatch[2].trim();
+              
+              let tx = parseFloat(txStr);
+              if (txStr.includes("%")) tx = (tx / 100) * rect.width;
+              
+              let ty = parseFloat(tyStr);
+              if (tyStr.includes("%")) ty = (ty / 100) * rect.height;
+              
+              nPosX += tx;
+              nPosY -= ty; // Three.js Y is up, so subtract positive Y translation to move down
+            }
+          }
+
+          nativeMesh.position.setX(nPosX);
+          nativeMesh.position.setY(nPosY);
+          nativeMesh.scale.set(nScaleX, nScaleY, 1);
           nativeMesh.updateMatrixWorld();
         }
       }
