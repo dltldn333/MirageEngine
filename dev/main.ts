@@ -8,7 +8,7 @@ const shader = {
   uvModifier: /* glsl */ `
     float textureZoom = uTextureZoom;
 
-    vec2 xRadii_uv = mix(uBorderRadius.xw, uBorderRadius.yz, step(0.0, p.x));
+    vec2 xRadii_uv = mix(clampedRadius.xw, clampedRadius.yz, step(0.0, p.x));
     float r_uv = mix(xRadii_uv.y, xRadii_uv.x, step(0.0, p.y));
     float d_uv = sdRoundedBox(p, halfSize, r_uv);
 

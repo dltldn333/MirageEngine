@@ -92,7 +92,7 @@ export function createBoxMaterial(
     uGradientStops: { value: new Float32Array(8) },
   };
   // border radius value initialize
-  setBorderRadius(uniforms.uBorderRadius.value, styles.borderRadius);
+  setBorderRadius(uniforms.uBorderRadius.value, styles.borderRadius, Math.min(width, height));
 
   if (hasTexture) {
     uniforms.uTexture.value = texture;
@@ -158,7 +158,10 @@ export function setBoxUniforms(
     material.uniforms.uSize.value.set(values.width, values.height);
   }
   if (values.borderRadius !== undefined) {
-    setBorderRadius(material.uniforms.uBorderRadius.value, values.borderRadius);
+    const baseSize = values.width !== undefined && values.height !== undefined 
+      ? Math.min(values.width, values.height) 
+      : Math.min(material.uniforms.uSize.value.x, material.uniforms.uSize.value.y);
+    setBorderRadius(material.uniforms.uBorderRadius.value, values.borderRadius, baseSize);
   }
   if (values.borderWidth !== undefined) {
     material.uniforms.uBorderWidth.value = values.borderWidth;
@@ -325,7 +328,8 @@ export function setBoxUniforms(
 
 function setBorderRadius(
   target: THREE.Vector4,
-  radius?: string | number | [number, number, number, number],
+  radius: string | number | [number, number, number, number] | undefined | null,
+  baseSize: number = 0,
 ) {
   if (radius === undefined || radius === null) {
     target.set(0, 0, 0, 0);
@@ -343,10 +347,10 @@ function setBorderRadius(
   }
 
   const arr = radius.split("/")[0].trim().split(/\s+/);
-  const tl = parsePixelValue(arr[0]);
-  const tr = parsePixelValue(arr[1] ?? arr[0]);
-  const br = parsePixelValue(arr[2] ?? arr[0]);
-  const bl = parsePixelValue(arr[3] ?? arr[1] ?? arr[0]);
+  const tl = parsePixelValue(arr[0], baseSize);
+  const tr = parsePixelValue(arr[1] ?? arr[0], baseSize);
+  const br = parsePixelValue(arr[2] ?? arr[0], baseSize);
+  const bl = parsePixelValue(arr[3] ?? arr[1] ?? arr[0], baseSize);
 
   target.set(tl, tr, br, bl);
 }
