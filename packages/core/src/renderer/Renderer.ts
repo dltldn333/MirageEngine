@@ -876,6 +876,7 @@ export class Renderer {
         mesh.position.setX(baseX);
         mesh.position.setY(baseY);
         mesh.scale.set(rect.width, rect.height, 1);
+        mesh.updateMatrixWorld();
 
         // Update uniforms so shader-based drawing (like border-radius) doesn't stretch
         if (mesh.material instanceof THREE.ShaderMaterial) {
@@ -891,6 +892,7 @@ export class Renderer {
           nativeMesh.position.setX(baseX);
           nativeMesh.position.setY(baseY);
           nativeMesh.scale.set(rect.width, rect.height, 1);
+          nativeMesh.updateMatrixWorld();
         }
       }
     });
