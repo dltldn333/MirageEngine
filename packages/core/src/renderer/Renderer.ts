@@ -515,38 +515,39 @@ export class Renderer {
       if (!child.name.startsWith("TEXT_CHILD")) return;
       const textMesh = child as THREE.Mesh;
 
-      const layerNum =
-        node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
-      textMesh.layers.set(layerNum);
+      if (isNative && node.nativeLayer !== undefined) {
+        textMesh.layers.set(THREE_LAYERS.HIDDEN);
+        if (node.visibility & USER_LAYER) {
+          textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(node.nativeLayer));
+        }
+      } else {
+        const layerNum =
+          node.visibility & USER_LAYER ? THREE_LAYERS.BASE : THREE_LAYERS.HIDDEN;
+        textMesh.layers.set(layerNum);
 
-      if (node.visibility & SELECT_LAYER) {
-        textMesh.layers.enable(THREE_LAYERS.SELECTED);
-      }
+        if (node.visibility & SELECT_LAYER) {
+          textMesh.layers.enable(THREE_LAYERS.SELECTED);
+        }
 
-      if (node.visibility & USER_LAYER) {
-        if (
-          !isNative &&
-          node.nativeLayer !== undefined &&
-          node.nativeStyles !== undefined
-        ) {
-          for (let i = node.captureLayer; i < node.nativeLayer; i++) {
-            textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
-          }
-        } else if (isNative && node.nativeLayer !== undefined) {
-          for (
-            let i = Math.max(node.captureLayer, node.nativeLayer);
-            i <= ATTR_TRAVEL.MAX_LAYERS + 1;
-            i++
+        if (node.visibility & USER_LAYER) {
+          if (
+            !isNative &&
+            node.nativeLayer !== undefined &&
+            node.nativeStyles !== undefined
           ) {
-            textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
-          }
-        } else {
-          for (
-            let i = node.captureLayer;
-            i <= ATTR_TRAVEL.MAX_LAYERS + 1;
-            i++
-          ) {
-            textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+            for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+              if (i !== node.nativeLayer) {
+                textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+              }
+            }
+          } else {
+            for (
+              let i = node.captureLayer;
+              i <= ATTR_TRAVEL.MAX_LAYERS + 1;
+              i++
+            ) {
+              textMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+            }
           }
         }
       }
@@ -765,15 +766,12 @@ export class Renderer {
       nativeMesh.layers.set(THREE_LAYERS.HIDDEN);
 
       if (node.visibility & USER_LAYER) {
-        for (let i = node.captureLayer; i < node.nativeLayer; i++) {
-          mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
-        }
-        for (
-          let i = Math.max(node.captureLayer, node.nativeLayer);
-          i <= ATTR_TRAVEL.MAX_LAYERS + 1;
-          i++
-        ) {
-          nativeMesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+        nativeMesh.layers.enable(THREE_LAYERS.getCaptureLayer(node.nativeLayer));
+        
+        for (let i = node.captureLayer; i <= ATTR_TRAVEL.MAX_LAYERS + 1; i++) {
+          if (i !== node.nativeLayer) {
+            mesh.layers.enable(THREE_LAYERS.getCaptureLayer(i));
+          }
         }
       }
     } else {

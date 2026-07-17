@@ -1,5 +1,13 @@
 # mirage-engine
 
+## 0.3.11
+
+### Patch Changes
+
+- e28064f: Hot fix
+- Updated dependencies [e28064f]
+  - @mirage-engine/core@0.3.11
+
 ## 0.3.10
 
 ### Patch Changes
