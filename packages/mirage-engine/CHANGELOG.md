@@ -1,5 +1,13 @@
 # mirage-engine
 
+## 0.3.12
+
+### Patch Changes
+
+- cae667c: native layer
+- Updated dependencies [cae667c]
+  - @mirage-engine/core@0.3.12
+
 ## 0.3.11
 
 ### Patch Changes

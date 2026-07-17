@@ -1,5 +1,11 @@
 # @mirage-engine/core
 
+## 0.3.12
+
+### Patch Changes
+
+- cae667c: native layer
+
 ## 0.3.11
 
 ### Patch Changes
