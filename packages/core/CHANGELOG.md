@@ -1,5 +1,11 @@
 # @mirage-engine/core
 
+## 0.3.14
+
+### Patch Changes
+
+- a06838a: scale
+
 ## 0.3.13
 
 ### Patch Changes

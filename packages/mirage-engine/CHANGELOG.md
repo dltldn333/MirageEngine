@@ -1,5 +1,13 @@
 # mirage-engine
 
+## 0.3.14
+
+### Patch Changes
+
+- a06838a: scale
+- Updated dependencies [a06838a]
+  - @mirage-engine/core@0.3.14
+
 ## 0.3.13
 
 ### Patch Changes
