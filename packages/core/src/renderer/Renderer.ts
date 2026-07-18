@@ -692,6 +692,20 @@ export class Renderer {
           nScaleY *= scaleVal;
         }
 
+        const scaleXMatch = transformStr.match(/scaleX\(([\d.]+%?)\)/);
+        if (scaleXMatch) {
+          let scaleVal = parseFloat(scaleXMatch[1]);
+          if (scaleXMatch[1].includes("%")) scaleVal /= 100;
+          nScaleX *= scaleVal;
+        }
+
+        const scaleYMatch = transformStr.match(/scaleY\(([\d.]+%?)\)/);
+        if (scaleYMatch) {
+          let scaleVal = parseFloat(scaleYMatch[1]);
+          if (scaleYMatch[1].includes("%")) scaleVal /= 100;
+          nScaleY *= scaleVal;
+        }
+
         const translateMatch = transformStr.match(/translate\(([^,]+),\s*([^)]+)\)/);
         if (translateMatch) {
           const txStr = translateMatch[1].trim();
