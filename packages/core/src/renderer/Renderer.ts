@@ -968,6 +968,20 @@ export class Renderer {
               nScaleY *= scaleVal;
             }
 
+            const scaleXMatch = transformStr.match(/scaleX\(([\d.]+%?)\)/);
+            if (scaleXMatch) {
+              let scaleVal = parseFloat(scaleXMatch[1]);
+              if (scaleXMatch[1].includes("%")) scaleVal /= 100;
+              nScaleX *= scaleVal;
+            }
+
+            const scaleYMatch = transformStr.match(/scaleY\(([\d.]+%?)\)/);
+            if (scaleYMatch) {
+              let scaleVal = parseFloat(scaleYMatch[1]);
+              if (scaleYMatch[1].includes("%")) scaleVal /= 100;
+              nScaleY *= scaleVal;
+            }
+
             const translateMatch = transformStr.match(/translate\(([^,]+),\s*([^)]+)\)/);
             if (translateMatch) {
               const txStr = translateMatch[1].trim();
@@ -1004,6 +1018,14 @@ export class Renderer {
           nativeMesh.position.setY(nPosY);
           nativeMesh.scale.set(nScaleX, nScaleY, 1);
           nativeMesh.updateMatrixWorld();
+
+          // Update uniforms so native shader-based drawing doesn't stretch
+          if (nativeMesh.material instanceof THREE.ShaderMaterial) {
+            Painter.forceUpdateUniforms(nativeMesh.material, {
+              width: nScaleX,
+              height: nScaleY,
+            });
+          }
         }
       }
     });
