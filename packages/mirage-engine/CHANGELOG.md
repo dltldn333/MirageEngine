@@ -1,5 +1,13 @@
 # mirage-engine
 
+## 0.3.13
+
+### Patch Changes
+
+- 872e164: release
+- Updated dependencies [872e164]
+  - @mirage-engine/core@0.3.13
+
 ## 0.3.12
 
 ### Patch Changes
