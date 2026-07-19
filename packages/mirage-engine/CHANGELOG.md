@@ -1,5 +1,14 @@
 # mirage-engine
 
+## 0.3.15
+
+### Patch Changes
+
+- ed5f57f: provide box shadow
+- Updated dependencies [ed5f57f]
+  - @mirage-engine/painter@1.0.5
+  - @mirage-engine/core@0.3.15
+
 ## 0.3.14
 
 ### Patch Changes
