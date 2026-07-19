@@ -1,5 +1,14 @@
 # mirage-engine
 
+## 0.3.16
+
+### Patch Changes
+
+- e2479a9: shadow animation
+- Updated dependencies [e2479a9]
+  - @mirage-engine/painter@1.0.6
+  - @mirage-engine/core@0.3.16
+
 ## 0.3.15
 
 ### Patch Changes
