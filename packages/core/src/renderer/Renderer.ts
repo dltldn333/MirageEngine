@@ -893,14 +893,11 @@ export class Renderer {
     const canvasLeft = canvasEl.getBoundingClientRect().left;
 
     // Assign per-mesh onBeforeRender / onAfterRender to handle scissor
-    this.scene.children.forEach((child) => {
-      const mesh = child as THREE.Mesh;
-      const scissorRect = mesh.userData?.scissorRect as
-        | { x: number; y: number; width: number; height: number }
-        | undefined;
-
+    const applyScissorHook = (
+      mesh: THREE.Mesh,
+      scissorRect: { x: number; y: number; width: number; height: number } | undefined,
+    ) => {
       if (scissorRect && scissorRect.width > 0 && scissorRect.height > 0) {
-        // Convert viewport CSS coords → WebGL bottom-left pixel coords
         const sx = Math.floor((scissorRect.x - canvasLeft) * pixelRatio);
         const sy = Math.floor(
           (canvasHeight - (scissorRect.y - canvasTop + scissorRect.height)) *
@@ -916,18 +913,31 @@ export class Renderer {
         mesh.onAfterRender = () => {
           gl.disable(gl.SCISSOR_TEST);
         };
+        (mesh as any).__hasScissorHook = true;
       } else {
-        // Clear hooks if no clipping needed
-        if (mesh.onBeforeRender && (mesh as any).__hasScissorHook) {
+        if ((mesh as any).__hasScissorHook) {
           mesh.onBeforeRender = () => {};
           mesh.onAfterRender = () => {};
           (mesh as any).__hasScissorHook = false;
         }
       }
+    };
 
-      if (scissorRect) {
-        (mesh as any).__hasScissorHook = true;
-      }
+    this.scene.children.forEach((child) => {
+      const mesh = child as THREE.Mesh;
+      const scissorRect = mesh.userData?.scissorRect as
+        | { x: number; y: number; width: number; height: number }
+        | undefined;
+
+      // Apply to parent mesh
+      applyScissorHook(mesh, scissorRect);
+
+      // Apply same scissor to TEXT_CHILD meshes (they live as Three.js children of parent)
+      mesh.children.forEach((subChild) => {
+        if (subChild.name.startsWith("TEXT_CHILD")) {
+          applyScissorHook(subChild as THREE.Mesh, scissorRect);
+        }
+      });
     });
 
     this.renderer.render(this.scene, this.camera);
