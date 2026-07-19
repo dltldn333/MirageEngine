@@ -22,6 +22,7 @@ export interface BoxStyles {
   borderColor: string;
   borderWidth: string;
   transform?: string;
+  boxShadow?: string;
 }
 
 export interface ShaderHooks {

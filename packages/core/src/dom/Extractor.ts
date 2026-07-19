@@ -586,6 +586,7 @@ export function extractSceneGraph(
     borderRadius: computed.borderRadius,
     borderColor: computed.borderColor,
     borderWidth: computed.borderWidth,
+    boxShadow: computed.boxShadow,
     imageSrc,
     isTraveler: isTraveler,
   };
@@ -655,6 +656,8 @@ export function extractSceneGraph(
               nativeParsedStyles.borderColor ?? baseStyles.borderColor,
             borderWidth:
               nativeParsedStyles.borderWidth ?? baseStyles.borderWidth,
+            boxShadow:
+              nativeParsedStyles.boxShadow ?? baseStyles.boxShadow,
             isTraveler: baseStyles.isTraveler,
             transform: nativeParsedStyles.transform,
           }
