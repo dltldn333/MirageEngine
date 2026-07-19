@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 1.0.9
+
+### Patch Changes
+
+- ec5b403: text overflow
+
 ## 1.0.8
 
 ### Patch Changes

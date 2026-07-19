@@ -1,5 +1,14 @@
 # mirage-engine
 
+## 0.3.19
+
+### Patch Changes
+
+- ec5b403: text overflow
+- Updated dependencies [ec5b403]
+  - @mirage-engine/painter@1.0.9
+  - @mirage-engine/core@0.3.19
+
 ## 0.3.18
 
 ### Patch Changes
