@@ -1,5 +1,10 @@
 varying vec2 vUv;
 uniform vec2 uSize;
+uniform vec2 uMeshSize;
+uniform vec4 uShadowColor;
+uniform vec2 uShadowOffset;
+uniform float uShadowBlur;
+uniform float uShadowSpread;
 uniform vec4 uBorderRadius;
 uniform float uBorderWidth;
 uniform vec4 uBgColor;
@@ -55,11 +60,10 @@ float sdVisualBox(vec2 p, vec2 b, float r) {
   return min(max(q.x, q.y), 0.0) + d;
 }
 
-vec4 calculateGradientLayer(vec2 uv) {
+vec4 calculateGradientLayer(vec2 p) {
   if (uGradientCount < 2) return uGradientColors[0];
 
   vec2 dir = vec2(sin(uGradientAngle), cos(uGradientAngle));
-  vec2 p = (uv - 0.5) * uSize;
   float proj = dot(p, dir);
   float L = abs(uSize.x * dir.x) + abs(uSize.y * dir.y);
   float t = clamp((proj / L) + 0.5, 0.0, 1.0);
@@ -78,7 +82,7 @@ vec4 calculateGradientLayer(vec2 uv) {
 }
 
 void main() {
-  vec2 p = (vUv - 0.5) * uSize;
+  vec2 p = (vUv - 0.5) * uMeshSize;
   vec2 halfSize = uSize * 0.5;
 
   // CSS Proportional Border-Radius Clamping
@@ -99,7 +103,7 @@ void main() {
   vec4 baseColor = vec4(uBgColor.rgb, uBgColor.a);
 
   if (uGradientCount > 0) {
-    vec4 gradColor = calculateGradientLayer(vUv);
+    vec4 gradColor = calculateGradientLayer(p);
     baseColor = blendSrcOver(gradColor, baseColor);
   }
 
@@ -126,11 +130,26 @@ void main() {
 
   // final blending (border + background) using blendSrcOver
   vec4 borderLayer = vec4(uBorderColor.rgb, borderAlpha);
-  vec4 finalColor = blendSrcOver(borderLayer, baseColor);
+  vec4 mainColor = blendSrcOver(borderLayer, baseColor);
+  mainColor.a *= bgMask;
+
+  vec4 shadowLayer = vec4(0.0);
+  if (uShadowColor.a > 0.001) {
+    vec2 shadowP = p - vec2(uShadowOffset.x, -uShadowOffset.y);
+    float shadowRadius = max(r + uShadowSpread, 0.0);
+    vec2 shadowHalfSize = max(halfSize + vec2(uShadowSpread), vec2(0.0));
+    float shadowD = sdRoundedBox(shadowP, shadowHalfSize, shadowRadius);
+    float blur = max(uShadowBlur, 1.0);
+    float shadowMask = 1.0 - smoothstep(-blur * 0.5, blur * 0.5, shadowD);
+    shadowLayer = vec4(uShadowColor.rgb, uShadowColor.a * shadowMask);
+  }
+
+  vec4 finalColor = blendSrcOver(mainColor, shadowLayer);
+
   // final color control (Tint, Noise)
   #INJECT_COLOR_MODIFIER
 
-  float finalOpacity = finalColor.a * bgMask * uOpacity;
+  float finalOpacity = finalColor.a * uOpacity;
   if (finalOpacity < 0.001) discard;
 
   gl_FragColor = vec4(finalColor.rgb, finalOpacity);

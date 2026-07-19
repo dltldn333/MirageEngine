@@ -1,0 +1,39 @@
+--- packages/painter/src/tools/parser.ts
++++ packages/painter/src/tools/parser.ts
+@@ -194,2 +194,37 @@
+   return { angle, stops };
+ }
++
++export function parseBoxShadow(value: string | null | undefined) {
++  if (!value || value === "none") return null;
++
++  const shadows = splitByComma(value);
++  if (shadows.length === 0) return null;
++  const shadowStr = shadows[0].trim();
++
++  const colorRegex = /(rgba?\([^)]+\)|#[0-9a-fA-F]+|[a-zA-Z]+)/;
++  const colorMatch = shadowStr.match(colorRegex);
++  
++  let colorStr = "transparent";
++  let restStr = shadowStr;
++  
++  if (colorMatch && colorMatch[1] !== 'inset') {
++    const c = colorMatch[1];
++    if (c.startsWith("rgb") || c.startsWith("#") || c === "black" || c === "white" || c === "transparent") {
++       colorStr = c;
++       restStr = shadowStr.replace(c, "").trim();
++    }
++  }
++
++  restStr = restStr.replace("inset", "").trim();
++  const lengths = restStr.split(/\s+/).map(s => parseFloat(s) || 0);
++  
++  const offsetX = lengths[0] || 0;
++  const offsetY = lengths[1] || 0;
++  const blurRadius = lengths[2] || 0;
++  const spreadRadius = lengths[3] || 0;
++
++  const color = parseColor(colorStr);
++
++  return { offsetX, offsetY, blurRadius, spreadRadius, color: color.color, alpha: color.alpha };
++}
