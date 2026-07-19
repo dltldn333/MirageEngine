@@ -16,6 +16,7 @@ export function animateMeshByData(
     Painter.forceUpdateUniforms(mesh.material as THREE.ShaderMaterial, {
       backgroundColor: styleData.backgroundColor,
       backgroundImage: styleData.backgroundImage,
+      boxShadow: styleData.boxShadow,
       opacity: styleData.opacity,
       borderRadius:
         styleData.borderRadius ?? mesh.userData.baseStyles?.borderRadius,
@@ -26,6 +27,7 @@ export function animateMeshByData(
       Painter.forceUpdateUniforms((mesh.userData.nativeMesh as THREE.Mesh).material as THREE.ShaderMaterial, {
         backgroundColor: styleData.backgroundColor,
         backgroundImage: styleData.backgroundImage,
+        boxShadow: styleData.boxShadow,
         opacity: styleData.opacity,
         borderRadius: styleData.borderRadius ?? mesh.userData.baseStyles?.borderRadius,
       });

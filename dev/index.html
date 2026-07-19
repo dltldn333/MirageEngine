@@ -14,13 +14,13 @@
         padding: 0;
         font-family: "Arial", sans-serif;
         line-height: 2.2;
-        background-color: #f0f0f0;
+        background-color: #333;
         color: #333;
         overscroll-behavior: none;
         overflow: hidden;
         height: 100vh;
       }
-      
+
       .showcase {
         height: 100vh;
         overflow-y: auto;
@@ -82,195 +82,200 @@
   <body>
     <div class="showcase">
       <div class="showcase-content">
-    <!-- <div id="root" class="exclude"> -->
-    <div
-      id="loading"
-      style="
-        position: absolute;
-        width: 100vw;
-        height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: white;
-        z-index: 1000;
-        font-size: 24px;
-        color: #666;
-        display: none;
-      "
-    >
-      loading...
-    </div>
-    <div id="root" data-mirage-filter="">
-      <div id="css-test">
-        <span>TEST</span>
-      </div>
-      <h1 data-mirage-filter="include-self">
-        mirage-engine Test Environment
-        <span style="color: darkorange">(not-included)</span>
-      </h1>
-      <button id="test-btn" onclick="alert('test')">Test Button</button>
-      <h3 id="box-test" style="color: #1e3a8a;">BOX test</h3>
-
-      <div
-        id="box-parent"
-        class="native"
-        style="
-          display: flex;
-          gap: 20px;
-          color: red;
-          background: lightgrey;
-          padding: 20px;
-          border-radius: 10px;
-          position: relative;
-        "
-        data-mirage-filter="include-tree"
-      >
+        <!-- <div id="root" class="exclude"> -->
         <div
-          id="box-z"
-          class="box"
-          style="background-color: rgba(255, 255, 255, 0.8); text-align: center; box-shadow: 5px 5px 5px 2px black;"
-          data-mirage-select="include-tree"
-          data-mirage-travel="traveler 1"
-          data-mirage-dom="hide"
-        >
-          <div data-mirage-sandwich="" data-mirage-filter="">(not-exclude)</div>
-        </div>
-        <div
-          id="box1"
-          class="box"
+          id="loading"
           style="
-            /* background-color: black; */
-            color: white;
-            font-weight: 900;
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 30px;
-            background: linear-gradient(red, blue);
-            /* background: linear-gradient(in oklab, red, blue); */
-            /* background: linear-gradient(in srgb-linear, red, blue); */
+            background-color: white;
+            z-index: 1000;
+            font-size: 24px;
+            color: #666;
+            display: none;
           "
         >
-          <span>test, test, test</span>
+          loading...
         </div>
+        <div id="root" data-mirage-filter="">
+          <div id="css-test">
+            <span>TEST</span>
+          </div>
+          <h1 data-mirage-filter="include-self">
+            mirage-engine Test Environment
+            <span style="color: darkorange">(not-included)</span>
+          </h1>
+          <button id="test-btn" onclick="alert('test')">Test Button</button>
+          <h3 id="box-test" style="color: #1e3a8a">BOX test</h3>
 
-        <div
-          id="box2"
-          class="box"
-          style="
-            opacity: 1;
-            position: fixed;
-            /* position: absolute; */
-            right: 50%;
-            top: 100px;
-            width: 120px;
-            border-radius: 200px;
-            height: 100px;
-            width: 150px;
-            z-index: 5;
-            /*box-shadow:;
-            0 4px 6px -1px rgba(0, 0, 0, 0.4);*/
-            background-color: rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-            /* background: linear-gradient( */
-            /* rgba(0, 0, 0, 0.98) 0%, */
-            /* rgba(0, 0, 0, 0.93) 40%, */
-            /* rgba(0, 0, 0, 0.9) 43%, */
-            /* rgba(0, 0, 0, 0.1) 100% */
-            /* ); */
-          "
-          data-mirage-select="include-tree"
-          data-mirage-travel="traveler 2"
-          data-mirage-dom="hide"
-        >
           <div
-            id="box2-child"
-            data-mirage-sandwich="front"
-            data-mirage-filter="end"
+            id="box-parent"
+            class="native"
             style="
-              height: 20px;
-              text-align: center;
-              color: black;
+              display: flex;
+              gap: 20px;
+              color: red;
+              background: lightgrey;
+              padding: 20px;
+              border-radius: 10px;
               position: relative;
-              z-index: 1;
-              font-weight: bold;
+            "
+            data-mirage-filter="include-tree"
+          >
+            <div
+              id="box-z"
+              class="box"
+              style="
+                background-color: rgba(255, 255, 255, 0.8);
+                text-align: center;
+                box-shadow: 5px 5px 5px 2px black;
+              "
+              data-mirage-select="include-tree"
+              data-mirage-travel="traveler 1"
+              data-mirage-dom="hide"
+            >
+              <div data-mirage-sandwich="" data-mirage-filter="">
+                (not-exclude)
+              </div>
+            </div>
+            <div
+              id="box1"
+              class="box"
+              style="
+                /* background-color: black; */
+                color: white;
+                font-weight: 900;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 30px;
+                background: linear-gradient(red, blue);
+                /* background: linear-gradient(in oklab, red, blue); */
+                /* background: linear-gradient(in srgb-linear, red, blue); */
+              "
+            >
+              <span>test, test, test</span>
+            </div>
+
+            <div
+              id="box2"
+              class="box"
+              style="
+                opacity: 1;
+                position: fixed;
+                /* position: absolute; */
+                right: 50%;
+                top: 100px;
+                width: 120px;
+                border-radius: 200px;
+                height: 100px;
+                width: 150px;
+                z-index: 5;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+                background-color: rgba(0, 0, 0, 0.2);
+                cursor: pointer;
+                /* background: linear-gradient( */
+                /* rgba(0, 0, 0, 0.98) 0%, */
+                /* rgba(0, 0, 0, 0.93) 40%, */
+                /* rgba(0, 0, 0, 0.9) 43%, */
+                /* rgba(0, 0, 0, 0.1) 100% */
+                /* ); */
+              "
+              data-mirage-select="include-tree"
+              data-mirage-travel="traveler 2"
+              data-mirage-dom="hide"
+            >
+              <div
+                id="box2-child"
+                data-mirage-sandwich="front"
+                data-mirage-filter="end"
+                style="
+                  height: 20px;
+                  text-align: center;
+                  color: black;
+                  position: relative;
+                  z-index: 1;
+                  font-weight: bold;
+                "
+              >
+                Hello Sandwich
+              </div>
+            </div>
+          </div>
+          <div style="margin-top: 20px; text-align: center">
+            <svg
+              class="icon-test"
+              id="native-svg"
+              viewBox="0 0 100 100"
+              style="
+                width: 150px;
+                height: 150px;
+                color: #1e3a8a;
+                fill: currentColor;
+              "
+            >
+              <circle cx="50" cy="50" r="40" />
+              <text
+                x="50"
+                y="50"
+                fill="black"
+                font-size="20"
+                text-anchor="middle"
+                dominant-baseline="middle"
+              >
+                SVG
+              </text>
+            </svg>
+          </div>
+          <div
+            id="box-gsap"
+            class="box"
+            style="
+              background-color: rebeccapurple;
+              width: 150px;
+              margin-left: 0;
+              margin-top: 20px;
+              color: white;
             "
           >
-            Hello Sandwich
+            GSAP Target
           </div>
-        </div>
-      </div>
-      <div style="margin-top: 20px; text-align: center">
-        <svg
-          class="icon-test"
-          id="native-svg"
-          viewBox="0 0 100 100"
-          style="
-            width: 150px;
-            height: 150px;
-            color: #1e3a8a;
-            fill: currentColor;
-          "
-        >
-          <circle cx="50" cy="50" r="40" />
-          <text
-            x="50"
-            y="50"
-            fill="black"
-            font-size="20"
-            text-anchor="middle"
-            dominant-baseline="middle"
+
+          <div
+            id="image-test"
+            class="box"
+            style="
+              margin-top: 20px;
+              height: 300px;
+              background-image: url(&quot;./test.png&quot;);
+              background-size: cover;
+              background-position: center;
+              color: white;
+              font-weight: bold;
+              text-shadow: 1px 1px 2px black;
+            "
           >
-            SVG
-          </text>
-        </svg>
-      </div>
-      <div
-        id="box-gsap"
-        class="box"
-        style="
-          background-color: rebeccapurple;
-          width: 150px;
-          margin-left: 0;
-          margin-top: 20px;
-          color: white;
-        "
-      >
-        GSAP Target
-      </div>
+            Lazy Loaded Image Test
+          </div>
 
-      <div
-        id="image-test"
-        class="box"
-        style="
-          margin-top: 20px;
-          height: 300px;
-          background-image: url(&quot;./test.png&quot;);
-          background-size: cover;
-          background-position: center;
-          color: white;
-          font-weight: bold;
-          text-shadow: 1px 1px 2px black;
-        "
-      >
-        Lazy Loaded Image Test
-      </div>
-
-      <img
-        src="./test.png"
-        style="
-          width: 100%;
-          max-width: 400px;
-          height: auto;
-          margin-top: 20px;
-          border-radius: 10px;
-          display: block;
-        "
-        alt="Test Image"
-      />
-    </div>
-    <div id="space" style="height: 1500px;"></div>
+          <img
+            src="./test.png"
+            style="
+              width: 100%;
+              max-width: 400px;
+              height: auto;
+              margin-top: 20px;
+              border-radius: 10px;
+              display: block;
+            "
+            alt="Test Image"
+          />
+        </div>
+        <div id="space" style="height: 1500px"></div>
       </div>
     </div>
 
@@ -318,6 +323,7 @@
             // { width: 150, height: 80, duration: 0.2 },
           ],
           // background: "linear-gradient(rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.93) 85%, rgba(0, 0, 0, 0.1) 100%)",
+          boxShadow: "10px 10px 10px 10px black",
           borderRadius: "30px",
           duration: 1,
           ease: "power2.inOut",
@@ -326,8 +332,8 @@
 
       // Initialize Lenis for Virtual Scroll testing on a specific wrapper
       const lenis = new Lenis({
-        wrapper: document.querySelector('.showcase'),
-        content: document.querySelector('.showcase-content'),
+        wrapper: document.querySelector(".showcase"),
+        content: document.querySelector(".showcase-content"),
         autoRaf: true,
         duration: 1.2,
         syncTouch: true,
