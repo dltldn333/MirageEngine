@@ -1,5 +1,13 @@
 # @mirage-engine/core
 
+## 0.3.17
+
+### Patch Changes
+
+- 312cb70: alpha
+- Updated dependencies [312cb70]
+  - @mirage-engine/painter@1.0.7
+
 ## 0.3.16
 
 ### Patch Changes

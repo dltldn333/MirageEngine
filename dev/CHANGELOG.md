@@ -1,5 +1,12 @@
 # dev
 
+## 1.0.19
+
+### Patch Changes
+
+- Updated dependencies [312cb70]
+  - mirage-engine@0.3.17
+
 ## 1.0.18
 
 ### Patch Changes

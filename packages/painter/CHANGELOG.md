@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 1.0.7
+
+### Patch Changes
+
+- 312cb70: alpha
+
 ## 1.0.6
 
 ### Patch Changes
