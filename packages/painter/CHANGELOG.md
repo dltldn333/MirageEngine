@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 1.0.6
+
+### Patch Changes
+
+- e2479a9: shadow animation
+
 ## 1.0.5
 
 ### Patch Changes
