@@ -31,6 +31,10 @@ export function extractFromStyle(style: CSSStyleDeclaration): StyleData {
     styleObject.backgroundImage = style.background;
   }
 
+  if (style.boxShadow) {
+    styleObject.boxShadow = style.boxShadow;
+  }
+
   if (style.borderRadius) {
     styleObject.borderRadius = parseFloat(style.borderRadius);
   }
