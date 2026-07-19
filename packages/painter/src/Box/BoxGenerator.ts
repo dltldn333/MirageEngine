@@ -147,8 +147,8 @@ export interface BoxUniformValues {
   height?: number;
   borderRadius?: string | number | [number, number, number, number];
   borderWidth?: number;
-  backgroundColor?: THREE.Color | [number, number, number] | string;
-  borderColor?: THREE.Color | [number, number, number] | string;
+  backgroundColor?: THREE.Color | [number, number, number, number?] | string;
+  borderColor?: THREE.Color | [number, number, number, number?] | string;
   opacity?: number;
   bgOpacity?: number;
   borderOpacity?: number;
@@ -199,7 +199,7 @@ export function setBoxUniforms(
 
   if (values.backgroundColor !== undefined) {
     if (Array.isArray(values.backgroundColor)) {
-      const currentAlpha = material.uniforms.uBgColor.value.w;
+      const currentAlpha = values.backgroundColor[3] !== undefined ? values.backgroundColor[3] : material.uniforms.uBgColor.value.w;
       material.uniforms.uBgColor.value.set(
         values.backgroundColor[0],
         values.backgroundColor[1],

@@ -15,7 +15,7 @@ export interface StyleData {
 
     // 2. Material / Appearance
     opacity?: number;
-    backgroundColor?: [number, number, number]; 
+    backgroundColor?: [number, number, number, number?]; 
     backgroundImage?: string;
     boxShadow?: string;
     borderRadius?: number | [number, number, number, number]; 
