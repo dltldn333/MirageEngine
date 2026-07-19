@@ -379,6 +379,8 @@ export class Renderer {
       mesh.userData.domElement = node.element;
       mesh.userData.shaderHash = currentShaderHash;
     }
+
+    mesh.userData.clipElements = node.clipElements;
     
     if (node.nativeStyles?.transform) {
       mesh.userData.nativeTransform = node.nativeStyles.transform;
@@ -883,6 +885,51 @@ export class Renderer {
       );
     }
 
+    const gl = this.renderer.getContext();
+    const pixelRatio = this.renderer.getPixelRatio();
+    const canvasHeight = this.renderer.domElement.height / pixelRatio;
+    const canvasEl = this.renderer.domElement;
+    const canvasTop = canvasEl.getBoundingClientRect().top;
+    const canvasLeft = canvasEl.getBoundingClientRect().left;
+
+    // Assign per-mesh onBeforeRender / onAfterRender to handle scissor
+    this.scene.children.forEach((child) => {
+      const mesh = child as THREE.Mesh;
+      const scissorRect = mesh.userData?.scissorRect as
+        | { x: number; y: number; width: number; height: number }
+        | undefined;
+
+      if (scissorRect && scissorRect.width > 0 && scissorRect.height > 0) {
+        // Convert viewport CSS coords → WebGL bottom-left pixel coords
+        const sx = Math.floor((scissorRect.x - canvasLeft) * pixelRatio);
+        const sy = Math.floor(
+          (canvasHeight - (scissorRect.y - canvasTop + scissorRect.height)) *
+            pixelRatio,
+        );
+        const sw = Math.ceil(scissorRect.width * pixelRatio);
+        const sh = Math.ceil(scissorRect.height * pixelRatio);
+
+        mesh.onBeforeRender = () => {
+          gl.enable(gl.SCISSOR_TEST);
+          gl.scissor(sx, sy, sw, sh);
+        };
+        mesh.onAfterRender = () => {
+          gl.disable(gl.SCISSOR_TEST);
+        };
+      } else {
+        // Clear hooks if no clipping needed
+        if (mesh.onBeforeRender && (mesh as any).__hasScissorHook) {
+          mesh.onBeforeRender = () => {};
+          mesh.onAfterRender = () => {};
+          (mesh as any).__hasScissorHook = false;
+        }
+      }
+
+      if (scissorRect) {
+        (mesh as any).__hasScissorHook = true;
+      }
+    });
+
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -925,6 +972,31 @@ export class Renderer {
           width: rect.width,
           height: rect.height,
         };
+
+        // Compute scissorRect from clipElements (overflow:hidden ancestors)
+        const clipEls = mesh.userData.clipElements as HTMLElement[] | undefined;
+        if (clipEls && clipEls.length > 0) {
+          let clipLeft = -Infinity;
+          let clipTop = -Infinity;
+          let clipRight = Infinity;
+          let clipBottom = Infinity;
+          for (const clipEl of clipEls) {
+            const cr = clipEl.getBoundingClientRect();
+            clipLeft = Math.max(clipLeft, cr.left);
+            clipTop = Math.max(clipTop, cr.top);
+            clipRight = Math.min(clipRight, cr.right);
+            clipBottom = Math.min(clipBottom, cr.bottom);
+          }
+          // Intersect with the mesh's own rect to avoid scissoring larger than the mesh
+          mesh.userData.scissorRect = {
+            x: clipLeft,
+            y: clipTop,
+            width: Math.max(0, clipRight - clipLeft),
+            height: Math.max(0, clipBottom - clipTop),
+          };
+        } else {
+          mesh.userData.scissorRect = undefined;
+        }
 
         let baseX: number, baseY: number;
         if (this.isViewport) {
