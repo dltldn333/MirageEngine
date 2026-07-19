@@ -2,15 +2,16 @@ import { StyleData } from "./types";
 
 function parseColor(color: string) {
   // basic rgb/rgba parser since we don't have painter's parseColor here
-  const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
   if (match) {
     return {
       r: parseInt(match[1]) / 255,
       g: parseInt(match[2]) / 255,
       b: parseInt(match[3]) / 255,
+      a: match[4] !== undefined ? parseFloat(match[4]) : 1,
     };
   }
-  return { r: 1, g: 1, b: 1 };
+  return { r: 1, g: 1, b: 1, a: 1 };
 }
 
 export function extractFromStyle(style: CSSStyleDeclaration): StyleData {
@@ -20,9 +21,9 @@ export function extractFromStyle(style: CSSStyleDeclaration): StyleData {
     styleObject.opacity = parseFloat(style.opacity);
   }
 
-  if (style.backgroundColor && style.backgroundColor !== "rgba(0, 0, 0, 0)") {
+  if (style.backgroundColor) {
     const parsed = parseColor(style.backgroundColor);
-    styleObject.backgroundColor = [parsed.r, parsed.g, parsed.b];
+    styleObject.backgroundColor = [parsed.r, parsed.g, parsed.b, parsed.a];
   }
 
   if (style.backgroundImage) {
