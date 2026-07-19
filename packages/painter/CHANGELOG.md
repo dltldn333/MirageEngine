@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 1.0.8
+
+### Patch Changes
+
+- a19746b: overflow
+
 ## 1.0.7
 
 ### Patch Changes
