@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 1.0.5
+
+### Patch Changes
+
+- ed5f57f: provide box shadow
+
 ## 1.0.4
 
 ### Patch Changes
