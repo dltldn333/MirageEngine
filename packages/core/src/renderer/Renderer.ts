@@ -562,7 +562,8 @@ export class Renderer {
     const canvasHeight = this.renderer.domElement.height / pixelRatio;
 
     mesh.material = mesh.userData.baseMaterial as THREE.Material;
-    mesh.scale.set(rect.width, rect.height, 1);
+    let pad = (mesh.material as THREE.ShaderMaterial).userData?.shadowPadding || 0;
+    mesh.scale.set(rect.width + pad * 2, rect.height + pad * 2, 1);
 
     mesh.userData.domRect = {
       x: rect.x,
@@ -735,7 +736,8 @@ export class Renderer {
         }
       }
 
-      nativeMesh.scale.set(nScaleX, nScaleY, 1);
+      let nPad = (nativeMesh.material as THREE.ShaderMaterial).userData?.shadowPadding || 0;
+      nativeMesh.scale.set(nScaleX + nPad * 2, nScaleY + nPad * 2, 1);
       nativeMesh.position.set(
         nPosX,
         nPosY,
@@ -938,7 +940,8 @@ export class Renderer {
         // Apply new position and scale
         mesh.position.setX(baseX);
         mesh.position.setY(baseY);
-        mesh.scale.set(rect.width, rect.height, 1);
+        let pad = (mesh.material as THREE.ShaderMaterial).userData?.shadowPadding || 0;
+        mesh.scale.set(rect.width + pad * 2, rect.height + pad * 2, 1);
         mesh.updateMatrixWorld();
 
         // Update uniforms so shader-based drawing (like border-radius) doesn't stretch
@@ -1014,9 +1017,10 @@ export class Renderer {
             }
           }
 
+          let nPad = (nativeMesh.material as THREE.ShaderMaterial).userData?.shadowPadding || 0;
           nativeMesh.position.setX(nPosX);
           nativeMesh.position.setY(nPosY);
-          nativeMesh.scale.set(nScaleX, nScaleY, 1);
+          nativeMesh.scale.set(nScaleX + nPad * 2, nScaleY + nPad * 2, 1);
           nativeMesh.updateMatrixWorld();
 
           // Update uniforms so native shader-based drawing doesn't stretch

@@ -4,6 +4,7 @@ import {
   parsePixelValue,
   parseColor,
   parseLinearGradient,
+  parseBoxShadow,
 } from "../tools/parser";
 import { BoxShader, BoxChunk } from "../shaders/index";
 
@@ -45,7 +46,7 @@ export function createBoxMaterial(
   const hasHooks = hooks !== undefined;
   const declChunk = (hasTexture || hasHooks ? BoxChunk.declChunk : "") + "\n" + customUniformsCode;
   const screenUvDecl = "vec2 screenUv = (vScreenPos.xy / vScreenPos.w) * 0.5 + 0.5;\n";
-  const baseUvCode = styles.isTraveler ? "vec2 resultUv = screenUv;\n" : "vec2 resultUv = vUv * uTextureRepeat + uTextureOffset;\n";
+  const baseUvCode = styles.isTraveler ? "vec2 resultUv = screenUv;\n" : "vec2 localUv = (p / uSize) + 0.5;\nvec2 resultUv = localUv * uTextureRepeat + uTextureOffset;\n";
   const uvChunk = (hasTexture || hasHooks) ? screenUvDecl + baseUvCode + (hooks?.uvModifier || "") : "";
   const baseColorChunk = (hasTexture || hasHooks) ? BoxChunk.baseColorChunk : "";
   const colorModChunk = hooks?.colorModifier || "";
@@ -61,6 +62,11 @@ export function createBoxMaterial(
   const parsedBorder = parseColor(styles.borderColor);
   const uniforms = {
     uSize: { value: new THREE.Vector2(width, height) },
+    uMeshSize: { value: new THREE.Vector2(width, height) },
+    uShadowColor: { value: new THREE.Vector4(0, 0, 0, 0) },
+    uShadowOffset: { value: new THREE.Vector2(0, 0) },
+    uShadowBlur: { value: 0 },
+    uShadowSpread: { value: 0 },
     uBgColor: {
       value: new THREE.Vector4(
         parsedBg.color.r,
@@ -132,6 +138,7 @@ export function updateBoxMaterial(
     opacity: styles.opacity,
     texture,
     backgroundImage: styles.backgroundImage,
+    boxShadow: styles.boxShadow,
   });
 }
 
@@ -147,6 +154,7 @@ export interface BoxUniformValues {
   borderOpacity?: number;
   texture?: THREE.Texture | null;
   backgroundImage?: string;
+  boxShadow?: string;
   [key: string]: any;
 }
 
@@ -154,9 +162,31 @@ export function setBoxUniforms(
   material: THREE.ShaderMaterial,
   values: BoxUniformValues,
 ) {
+  if (values.boxShadow !== undefined) {
+    const shadow = parseBoxShadow(values.boxShadow);
+    if (shadow) {
+      material.uniforms.uShadowColor.value.set(shadow.color.r, shadow.color.g, shadow.color.b, shadow.alpha);
+      material.uniforms.uShadowOffset.value.set(shadow.offsetX, shadow.offsetY);
+      material.uniforms.uShadowBlur.value = shadow.blurRadius;
+      material.uniforms.uShadowSpread.value = shadow.spreadRadius;
+      material.userData.shadowPadding = shadow.blurRadius + shadow.spreadRadius + Math.max(Math.abs(shadow.offsetX), Math.abs(shadow.offsetY));
+    } else {
+      material.uniforms.uShadowColor.value.w = 0;
+      material.userData.shadowPadding = 0;
+    }
+  }
+
   if (values.width !== undefined && values.height !== undefined) {
     material.uniforms.uSize.value.set(values.width, values.height);
   }
+  
+  if (material.uniforms.uMeshSize) {
+    const pad = material.userData.shadowPadding || 0;
+    const cw = values.width !== undefined ? values.width : material.uniforms.uSize.value.x;
+    const ch = values.height !== undefined ? values.height : material.uniforms.uSize.value.y;
+    material.uniforms.uMeshSize.value.set(cw + pad * 2, ch + pad * 2);
+  }
+
   if (values.borderRadius !== undefined) {
     const baseSize = values.width !== undefined && values.height !== undefined 
       ? Math.min(values.width, values.height) 
@@ -301,7 +331,8 @@ export function setBoxUniforms(
       key !== "bgOpacity" &&
       key !== "borderOpacity" &&
       key !== "texture" &&
-      key !== "backgroundImage"
+      key !== "backgroundImage" &&
+      key !== "boxShadow"
     ) {
       if (material.uniforms[key] !== undefined) {
         if (
