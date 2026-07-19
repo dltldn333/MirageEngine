@@ -33,6 +33,7 @@ export interface SceneNode {
   nativeRect?: NodeRect;
   isFixed: boolean;
   shaderHooks?: ShaderHooks;
+  clipElements?: HTMLElement[];
 
   children: SceneNode[];
 }

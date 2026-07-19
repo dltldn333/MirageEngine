@@ -275,6 +275,40 @@
             alt="Test Image"
           />
         </div>
+
+        <!-- overflow:hidden Clipping Test -->
+        <div
+          id="clip-container"
+          style="
+            margin: 40px;
+            padding: 0;
+            width: 200px;
+            height: 80px;
+            overflow: hidden;
+            background: lightyellow;
+            border: 2px solid orange;
+            position: relative;
+          "
+          data-mirage-filter="include-self"
+        >
+          <div
+            id="clip-inner"
+            class="box"
+            style="
+              position: absolute;
+              left: 50px;
+              top: 0;
+              width: 200px;
+              height: 80px;
+              background-color: rgba(255, 100, 0, 0.7);
+              border-radius: 10px;
+            "
+            data-mirage-select="include-self"
+          >
+            clip test
+          </div>
+        </div>
+
         <div id="space" style="height: 1500px"></div>
       </div>
     </div>

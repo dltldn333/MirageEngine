@@ -209,6 +209,7 @@ export function extractSceneGraph(
   qualityFactor: number = 2,
   inheritedNativeLayer?: number,
   inheritedNativeStyles?: any,
+  inheritedClipElements?: HTMLElement[],
 ): SceneNode | null {
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {
@@ -304,6 +305,7 @@ export function extractSceneGraph(
             height: maxY - minY,
           }
         : undefined,
+      clipElements: inheritedClipElements,
       children: [],
     };
   }
@@ -597,6 +599,11 @@ export function extractSceneGraph(
   let textStyles: TextStyles | undefined;
   const children: SceneNode[] = [];
 
+  const nextClipElements =
+    computed.overflow === "hidden"
+      ? [...(inheritedClipElements || []), element]
+      : inheritedClipElements;
+
   if (element.tagName.toLowerCase() !== "svg") {
     Array.from(element.childNodes).forEach((child) => {
       const visibleFlowToPass =
@@ -612,6 +619,7 @@ export function extractSceneGraph(
         child.nodeType === Node.TEXT_NODE && Object.keys(nativeParsedStyles).length > 0
           ? nativeParsedStyles
           : undefined,
+        nextClipElements,
       );
       if (childNode) {
         children.push(childNode);
@@ -684,6 +692,7 @@ export function extractSceneGraph(
           }
         : undefined,
     isFixed: computed.position === "fixed",
+    clipElements: inheritedClipElements,
     children,
     shaderHooks,
   };
