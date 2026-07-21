@@ -652,7 +652,7 @@ export class Renderer {
           this.qualityFactor,
           node.isTraveler
             ? this.renderTargets[node.captureLayer - 2]?.texture
-            : this.textureManager.get(node.element),
+            : ((node.nativeStyles as any).imageSrc && (node.nativeStyles as any).imageSrc !== (node.styles as any).imageSrc) ? new THREE.TextureLoader().load((node.nativeStyles as any).imageSrc) : this.textureManager.get(node.element),
           node.shaderHooks,
         );
         const nativeMesh = new THREE.Mesh(mesh.geometry, nativeMaterial);
@@ -757,7 +757,7 @@ export class Renderer {
         this.qualityFactor,
         node.isTraveler
           ? this.renderTargets[node.captureLayer - 2]?.texture
-          : this.textureManager.get(node.element),
+          : ((nativeMesh.material as THREE.ShaderMaterial).uniforms.uTexture.value) || this.textureManager.get(node.element),
       );
     } else {
       if (mesh.userData.nativeMesh) {
