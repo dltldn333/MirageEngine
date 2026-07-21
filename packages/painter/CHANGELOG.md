@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 1.0.10
+
+### Patch Changes
+
+- 97c7b2a: shader sampling
+
 ## 1.0.9
 
 ### Patch Changes
