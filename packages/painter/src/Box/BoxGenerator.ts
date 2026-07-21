@@ -36,6 +36,9 @@ export function createBoxMaterial(
           customUniformsCode += `uniform vec4 ${key};\n`;
           customUniforms[key] = { value: new THREE.Vector4(...value) };
         }
+      } else if (value && typeof value === "object" && value.type) {
+        customUniformsCode += `uniform ${value.type} ${key};\n`;
+        customUniforms[key] = value;
       } else {
         customUniformsCode += `uniform float ${key};\n`;
         customUniforms[key] = { value };
