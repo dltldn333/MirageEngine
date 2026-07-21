@@ -1,6 +1,6 @@
 {
   "name": "@mirage-engine/painter",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
