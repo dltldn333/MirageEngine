@@ -1,5 +1,13 @@
 # @mirage-engine/core
 
+## 0.3.21
+
+### Patch Changes
+
+- d3bd1d5: svg problem
+- Updated dependencies [d3bd1d5]
+  - @mirage-engine/painter@1.0.11
+
 ## 0.3.20
 
 ### Patch Changes

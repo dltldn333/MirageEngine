@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 1.0.11
+
+### Patch Changes
+
+- d3bd1d5: svg problem
+
 ## 1.0.10
 
 ### Patch Changes
