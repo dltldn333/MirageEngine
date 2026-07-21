@@ -120,8 +120,8 @@ const mirageConifg: MirageConfig = {
   // mode: "duplicate",
   mode: "overlay",
   // layer: "selected",
-  layer: "base",
-  // layer: 29,
+  // layer: "base",
+  layer: 30,
   travelerClipArea: "50px",
   // resizeDebounce: {
   //   delay: 200,

@@ -511,64 +511,71 @@ export function extractSceneGraph(
   // console.log(`${element.id}: ${computed.background}`);
   // console.log(computed.backgroundImage);
   let imageSrc: string | undefined;
+  let nativeImageSrc: string | undefined;
   if (element.tagName === "IMG") {
     imageSrc = (element as HTMLImageElement).src;
   } else if (element.tagName.toLowerCase() === "svg") {
-    const clone = element.cloneNode(true) as SVGSVGElement;
-
     const overrideColor = nativeParsedStyles?.color;
     const overrideFill = nativeParsedStyles?.fill;
     const overrideStroke = nativeParsedStyles?.stroke;
     const overrideOpacity = nativeParsedStyles?.opacity;
 
-    const inlineSVGStyles = (orig: Element, cloned: Element) => {
-      const computed = window.getComputedStyle(orig);
-      const clonedHtml = cloned as HTMLElement;
+    const getSvgImageSrc = (useOverrides: boolean) => {
+      const clone = element.cloneNode(true) as SVGSVGElement;
+      
+      const inlineSVGStyles = (orig: Element, cloned: Element) => {
+        const computed = window.getComputedStyle(orig);
+        const clonedHtml = cloned as HTMLElement;
 
-      const isCurrentColorFill = computed.fill === computed.color;
-      const isCurrentColorStroke = computed.stroke === computed.color;
+        const isCurrentColorFill = computed.fill === computed.color;
+        const isCurrentColorStroke = computed.stroke === computed.color;
 
-      const fill = overrideFill || (isCurrentColorFill ? overrideColor : undefined) || computed.fill;
-      if (fill && fill !== "none") clonedHtml.style.fill = fill;
+        const fill = (useOverrides ? (overrideFill || (isCurrentColorFill ? overrideColor : undefined)) : undefined) || computed.fill;
+        if (fill && fill !== "none") clonedHtml.style.fill = fill;
 
-      const stroke = overrideStroke || (isCurrentColorStroke ? overrideColor : undefined) || computed.stroke;
-      if (stroke && stroke !== "none") clonedHtml.style.stroke = stroke;
+        const stroke = (useOverrides ? (overrideStroke || (isCurrentColorStroke ? overrideColor : undefined)) : undefined) || computed.stroke;
+        if (stroke && stroke !== "none") clonedHtml.style.stroke = stroke;
 
-      if (computed.strokeWidth && computed.strokeWidth !== "0px")
-        clonedHtml.style.strokeWidth = computed.strokeWidth;
+        if (computed.strokeWidth && computed.strokeWidth !== "0px")
+          clonedHtml.style.strokeWidth = computed.strokeWidth;
 
-      const color = overrideColor || computed.color;
-      if (color) clonedHtml.style.color = color;
+        const color = (useOverrides ? overrideColor : undefined) || computed.color;
+        if (color) clonedHtml.style.color = color;
 
-      const opacity = overrideOpacity || computed.opacity;
-      if (opacity && opacity !== "1") clonedHtml.style.opacity = opacity;
+        const opacity = (useOverrides ? overrideOpacity : undefined) || computed.opacity;
+        if (opacity && opacity !== "1") clonedHtml.style.opacity = opacity;
 
-      for (let i = 0; i < orig.children.length; i++) {
-        inlineSVGStyles(orig.children[i], cloned.children[i]);
+        for (let i = 0; i < orig.children.length; i++) {
+          inlineSVGStyles(orig.children[i], cloned.children[i]);
+        }
+      };
+
+      inlineSVGStyles(element, clone);
+
+      const svgRect = element.getBoundingClientRect();
+      const scale = window.devicePixelRatio * qualityFactor;
+
+      if (!clone.hasAttribute("viewBox")) {
+        clone.setAttribute("viewBox", `0 0 ${svgRect.width} ${svgRect.height}`);
       }
+
+      clone.setAttribute("width", (svgRect.width * scale).toString());
+      clone.setAttribute("height", (svgRect.height * scale).toString());
+
+      let svgString = new XMLSerializer().serializeToString(clone);
+      if (!svgString.includes("xmlns=")) {
+        svgString = svgString.replace(
+          "<svg",
+          '<svg xmlns="http://www.w3.org/2000/svg"',
+        );
+      }
+      return `data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`;
     };
 
-    inlineSVGStyles(element, clone);
-
-    const svgRect = element.getBoundingClientRect();
-    const scale = window.devicePixelRatio * qualityFactor; // High-DPI 대응을 위한 해상도 스케일업
-
-    if (!clone.hasAttribute("viewBox")) {
-      clone.setAttribute("viewBox", `0 0 ${svgRect.width} ${svgRect.height}`);
+    imageSrc = getSvgImageSrc(false);
+    if (nativeLayer !== undefined && (overrideColor || overrideFill || overrideStroke || overrideOpacity)) {
+      nativeImageSrc = getSvgImageSrc(true);
     }
-
-    clone.setAttribute("width", (svgRect.width * scale).toString());
-    clone.setAttribute("height", (svgRect.height * scale).toString());
-
-    let svgString = new XMLSerializer().serializeToString(clone);
-    if (!svgString.includes("xmlns=")) {
-      svgString = svgString.replace(
-        "<svg",
-        '<svg xmlns="http://www.w3.org/2000/svg"',
-      );
-    }
-
-    imageSrc = `data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`;
   } else if (computed.backgroundImage && computed.backgroundImage !== "none") {
     const match = computed.backgroundImage.match(/url\(['"]?(.*?)['"]?\)/);
     if (match) {
@@ -668,6 +675,7 @@ export function extractSceneGraph(
               nativeParsedStyles.boxShadow ?? baseStyles.boxShadow,
             isTraveler: baseStyles.isTraveler,
             transform: nativeParsedStyles.transform,
+            imageSrc: nativeImageSrc ?? imageSrc,
           }
         : undefined,
     nativeRect:
