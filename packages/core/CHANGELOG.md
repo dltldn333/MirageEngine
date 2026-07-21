@@ -1,5 +1,13 @@
 # @mirage-engine/core
 
+## 0.3.20
+
+### Patch Changes
+
+- 97c7b2a: shader sampling
+- Updated dependencies [97c7b2a]
+  - @mirage-engine/painter@1.0.10
+
 ## 0.3.19
 
 ### Patch Changes
