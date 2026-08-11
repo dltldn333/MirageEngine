@@ -14,6 +14,10 @@ import {
   ATTR_SELECT,
   ATTR_TRAVEL,
   ATTR_SHADER,
+  WASM_STRIDE,
+  OFFSET_PARENT,
+  OFFSET_X,
+  OFFSET_Y,
 } from "../types";
 
 import { BoxStyles, TextStyles, ShaderHooks } from "@mirage-engine/painter";
@@ -210,6 +214,8 @@ export function extractSceneGraph(
   inheritedNativeLayer?: number,
   inheritedNativeStyles?: any,
   inheritedClipElements?: HTMLElement[],
+  extractContext?: { sharedArray: Float32Array; currentIndex: number },
+  parentWasmIndex: number = -1
 ): SceneNode | null {
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {
@@ -233,6 +239,15 @@ export function extractSceneGraph(
     const minY = Math.min(...textLines.map((l) => l.rect.top));
     const maxX = Math.max(...textLines.map((l) => l.rect.left + l.rect.width));
     const maxY = Math.max(...textLines.map((l) => l.rect.top + l.rect.height));
+
+    let myWasmIndex = -1;
+    if (extractContext && extractContext.sharedArray) {
+      myWasmIndex = extractContext.currentIndex++;
+      const offset = myWasmIndex * WASM_STRIDE;
+      extractContext.sharedArray[offset + OFFSET_PARENT] = parentWasmIndex;
+      extractContext.sharedArray[offset + OFFSET_X] = minX + window.scrollX;
+      extractContext.sharedArray[offset + OFFSET_Y] = minY + window.scrollY;
+    }
 
     // Create SceneNode for the text node
     return {
@@ -306,6 +321,7 @@ export function extractSceneGraph(
           }
         : undefined,
       clipElements: inheritedClipElements,
+      wasmIndex: myWasmIndex !== -1 ? myWasmIndex : undefined,
       children: [],
     };
   }
@@ -498,6 +514,15 @@ export function extractSceneGraph(
     return null;
   }
 
+  let myWasmIndex = -1;
+  if (extractContext && extractContext.sharedArray) {
+    myWasmIndex = extractContext.currentIndex++;
+    const offset = myWasmIndex * WASM_STRIDE;
+    extractContext.sharedArray[offset + OFFSET_PARENT] = parentWasmIndex;
+    extractContext.sharedArray[offset + OFFSET_X] = rect.left + window.scrollX;
+    extractContext.sharedArray[offset + OFFSET_Y] = rect.top + window.scrollY;
+  }
+
   // [TODO] dataset 방식으로 변경
   let id = element.getAttribute("data-mid");
   if (!id) {
@@ -627,6 +652,8 @@ export function extractSceneGraph(
           ? nativeParsedStyles
           : undefined,
         nextClipElements,
+        extractContext,
+        myWasmIndex
       );
       if (childNode) {
         children.push(childNode);
@@ -701,6 +728,7 @@ export function extractSceneGraph(
         : undefined,
     isFixed: computed.position === "fixed",
     clipElements: inheritedClipElements,
+    wasmIndex: myWasmIndex !== -1 ? myWasmIndex : undefined,
     children,
     shaderHooks,
   };

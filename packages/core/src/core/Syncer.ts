@@ -5,12 +5,14 @@ import { extractSceneGraph } from "../dom/Extractor";
 import { Visibility, USER_LAYER, ATTR_TRAVEL } from "../types";
 import { animateMeshByData } from "../animation/Animator";
 import { Tracker } from "@mirage-engine/dom-tracker";
+import { WasmSynchronizer } from "../wasm/WasmSynchronizer";
 
 export class Syncer {
   private target: HTMLElement;
   private renderer: Renderer;
   private registry: MeshRegistry;
   private isTravelEnabled: boolean = false;
+  private wasmSync: WasmSynchronizer;
   
   public tracker: Tracker;
 
@@ -23,6 +25,7 @@ export class Syncer {
     this.target = target;
     this.renderer = renderer;
     this.registry = registry;
+    this.wasmSync = new WasmSynchronizer();
 
     // Use Tracker from dom-tracker
     this.tracker = new Tracker(target, {
@@ -38,13 +41,20 @@ export class Syncer {
         this.renderer.createRenderTarget();
       }
 
+      const sharedArray = this.wasmSync.sharedArray;
+      const extractContext = sharedArray ? { sharedArray, currentIndex: 0 } : undefined;
+
       const sceneGraph = extractSceneGraph(
         this.target,
         pendingMask,
         USER_LAYER as Visibility,
         1,
         0,
-        this.renderer.qualityFactor
+        this.renderer.qualityFactor,
+        undefined,
+        undefined,
+        undefined,
+        extractContext
       );
 
       if (sceneGraph) {
@@ -62,7 +72,9 @@ export class Syncer {
     });
   }
 
-  public start() {
+  public async start() {
+    // 10000개 노드 분량의 공유 메모리를 넉넉하게 선행 할당 (1-Pass 위함)
+    await this.wasmSync.initialize(10000);
     this.tracker.start();
   }
 

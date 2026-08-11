@@ -10,6 +10,11 @@ export interface NodeRect {
   height: number;
 }
 
+export const WASM_STRIDE = 3;
+export const OFFSET_PARENT = 0;
+export const OFFSET_X = 1;
+export const OFFSET_Y = 2;
+
 export interface SceneNode {
   id: string;
   type: NodeType;
@@ -34,6 +39,8 @@ export interface SceneNode {
   isFixed: boolean;
   shaderHooks?: ShaderHooks;
   clipElements?: HTMLElement[];
+
+  wasmIndex?: number;
 
   children: SceneNode[];
 }
