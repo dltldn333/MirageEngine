@@ -13,6 +13,7 @@ export class Syncer {
   private registry: MeshRegistry;
   private isTravelEnabled: boolean = false;
   private wasmSync: WasmSynchronizer;
+  private lastWasmNodeCount: number = 0;
   
   public tracker: Tracker;
 
@@ -58,16 +59,26 @@ export class Syncer {
       );
 
       if (sceneGraph) {
+        if (extractContext) {
+          this.lastWasmNodeCount = extractContext.currentIndex;
+        }
         this.renderer.syncScene(sceneGraph, pendingDeletions);
+
+        if (sharedArray) {
+          this.renderer.saveInitialLocals(sharedArray);
+        }
       }
     });
 
     this.tracker.onStyleChange.add((pendingStyles) => {
-      animateMeshByData(this.registry, pendingStyles);
+      animateMeshByData(this.registry, pendingStyles, this.wasmSync.sharedArray || undefined);
     });
 
     this.tracker.onRender.add(() => {
-      this.renderer.syncMeshesByDOM();
+      this.wasmSync.updatePhysics(this.lastWasmNodeCount);
+      if (this.wasmSync.sharedArray) {
+        this.renderer.syncMeshesByWasm(this.wasmSync.sharedArray);
+      }
       this.renderer.render();
     });
   }
