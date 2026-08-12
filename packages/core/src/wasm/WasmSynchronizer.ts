@@ -35,4 +35,10 @@ export class WasmSynchronizer {
     }
     return this.sharedArray;
   }
+
+  updatePhysics(nodeCount: number) {
+    if (this.isInitialized && this.memoryManager) {
+      this.memoryManager.update_physics(nodeCount);
+    }
+  }
 }

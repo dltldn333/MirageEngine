@@ -16,8 +16,8 @@ import {
   ATTR_SHADER,
   WASM_STRIDE,
   OFFSET_PARENT,
-  OFFSET_X,
-  OFFSET_Y,
+  OFFSET_LOCAL_X,
+  OFFSET_LOCAL_Y,
 } from "../types";
 
 import { BoxStyles, TextStyles, ShaderHooks } from "@mirage-engine/painter";
@@ -245,8 +245,8 @@ export function extractSceneGraph(
       myWasmIndex = extractContext.currentIndex++;
       const offset = myWasmIndex * WASM_STRIDE;
       extractContext.sharedArray[offset + OFFSET_PARENT] = parentWasmIndex;
-      extractContext.sharedArray[offset + OFFSET_X] = minX + window.scrollX;
-      extractContext.sharedArray[offset + OFFSET_Y] = minY + window.scrollY;
+      extractContext.sharedArray[offset + OFFSET_LOCAL_X] = minX + window.scrollX;
+      extractContext.sharedArray[offset + OFFSET_LOCAL_Y] = minY + window.scrollY;
     }
 
     // Create SceneNode for the text node
@@ -519,8 +519,8 @@ export function extractSceneGraph(
     myWasmIndex = extractContext.currentIndex++;
     const offset = myWasmIndex * WASM_STRIDE;
     extractContext.sharedArray[offset + OFFSET_PARENT] = parentWasmIndex;
-    extractContext.sharedArray[offset + OFFSET_X] = rect.left + window.scrollX;
-    extractContext.sharedArray[offset + OFFSET_Y] = rect.top + window.scrollY;
+    extractContext.sharedArray[offset + OFFSET_LOCAL_X] = rect.left + window.scrollX;
+    extractContext.sharedArray[offset + OFFSET_LOCAL_Y] = rect.top + window.scrollY;
   }
 
   // [TODO] dataset 방식으로 변경

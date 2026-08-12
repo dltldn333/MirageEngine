@@ -2,7 +2,7 @@ import { CoreConfig } from "../types/config";
 import { Renderer } from "../renderer/Renderer";
 import { MeshRegistry } from "../store/MeshRegistry";
 import { extractSceneGraph } from "../dom/Extractor";
-import { Visibility, USER_LAYER, ATTR_TRAVEL } from "../types";
+import { Visibility, USER_LAYER, ATTR_TRAVEL, WASM_STRIDE } from "../types";
 import { animateMeshByData } from "../animation/Animator";
 import { Tracker } from "@mirage-engine/dom-tracker";
 import { WasmSynchronizer } from "../wasm/WasmSynchronizer";
@@ -74,7 +74,7 @@ export class Syncer {
 
   public async start() {
     // 10000개 노드 분량의 공유 메모리를 넉넉하게 선행 할당 (1-Pass 위함)
-    await this.wasmSync.initialize(10000);
+    await this.wasmSync.initialize(10000 * WASM_STRIDE);
     this.tracker.start();
   }
 
