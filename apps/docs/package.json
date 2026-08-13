@@ -1,6 +1,6 @@
 {
   "name": "docs",
-  "version": "1.0.22",
+  "version": "1.0.30",
   "private": true,
   "description": "Mirage Engine Documentation",
   "scripts": {

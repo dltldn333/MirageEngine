@@ -83,12 +83,12 @@ const traveler2 = document.querySelector("#box-z") as HTMLElement;
 
 traveler.dataset.mirageShader = JSON.stringify(shader);
 traveler2.dataset.mirageShader = JSON.stringify(shader);
-setTimeout(() => {
-  traveler.dataset.mirageShader = "";
-  traveler.dataset.mirageSelect = "";
-  traveler.dataset.mirageDom = "show";
-  console.log("now!!")
-}, 10000);
+// setTimeout(() => {
+//   traveler.dataset.mirageShader = "";
+//   traveler.dataset.mirageSelect = "";
+//   traveler.dataset.mirageDom = "show";
+//   console.log("now!!")
+// }, 10000);
 
 
 //====================native test====================//
@@ -119,9 +119,9 @@ const mirageConifg: MirageConfig = {
   quality: "high",
   // mode: "duplicate",
   mode: "overlay",
-  // layer: "selected",
+  layer: "selected",
   // layer: "base",
-  layer: 30,
+  // layer: 30,
   travelerClipArea: "50px",
   // resizeDebounce: {
   //   delay: 200,

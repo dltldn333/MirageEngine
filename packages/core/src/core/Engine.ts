@@ -47,8 +47,8 @@ export class Engine {
     this.syncer = new Syncer(this.target, this.renderer, this.registry, config);
   }
 
-  public start() {
-    this.syncer.start();
+  public async start() {
+    await this.syncer.start();
   }
 
   public stop() {

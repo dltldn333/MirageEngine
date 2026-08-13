@@ -1,5 +1,67 @@
 # @mirage-engine/core
 
+## 0.3.21
+
+### Patch Changes
+
+- d3bd1d5: svg problem
+- Updated dependencies [d3bd1d5]
+  - @mirage-engine/painter@1.0.11
+
+## 0.3.20
+
+### Patch Changes
+
+- 97c7b2a: shader sampling
+- Updated dependencies [97c7b2a]
+  - @mirage-engine/painter@1.0.10
+
+## 0.3.19
+
+### Patch Changes
+
+- ec5b403: text overflow
+- Updated dependencies [ec5b403]
+  - @mirage-engine/painter@1.0.9
+
+## 0.3.18
+
+### Patch Changes
+
+- a19746b: overflow
+- Updated dependencies [a19746b]
+  - @mirage-engine/painter@1.0.8
+
+## 0.3.17
+
+### Patch Changes
+
+- 312cb70: alpha
+- Updated dependencies [312cb70]
+  - @mirage-engine/painter@1.0.7
+
+## 0.3.16
+
+### Patch Changes
+
+- e2479a9: shadow animation
+- Updated dependencies [e2479a9]
+  - @mirage-engine/painter@1.0.6
+
+## 0.3.15
+
+### Patch Changes
+
+- ed5f57f: provide box shadow
+- Updated dependencies [ed5f57f]
+  - @mirage-engine/painter@1.0.5
+
+## 0.3.14
+
+### Patch Changes
+
+- a06838a: scale
+
 ## 0.3.13
 
 ### Patch Changes

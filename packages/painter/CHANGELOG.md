@@ -1,5 +1,47 @@
 # @mirage-engine/painter
 
+## 1.0.11
+
+### Patch Changes
+
+- d3bd1d5: svg problem
+
+## 1.0.10
+
+### Patch Changes
+
+- 97c7b2a: shader sampling
+
+## 1.0.9
+
+### Patch Changes
+
+- ec5b403: text overflow
+
+## 1.0.8
+
+### Patch Changes
+
+- a19746b: overflow
+
+## 1.0.7
+
+### Patch Changes
+
+- 312cb70: alpha
+
+## 1.0.6
+
+### Patch Changes
+
+- e2479a9: shadow animation
+
+## 1.0.5
+
+### Patch Changes
+
+- ed5f57f: provide box shadow
+
 ## 1.0.4
 
 ### Patch Changes

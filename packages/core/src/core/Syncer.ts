@@ -2,15 +2,18 @@ import { CoreConfig } from "../types/config";
 import { Renderer } from "../renderer/Renderer";
 import { MeshRegistry } from "../store/MeshRegistry";
 import { extractSceneGraph } from "../dom/Extractor";
-import { Visibility, USER_LAYER, ATTR_TRAVEL } from "../types";
+import { Visibility, USER_LAYER, ATTR_TRAVEL, WASM_STRIDE } from "../types";
 import { animateMeshByData } from "../animation/Animator";
 import { Tracker } from "@mirage-engine/dom-tracker";
+import { WasmSynchronizer } from "../wasm/WasmSynchronizer";
 
 export class Syncer {
   private target: HTMLElement;
   private renderer: Renderer;
   private registry: MeshRegistry;
   private isTravelEnabled: boolean = false;
+  private wasmSync: WasmSynchronizer;
+  private lastWasmNodeCount: number = 0;
   
   public tracker: Tracker;
 
@@ -23,6 +26,7 @@ export class Syncer {
     this.target = target;
     this.renderer = renderer;
     this.registry = registry;
+    this.wasmSync = new WasmSynchronizer();
 
     // Use Tracker from dom-tracker
     this.tracker = new Tracker(target, {
@@ -38,31 +42,55 @@ export class Syncer {
         this.renderer.createRenderTarget();
       }
 
+      const sharedArray = this.wasmSync.sharedArray;
+      this.renderer.updateScroll();
+      const extractContext = {
+        sharedArray: sharedArray || new Float32Array(),
+        currentIndex: 0,
+        scrollX: (this.renderer as any).getScrollX(),
+        scrollY: (this.renderer as any).getScrollY(),
+      };
+
       const sceneGraph = extractSceneGraph(
         this.target,
         pendingMask,
         USER_LAYER as Visibility,
         1,
         0,
-        this.renderer.qualityFactor
+        this.renderer.qualityFactor,
+        undefined,
+        undefined,
+        undefined,
+        extractContext
       );
 
       if (sceneGraph) {
+        this.lastWasmNodeCount = extractContext.currentIndex;
         this.renderer.syncScene(sceneGraph, pendingDeletions);
+
+        if (sharedArray) {
+          this.renderer.saveInitialLocals(sharedArray);
+        }
       }
     });
 
     this.tracker.onStyleChange.add((pendingStyles) => {
-      animateMeshByData(this.registry, pendingStyles);
+      animateMeshByData(this.registry, pendingStyles, this.wasmSync.sharedArray || undefined);
     });
 
     this.tracker.onRender.add(() => {
-      this.renderer.syncMeshesByDOM();
+      this.renderer.updateScroll();
+      this.wasmSync.updatePhysics(this.lastWasmNodeCount);
+      if (this.wasmSync.sharedArray) {
+        this.renderer.syncMeshesByWasm(this.wasmSync.sharedArray);
+      }
       this.renderer.render();
     });
   }
 
-  public start() {
+  public async start() {
+    // 10000개 노드 분량의 공유 메모리를 넉넉하게 선행 할당 (1-Pass 위함)
+    await this.wasmSync.initialize(10000 * WASM_STRIDE);
     this.tracker.start();
   }
 
