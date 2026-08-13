@@ -214,11 +214,15 @@ export function extractSceneGraph(
   inheritedNativeLayer?: number,
   inheritedNativeStyles?: any,
   inheritedClipElements?: HTMLElement[],
-  extractContext?: { sharedArray: Float32Array; currentIndex: number },
+  extractContext?: { sharedArray: Float32Array; currentIndex: number; scrollX?: number; scrollY?: number },
   parentWasmIndex: number = -1,
   parentWorldX: number = 0,
-  parentWorldY: number = 0
+  parentWorldY: number = 0,
+  inheritedIsFixed: boolean = false
 ): SceneNode | null {
+  const scrollX = extractContext?.scrollX ?? window.scrollX;
+  const scrollY = extractContext?.scrollY ?? window.scrollY;
+
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {
     const textNode = sourceNode as Text;
@@ -236,14 +240,16 @@ export function extractSceneGraph(
     const computed = parent ? window.getComputedStyle(parent) : null;
     if (!computed) return null;
 
+    const myIsFixed = inheritedIsFixed || computed.position === "fixed";
+
     // Calculate overall bounding box of the lines
     const minX = Math.min(...textLines.map((l) => l.rect.left));
     const minY = Math.min(...textLines.map((l) => l.rect.top));
     const maxX = Math.max(...textLines.map((l) => l.rect.left + l.rect.width));
     const maxY = Math.max(...textLines.map((l) => l.rect.top + l.rect.height));
 
-    const myWorldX = minX + window.scrollX;
-    const myWorldY = minY + window.scrollY;
+    const myWorldX = minX + (myIsFixed ? 0 : scrollX);
+    const myWorldY = minY + (myIsFixed ? 0 : scrollY);
 
     let myWasmIndex = -1;
     if (extractContext && extractContext.sharedArray) {
@@ -260,8 +266,8 @@ export function extractSceneGraph(
       type: "TEXT",
       element: textNode as unknown as HTMLElement,
       rect: {
-        x: minX + window.scrollX,
-        y: minY + window.scrollY,
+        x: minX + (myIsFixed ? 0 : scrollX),
+        y: minY + (myIsFixed ? 0 : scrollY),
         width: maxX - minX,
         height: maxY - minY,
       },
@@ -284,8 +290,8 @@ export function extractSceneGraph(
       textLines: textLines.map((l) => ({
         text: l.text.trim(),
         rect: {
-          x: l.rect.left + window.scrollX,
-          y: l.rect.top + window.scrollY,
+          x: l.rect.left + (myIsFixed ? 0 : scrollX),
+          y: l.rect.top + (myIsFixed ? 0 : scrollY),
           width: l.rect.width,
           height: l.rect.height,
         },
@@ -295,7 +301,7 @@ export function extractSceneGraph(
       visibility: inheritedFlow,
       isTraveler: false,
       captureLayer,
-      isFixed: computed.position === "fixed",
+      isFixed: myIsFixed,
       nativeLayer: inheritedNativeLayer,
       nativeStyles: inheritedNativeStyles
         ? {
@@ -319,8 +325,8 @@ export function extractSceneGraph(
         : undefined,
       nativeRect: inheritedNativeStyles
         ? {
-            x: minX + window.scrollX,
-            y: minY + window.scrollY,
+            x: minX + (myIsFixed ? 0 : scrollX),
+            y: minY + (myIsFixed ? 0 : scrollY),
             width: maxX - minX,
             height: maxY - minY,
           }
@@ -519,8 +525,10 @@ export function extractSceneGraph(
     return null;
   }
 
-  const myWorldX = rect.left + window.scrollX;
-  const myWorldY = rect.top + window.scrollY;
+  const myIsFixed = inheritedIsFixed || computed.position === "fixed";
+
+  const myWorldX = rect.left + (myIsFixed ? 0 : scrollX);
+  const myWorldY = rect.top + (myIsFixed ? 0 : scrollY);
 
   let myWasmIndex = -1;
   if (extractContext && extractContext.sharedArray) {
@@ -663,7 +671,8 @@ export function extractSceneGraph(
         extractContext,
         myWasmIndex,
         myWorldX,
-        myWorldY
+        myWorldY,
+        myIsFixed
       );
       if (childNode) {
         children.push(childNode);
@@ -676,8 +685,8 @@ export function extractSceneGraph(
     type: "BOX",
     element,
     rect: {
-      x: rect.left + window.scrollX,
-      y: rect.top + window.scrollY,
+      x: rect.left + scrollX,
+      y: rect.top + scrollY,
       width: rect.width,
       height: rect.height,
     },
@@ -721,11 +730,11 @@ export function extractSceneGraph(
             x:
               nativeParsedStyles.x !== undefined
                 ? parseFloat(nativeParsedStyles.x)
-                : rect.left + window.scrollX,
+                : rect.left + scrollX,
             y:
               nativeParsedStyles.y !== undefined
                 ? parseFloat(nativeParsedStyles.y)
-                : rect.top + window.scrollY,
+                : rect.top + scrollY,
             width:
               nativeParsedStyles.width !== undefined
                 ? parseFloat(nativeParsedStyles.width)
@@ -736,7 +745,7 @@ export function extractSceneGraph(
                 : rect.height,
           }
         : undefined,
-    isFixed: computed.position === "fixed",
+    isFixed: myIsFixed,
     clipElements: inheritedClipElements,
     wasmIndex: myWasmIndex !== -1 ? myWasmIndex : undefined,
     children,

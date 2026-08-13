@@ -43,6 +43,14 @@ export class Renderer {
   private mountContainer: HTMLElement;
   private registry: MeshRegistry;
   private targetRect: DOMRect;
+  private targetPageX: number = 0;
+  private targetPageY: number = 0;
+  public size: { width: number; height: number } = { width: 0, height: 0 };
+  
+  private currentScrollX: number = 0;
+  private currentScrollY: number = 0;
+  private lastTargetLeft: number = 0;
+  private lastTargetTop: number = 0;
 
   private travelersByLayer: Set<THREE.Mesh>[] = Array.from(
     { length: ATTR_TRAVEL.MAX_LAYERS },
@@ -75,10 +83,17 @@ export class Renderer {
       }
     }, this.isViewport);
 
+    this.qualityFactor = this.getQualityFactor(config.quality);
+    
     this.canvas = document.createElement("canvas");
     this.scene = new THREE.Scene();
 
     this.targetRect = this.target.getBoundingClientRect();
+    this.lastTargetLeft = this.targetRect.left;
+    this.lastTargetTop = this.targetRect.top;
+    
+    this.targetPageX = this.targetRect.left + this.getScrollX();
+    this.targetPageY = this.targetRect.top + this.getScrollY();
     const width = this.isViewport
       ? window.innerWidth + this.overscan * 2
       : this.targetRect.width;
@@ -172,6 +187,31 @@ export class Renderer {
         this.qualityFactor = 2;
         break;
     }
+  }
+
+  private getQualityFactor(quality: Quality | undefined): number {
+    if (typeof quality === "number") return Math.max(0.1, quality);
+    switch (quality) {
+      case "low": return 1;
+      case "high": return 4;
+      default: return 2;
+    }
+  }
+
+  public updateScroll() {
+    const rect = this.target.getBoundingClientRect();
+    this.currentScrollX += (this.lastTargetLeft - rect.left);
+    this.currentScrollY += (this.lastTargetTop - rect.top);
+    this.lastTargetLeft = rect.left;
+    this.lastTargetTop = rect.top;
+  }
+
+  public getScrollX(): number {
+    return this.currentScrollX;
+  }
+
+  public getScrollY(): number {
+    return this.currentScrollY;
   }
 
   public mount() {
@@ -279,14 +319,20 @@ export class Renderer {
 
     if (isResized) {
       this.targetRect = newRect;
+      this.targetPageX = newRect.left + this.getScrollX();
+      this.targetPageY = newRect.top + this.getScrollY();
       this.setSize(newWidth, newHeight);
 
       this.updateCanvasLayout();
     } else if (isMoved) {
       this.targetRect = newRect;
+      this.targetPageX = newRect.left + this.getScrollX();
+      this.targetPageY = newRect.top + this.getScrollY();
       this.updateCanvasLayout();
     } else {
       this.targetRect = newRect;
+      this.targetPageX = newRect.left + this.getScrollX();
+      this.targetPageY = newRect.top + this.getScrollY();
     }
 
     this.renderOrder = 0;
@@ -386,6 +432,7 @@ export class Renderer {
     }
 
     mesh.userData.clipElements = node.clipElements;
+    mesh.userData.wasmIndex = node.wasmIndex;
     
     if (node.nativeStyles?.transform) {
       mesh.userData.nativeTransform = node.nativeStyles.transform;
@@ -578,20 +625,21 @@ export class Renderer {
       width: rect.width,
       height: rect.height,
     };
+    mesh.userData.needsNativeReset = true;
 
     const Z_MICRO_OFFSET = 0.001;
     this.renderOrder++;
 
-    const targetPageX = this.targetRect.left + window.scrollX;
-    const targetPageY = this.targetRect.top + window.scrollY;
+    // const targetPageX = this.targetRect.left + this.getScrollX();
+    // const targetPageY = this.targetRect.top + this.getScrollY();
 
     let baseX: number, baseY: number;
     if (this.isViewport) {
       baseX = rect.x - window.innerWidth / 2 + rect.width / 2;
       baseY = -rect.y + window.innerHeight / 2 - rect.height / 2;
     } else {
-      const localX = rect.x - targetPageX;
-      const localY = rect.y - targetPageY;
+      const localX = rect.x - this.targetPageX;
+      const localY = rect.y - this.targetPageY;
       baseX = localX - canvasWidth / 2 + rect.width / 2;
       baseY = -localY + canvasHeight / 2 - rect.height / 2;
     }
@@ -676,8 +724,8 @@ export class Renderer {
           window.innerHeight / 2 -
           node.nativeRect.height / 2;
       } else {
-        const nativeLocalX = node.nativeRect.x - targetPageX;
-        const nativeLocalY = node.nativeRect.y - targetPageY;
+        const nativeLocalX = node.nativeRect.x - this.targetPageX;
+        const nativeLocalY = node.nativeRect.y - this.targetPageY;
         nativeBaseX =
           nativeLocalX - canvasWidth / 2 + node.nativeRect.width / 2;
         nativeBaseY =
@@ -960,9 +1008,6 @@ export class Renderer {
   }
 
   public syncMeshesByWasm(sharedArray: Float32Array) {
-    const targetPageX = this.targetRect.left + window.scrollX;
-    const targetPageY = this.targetRect.top + window.scrollY;
-
     const pixelRatio = this.renderer.getPixelRatio();
     const canvasWidth = this.renderer.domElement.width / pixelRatio;
     const canvasHeight = this.renderer.domElement.height / pixelRatio;
@@ -980,13 +1025,19 @@ export class Renderer {
       const rect = mesh.userData.domRect;
       if (!rect) return;
 
+      const isFixed = this.fixedMeshes.has(mesh);
+      const effectiveScrollX = isFixed ? 0 : this.getScrollX();
+      const effectiveScrollY = isFixed ? 0 : this.getScrollY();
+
       let baseX: number, baseY: number;
       if (this.isViewport) {
-        baseX = worldX - window.innerWidth / 2 + rect.width / 2;
-        baseY = -worldY + window.innerHeight / 2 - rect.height / 2;
+        const viewportX = worldX - effectiveScrollX;
+        const viewportY = worldY - effectiveScrollY;
+        baseX = viewportX - window.innerWidth / 2 + rect.width / 2;
+        baseY = -viewportY + window.innerHeight / 2 - rect.height / 2;
       } else {
-        const localX = worldX - targetPageX;
-        const localY = worldY - targetPageY;
+        const localX = worldX - this.targetPageX;
+        const localY = worldY - this.targetPageY;
         baseX = localX - canvasWidth / 2 + rect.width / 2;
         baseY = -localY + canvasHeight / 2 - rect.height / 2;
       }
@@ -996,14 +1047,15 @@ export class Renderer {
 
       if (mesh.userData.nativeMesh) {
         const nativeMesh = mesh.userData.nativeMesh as THREE.Mesh;
-        // Apply relative position from baseX/Y if there is nativeTransform applied
-        // We calculate delta from the base original position computed during layout.
-        // But for simplicity in Step 4, we just apply the same delta to the native mesh.
-        const deltaX = baseX - mesh.userData.basePosition.x;
-        const deltaY = baseY - mesh.userData.basePosition.y;
-        
-        nativeMesh.position.setX(nativeMesh.position.x + deltaX);
-        nativeMesh.position.setY(nativeMesh.position.y + deltaY);
+        if (mesh.userData.needsNativeReset) {
+          mesh.userData.needsNativeReset = false;
+        } else {
+          const deltaX = baseX - mesh.userData.basePosition.x;
+          const deltaY = baseY - mesh.userData.basePosition.y;
+          
+          nativeMesh.position.setX(nativeMesh.position.x + deltaX);
+          nativeMesh.position.setY(nativeMesh.position.y + deltaY);
+        }
       }
       
       mesh.userData.basePosition.x = baseX;

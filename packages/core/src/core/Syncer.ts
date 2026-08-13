@@ -43,7 +43,13 @@ export class Syncer {
       }
 
       const sharedArray = this.wasmSync.sharedArray;
-      const extractContext = sharedArray ? { sharedArray, currentIndex: 0 } : undefined;
+      this.renderer.updateScroll();
+      const extractContext = {
+        sharedArray: sharedArray || new Float32Array(),
+        currentIndex: 0,
+        scrollX: (this.renderer as any).getScrollX(),
+        scrollY: (this.renderer as any).getScrollY(),
+      };
 
       const sceneGraph = extractSceneGraph(
         this.target,
@@ -59,9 +65,7 @@ export class Syncer {
       );
 
       if (sceneGraph) {
-        if (extractContext) {
-          this.lastWasmNodeCount = extractContext.currentIndex;
-        }
+        this.lastWasmNodeCount = extractContext.currentIndex;
         this.renderer.syncScene(sceneGraph, pendingDeletions);
 
         if (sharedArray) {
@@ -75,6 +79,7 @@ export class Syncer {
     });
 
     this.tracker.onRender.add(() => {
+      this.renderer.updateScroll();
       this.wasmSync.updatePhysics(this.lastWasmNodeCount);
       if (this.wasmSync.sharedArray) {
         this.renderer.syncMeshesByWasm(this.wasmSync.sharedArray);
