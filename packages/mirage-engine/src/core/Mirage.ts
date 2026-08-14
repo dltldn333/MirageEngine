@@ -21,8 +21,10 @@ export class Mirage {
     }
   }
 
-  public start(): void {
-    this._engine.start();
+  public async start(): Promise<void> {
+    await this._engine.start();
+      // public start(): void {
+    // this._engine.start();
     if (this._sandwich) {
       this._sandwich.init();
     }

@@ -14,6 +14,10 @@ import {
   ATTR_SELECT,
   ATTR_TRAVEL,
   ATTR_SHADER,
+  WASM_STRIDE,
+  OFFSET_PARENT,
+  OFFSET_LOCAL_X,
+  OFFSET_LOCAL_Y,
 } from "../types";
 
 import { BoxStyles, TextStyles, ShaderHooks } from "@mirage-engine/painter";
@@ -210,7 +214,15 @@ export function extractSceneGraph(
   inheritedNativeLayer?: number,
   inheritedNativeStyles?: any,
   inheritedClipElements?: HTMLElement[],
+  extractContext?: { sharedArray: Float32Array; currentIndex: number; scrollX?: number; scrollY?: number },
+  parentWasmIndex: number = -1,
+  parentWorldX: number = 0,
+  parentWorldY: number = 0,
+  inheritedIsFixed: boolean = false
 ): SceneNode | null {
+  const scrollX = extractContext?.scrollX ?? window.scrollX;
+  const scrollY = extractContext?.scrollY ?? window.scrollY;
+
   // Check text node
   if (sourceNode.nodeType === Node.TEXT_NODE) {
     const textNode = sourceNode as Text;
@@ -228,11 +240,25 @@ export function extractSceneGraph(
     const computed = parent ? window.getComputedStyle(parent) : null;
     if (!computed) return null;
 
+    const myIsFixed = inheritedIsFixed || computed.position === "fixed";
+
     // Calculate overall bounding box of the lines
     const minX = Math.min(...textLines.map((l) => l.rect.left));
     const minY = Math.min(...textLines.map((l) => l.rect.top));
     const maxX = Math.max(...textLines.map((l) => l.rect.left + l.rect.width));
     const maxY = Math.max(...textLines.map((l) => l.rect.top + l.rect.height));
+
+    const myWorldX = minX + (myIsFixed ? 0 : scrollX);
+    const myWorldY = minY + (myIsFixed ? 0 : scrollY);
+
+    let myWasmIndex = -1;
+    if (extractContext && extractContext.sharedArray) {
+      myWasmIndex = extractContext.currentIndex++;
+      const offset = myWasmIndex * WASM_STRIDE;
+      extractContext.sharedArray[offset + OFFSET_PARENT] = parentWasmIndex;
+      extractContext.sharedArray[offset + OFFSET_LOCAL_X] = myWorldX - parentWorldX;
+      extractContext.sharedArray[offset + OFFSET_LOCAL_Y] = myWorldY - parentWorldY;
+    }
 
     // Create SceneNode for the text node
     return {
@@ -240,8 +266,8 @@ export function extractSceneGraph(
       type: "TEXT",
       element: textNode as unknown as HTMLElement,
       rect: {
-        x: minX + window.scrollX,
-        y: minY + window.scrollY,
+        x: minX + (myIsFixed ? 0 : scrollX),
+        y: minY + (myIsFixed ? 0 : scrollY),
         width: maxX - minX,
         height: maxY - minY,
       },
@@ -264,8 +290,8 @@ export function extractSceneGraph(
       textLines: textLines.map((l) => ({
         text: l.text.trim(),
         rect: {
-          x: l.rect.left + window.scrollX,
-          y: l.rect.top + window.scrollY,
+          x: l.rect.left + (myIsFixed ? 0 : scrollX),
+          y: l.rect.top + (myIsFixed ? 0 : scrollY),
           width: l.rect.width,
           height: l.rect.height,
         },
@@ -275,7 +301,7 @@ export function extractSceneGraph(
       visibility: inheritedFlow,
       isTraveler: false,
       captureLayer,
-      isFixed: computed.position === "fixed",
+      isFixed: myIsFixed,
       nativeLayer: inheritedNativeLayer,
       nativeStyles: inheritedNativeStyles
         ? {
@@ -299,13 +325,14 @@ export function extractSceneGraph(
         : undefined,
       nativeRect: inheritedNativeStyles
         ? {
-            x: minX + window.scrollX,
-            y: minY + window.scrollY,
+            x: minX + (myIsFixed ? 0 : scrollX),
+            y: minY + (myIsFixed ? 0 : scrollY),
             width: maxX - minX,
             height: maxY - minY,
           }
         : undefined,
       clipElements: inheritedClipElements,
+      wasmIndex: myWasmIndex !== -1 ? myWasmIndex : undefined,
       children: [],
     };
   }
@@ -498,6 +525,20 @@ export function extractSceneGraph(
     return null;
   }
 
+  const myIsFixed = inheritedIsFixed || computed.position === "fixed";
+
+  const myWorldX = rect.left + (myIsFixed ? 0 : scrollX);
+  const myWorldY = rect.top + (myIsFixed ? 0 : scrollY);
+
+  let myWasmIndex = -1;
+  if (extractContext && extractContext.sharedArray) {
+    myWasmIndex = extractContext.currentIndex++;
+    const offset = myWasmIndex * WASM_STRIDE;
+    extractContext.sharedArray[offset + OFFSET_PARENT] = parentWasmIndex;
+    extractContext.sharedArray[offset + OFFSET_LOCAL_X] = myWorldX - parentWorldX;
+    extractContext.sharedArray[offset + OFFSET_LOCAL_Y] = myWorldY - parentWorldY;
+  }
+
   // [TODO] dataset 방식으로 변경
   let id = element.getAttribute("data-mid");
   if (!id) {
@@ -627,6 +668,11 @@ export function extractSceneGraph(
           ? nativeParsedStyles
           : undefined,
         nextClipElements,
+        extractContext,
+        myWasmIndex,
+        myWorldX,
+        myWorldY,
+        myIsFixed
       );
       if (childNode) {
         children.push(childNode);
@@ -639,8 +685,8 @@ export function extractSceneGraph(
     type: "BOX",
     element,
     rect: {
-      x: rect.left + window.scrollX,
-      y: rect.top + window.scrollY,
+      x: rect.left + scrollX,
+      y: rect.top + scrollY,
       width: rect.width,
       height: rect.height,
     },
@@ -684,11 +730,11 @@ export function extractSceneGraph(
             x:
               nativeParsedStyles.x !== undefined
                 ? parseFloat(nativeParsedStyles.x)
-                : rect.left + window.scrollX,
+                : rect.left + scrollX,
             y:
               nativeParsedStyles.y !== undefined
                 ? parseFloat(nativeParsedStyles.y)
-                : rect.top + window.scrollY,
+                : rect.top + scrollY,
             width:
               nativeParsedStyles.width !== undefined
                 ? parseFloat(nativeParsedStyles.width)
@@ -699,8 +745,9 @@ export function extractSceneGraph(
                 : rect.height,
           }
         : undefined,
-    isFixed: computed.position === "fixed",
+    isFixed: myIsFixed,
     clipElements: inheritedClipElements,
+    wasmIndex: myWasmIndex !== -1 ? myWasmIndex : undefined,
     children,
     shaderHooks,
   };

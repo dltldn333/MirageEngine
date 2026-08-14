@@ -24,4 +24,5 @@ export interface StyleData {
     width?: number;
     height?: number;
     zIndex?: number;
+    layoutChanged?: boolean;
 }

@@ -8,9 +8,14 @@ import {
   USER_LAYER,
   SELECT_LAYER,
   travelerClipArea,
-  THREE_LAYERS,
   ATTR_TRAVEL,
+  THREE_LAYERS,
   LayerTarget,
+  WASM_STRIDE,
+  OFFSET_WORLD_X,
+  OFFSET_WORLD_Y,
+  OFFSET_LOCAL_X,
+  OFFSET_LOCAL_Y,
 } from "../types";
 import { Painter, TextStyles, BoxStyles } from "@mirage-engine/painter";
 import { MeshRegistry } from "../store/MeshRegistry";
@@ -38,6 +43,14 @@ export class Renderer {
   private mountContainer: HTMLElement;
   private registry: MeshRegistry;
   private targetRect: DOMRect;
+  private targetPageX: number = 0;
+  private targetPageY: number = 0;
+  public size: { width: number; height: number } = { width: 0, height: 0 };
+  
+  private currentScrollX: number = 0;
+  private currentScrollY: number = 0;
+  private lastTargetLeft: number = 0;
+  private lastTargetTop: number = 0;
 
   private travelersByLayer: Set<THREE.Mesh>[] = Array.from(
     { length: ATTR_TRAVEL.MAX_LAYERS },
@@ -70,10 +83,17 @@ export class Renderer {
       }
     }, this.isViewport);
 
+    this.qualityFactor = this.getQualityFactor(config.quality);
+    
     this.canvas = document.createElement("canvas");
     this.scene = new THREE.Scene();
 
     this.targetRect = this.target.getBoundingClientRect();
+    this.lastTargetLeft = this.targetRect.left;
+    this.lastTargetTop = this.targetRect.top;
+    
+    this.targetPageX = this.targetRect.left + this.getScrollX();
+    this.targetPageY = this.targetRect.top + this.getScrollY();
     const width = this.isViewport
       ? window.innerWidth + this.overscan * 2
       : this.targetRect.width;
@@ -167,6 +187,31 @@ export class Renderer {
         this.qualityFactor = 2;
         break;
     }
+  }
+
+  private getQualityFactor(quality: Quality | undefined): number {
+    if (typeof quality === "number") return Math.max(0.1, quality);
+    switch (quality) {
+      case "low": return 1;
+      case "high": return 4;
+      default: return 2;
+    }
+  }
+
+  public updateScroll() {
+    const rect = this.target.getBoundingClientRect();
+    this.currentScrollX += (this.lastTargetLeft - rect.left);
+    this.currentScrollY += (this.lastTargetTop - rect.top);
+    this.lastTargetLeft = rect.left;
+    this.lastTargetTop = rect.top;
+  }
+
+  public getScrollX(): number {
+    return this.currentScrollX;
+  }
+
+  public getScrollY(): number {
+    return this.currentScrollY;
   }
 
   public mount() {
@@ -274,14 +319,20 @@ export class Renderer {
 
     if (isResized) {
       this.targetRect = newRect;
+      this.targetPageX = newRect.left + this.getScrollX();
+      this.targetPageY = newRect.top + this.getScrollY();
       this.setSize(newWidth, newHeight);
 
       this.updateCanvasLayout();
     } else if (isMoved) {
       this.targetRect = newRect;
+      this.targetPageX = newRect.left + this.getScrollX();
+      this.targetPageY = newRect.top + this.getScrollY();
       this.updateCanvasLayout();
     } else {
       this.targetRect = newRect;
+      this.targetPageX = newRect.left + this.getScrollX();
+      this.targetPageY = newRect.top + this.getScrollY();
     }
 
     this.renderOrder = 0;
@@ -381,6 +432,7 @@ export class Renderer {
     }
 
     mesh.userData.clipElements = node.clipElements;
+    mesh.userData.wasmIndex = node.wasmIndex;
     
     if (node.nativeStyles?.transform) {
       mesh.userData.nativeTransform = node.nativeStyles.transform;
@@ -573,20 +625,21 @@ export class Renderer {
       width: rect.width,
       height: rect.height,
     };
+    mesh.userData.needsNativeReset = true;
 
     const Z_MICRO_OFFSET = 0.001;
     this.renderOrder++;
 
-    const targetPageX = this.targetRect.left + window.scrollX;
-    const targetPageY = this.targetRect.top + window.scrollY;
+    // const targetPageX = this.targetRect.left + this.getScrollX();
+    // const targetPageY = this.targetRect.top + this.getScrollY();
 
     let baseX: number, baseY: number;
     if (this.isViewport) {
       baseX = rect.x - window.innerWidth / 2 + rect.width / 2;
       baseY = -rect.y + window.innerHeight / 2 - rect.height / 2;
     } else {
-      const localX = rect.x - targetPageX;
-      const localY = rect.y - targetPageY;
+      const localX = rect.x - this.targetPageX;
+      const localY = rect.y - this.targetPageY;
       baseX = localX - canvasWidth / 2 + rect.width / 2;
       baseY = -localY + canvasHeight / 2 - rect.height / 2;
     }
@@ -671,8 +724,8 @@ export class Renderer {
           window.innerHeight / 2 -
           node.nativeRect.height / 2;
       } else {
-        const nativeLocalX = node.nativeRect.x - targetPageX;
-        const nativeLocalY = node.nativeRect.y - targetPageY;
+        const nativeLocalX = node.nativeRect.x - this.targetPageX;
+        const nativeLocalY = node.nativeRect.y - this.targetPageY;
         nativeBaseX =
           nativeLocalX - canvasWidth / 2 + node.nativeRect.width / 2;
         nativeBaseY =
@@ -943,177 +996,70 @@ export class Renderer {
     this.renderer.render(this.scene, this.camera);
   }
 
-  public syncMeshesByDOM() {
-    // If not in viewport mode, we must account for page scroll in absolute positions.
-    const targetPageX = this.targetRect.left + window.scrollX;
-    const targetPageY = this.targetRect.top + window.scrollY;
+  public saveInitialLocals(sharedArray: Float32Array) {
+    this.scene.children.forEach((child) => {
+      const mesh = child as THREE.Mesh;
+      if (mesh.userData.wasmIndex !== undefined) {
+        const offset = mesh.userData.wasmIndex * WASM_STRIDE;
+        mesh.userData.initialLocalX = sharedArray[offset + OFFSET_LOCAL_X];
+        mesh.userData.initialLocalY = sharedArray[offset + OFFSET_LOCAL_Y];
+      }
+    });
+  }
 
+  public syncMeshesByWasm(sharedArray: Float32Array) {
     const pixelRatio = this.renderer.getPixelRatio();
     const canvasWidth = this.renderer.domElement.width / pixelRatio;
     const canvasHeight = this.renderer.domElement.height / pixelRatio;
 
     this.scene.children.forEach((child) => {
       const mesh = child as THREE.Mesh;
-      if (!mesh.userData || !mesh.userData.domElement) return;
+      if (!mesh.userData || mesh.userData.wasmIndex === undefined) return;
 
-      const element = mesh.userData.domElement as HTMLElement;
-      if (!element.isConnected) return;
-      let rect: DOMRect;
-      if (element.nodeType === Node.TEXT_NODE) {
-        const range = document.createRange();
-        range.selectNode(element);
-        rect = range.getBoundingClientRect();
+      const wasmIndex = mesh.userData.wasmIndex as number;
+      const offset = wasmIndex * WASM_STRIDE;
+      
+      const worldX = sharedArray[offset + OFFSET_WORLD_X];
+      const worldY = sharedArray[offset + OFFSET_WORLD_Y];
+
+      const rect = mesh.userData.domRect;
+      if (!rect) return;
+
+      const isFixed = this.fixedMeshes.has(mesh);
+      const effectiveScrollX = isFixed ? 0 : this.getScrollX();
+      const effectiveScrollY = isFixed ? 0 : this.getScrollY();
+
+      let baseX: number, baseY: number;
+      if (this.isViewport) {
+        const viewportX = worldX - effectiveScrollX;
+        const viewportY = worldY - effectiveScrollY;
+        baseX = viewportX - window.innerWidth / 2 + rect.width / 2;
+        baseY = -viewportY + window.innerHeight / 2 - rect.height / 2;
       } else {
-        rect = element.getBoundingClientRect();
+        const localX = worldX - this.targetPageX;
+        const localY = worldY - this.targetPageY;
+        baseX = localX - canvasWidth / 2 + rect.width / 2;
+        baseY = -localY + canvasHeight / 2 - rect.height / 2;
       }
-      const cached = mesh.userData.domRect;
 
-      // Update if position or size changed by more than 0.5px
-      if (
-        !cached ||
-        Math.abs(rect.x - cached.x) > 0.5 ||
-        Math.abs(rect.y - cached.y) > 0.5 ||
-        Math.abs(rect.width - cached.width) > 0.5 ||
-        Math.abs(rect.height - cached.height) > 0.5
-      ) {
-        mesh.userData.domRect = {
-          x: rect.x,
-          y: rect.y,
-          width: rect.width,
-          height: rect.height,
-        };
+      const currentZ = mesh.position.z;
+      mesh.position.set(baseX, baseY, currentZ);
 
-        // Compute scissorRect from clipElements (overflow:hidden ancestors)
-        const clipEls = mesh.userData.clipElements as HTMLElement[] | undefined;
-        if (clipEls && clipEls.length > 0) {
-          let clipLeft = -Infinity;
-          let clipTop = -Infinity;
-          let clipRight = Infinity;
-          let clipBottom = Infinity;
-          for (const clipEl of clipEls) {
-            const cr = clipEl.getBoundingClientRect();
-            clipLeft = Math.max(clipLeft, cr.left);
-            clipTop = Math.max(clipTop, cr.top);
-            clipRight = Math.min(clipRight, cr.right);
-            clipBottom = Math.min(clipBottom, cr.bottom);
-          }
-          // Intersect with the mesh's own rect to avoid scissoring larger than the mesh
-          mesh.userData.scissorRect = {
-            x: clipLeft,
-            y: clipTop,
-            width: Math.max(0, clipRight - clipLeft),
-            height: Math.max(0, clipBottom - clipTop),
-          };
+      if (mesh.userData.nativeMesh) {
+        const nativeMesh = mesh.userData.nativeMesh as THREE.Mesh;
+        if (mesh.userData.needsNativeReset) {
+          mesh.userData.needsNativeReset = false;
         } else {
-          mesh.userData.scissorRect = undefined;
-        }
-
-        let baseX: number, baseY: number;
-        if (this.isViewport) {
-          baseX = rect.x - window.innerWidth / 2 + rect.width / 2;
-          baseY = -rect.y + window.innerHeight / 2 - rect.height / 2;
-        } else {
-          const localX = rect.x - targetPageX;
-          const localY = rect.y - targetPageY;
-          baseX = localX - canvasWidth / 2 + rect.width / 2;
-          baseY = -localY + canvasHeight / 2 - rect.height / 2;
-        }
-
-        // Apply new position and scale
-        mesh.position.setX(baseX);
-        mesh.position.setY(baseY);
-        let pad = (mesh.material as THREE.ShaderMaterial).userData?.shadowPadding || 0;
-        mesh.scale.set(rect.width + pad * 2, rect.height + pad * 2, 1);
-        mesh.updateMatrixWorld();
-
-        // Update uniforms so shader-based drawing (like border-radius) doesn't stretch
-        if (mesh.material instanceof THREE.ShaderMaterial) {
-          Painter.forceUpdateUniforms(mesh.material, {
-            width: rect.width,
-            height: rect.height,
-          });
-        }
-
-        // Update native mesh if exists
-        if (mesh.userData.nativeMesh) {
-          const nativeMesh = mesh.userData.nativeMesh as THREE.Mesh;
-          let nScaleX = rect.width;
-          let nScaleY = rect.height;
-          let nPosX = baseX;
-          let nPosY = baseY;
-
-          if (mesh.userData.nativeTransform) {
-            const transformStr = mesh.userData.nativeTransform as string;
-            
-            const scaleMatch = transformStr.match(/scale\(([\d.]+%?)\)/);
-            if (scaleMatch) {
-              let scaleVal = parseFloat(scaleMatch[1]);
-              if (scaleMatch[1].includes("%")) scaleVal /= 100;
-              nScaleX *= scaleVal;
-              nScaleY *= scaleVal;
-            }
-
-            const scaleXMatch = transformStr.match(/scaleX\(([\d.]+%?)\)/);
-            if (scaleXMatch) {
-              let scaleVal = parseFloat(scaleXMatch[1]);
-              if (scaleXMatch[1].includes("%")) scaleVal /= 100;
-              nScaleX *= scaleVal;
-            }
-
-            const scaleYMatch = transformStr.match(/scaleY\(([\d.]+%?)\)/);
-            if (scaleYMatch) {
-              let scaleVal = parseFloat(scaleYMatch[1]);
-              if (scaleYMatch[1].includes("%")) scaleVal /= 100;
-              nScaleY *= scaleVal;
-            }
-
-            const translateMatch = transformStr.match(/translate\(([^,]+),\s*([^)]+)\)/);
-            if (translateMatch) {
-              const txStr = translateMatch[1].trim();
-              const tyStr = translateMatch[2].trim();
-              
-              let tx = parseFloat(txStr);
-              if (txStr.includes("%")) tx = (tx / 100) * rect.width;
-              
-              let ty = parseFloat(tyStr);
-              if (tyStr.includes("%")) ty = (ty / 100) * rect.height;
-              
-              nPosX += tx;
-              nPosY -= ty;
-            }
-
-            const translateXMatch = transformStr.match(/translateX\(([^)]+)\)/);
-            if (translateXMatch) {
-              const txStr = translateXMatch[1].trim();
-              let tx = parseFloat(txStr);
-              if (txStr.includes("%")) tx = (tx / 100) * rect.width;
-              nPosX += tx;
-            }
-
-            const translateYMatch = transformStr.match(/translateY\(([^)]+)\)/);
-            if (translateYMatch) {
-              const tyStr = translateYMatch[1].trim();
-              let ty = parseFloat(tyStr);
-              if (tyStr.includes("%")) ty = (ty / 100) * rect.height;
-              nPosY -= ty;
-            }
-          }
-
-          let nPad = (nativeMesh.material as THREE.ShaderMaterial).userData?.shadowPadding || 0;
-          nativeMesh.position.setX(nPosX);
-          nativeMesh.position.setY(nPosY);
-          nativeMesh.scale.set(nScaleX + nPad * 2, nScaleY + nPad * 2, 1);
-          nativeMesh.updateMatrixWorld();
-
-          // Update uniforms so native shader-based drawing doesn't stretch
-          if (nativeMesh.material instanceof THREE.ShaderMaterial) {
-            Painter.forceUpdateUniforms(nativeMesh.material, {
-              width: nScaleX,
-              height: nScaleY,
-            });
-          }
+          const deltaX = baseX - mesh.userData.basePosition.x;
+          const deltaY = baseY - mesh.userData.basePosition.y;
+          
+          nativeMesh.position.setX(nativeMesh.position.x + deltaX);
+          nativeMesh.position.setY(nativeMesh.position.y + deltaY);
         }
       }
+      
+      mesh.userData.basePosition.x = baseX;
+      mesh.userData.basePosition.y = baseY;
     });
   }
 }

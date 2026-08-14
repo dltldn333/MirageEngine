@@ -190,19 +190,31 @@
               data-mirage-dom="hide"
             >
               <div
-                id="box2-child"
-                data-mirage-sandwich="front"
-                data-mirage-filter="end"
                 style="
-                  height: 20px;
-                  text-align: center;
-                  color: black;
-                  position: relative;
-                  z-index: 1;
-                  font-weight: bold;
+                  width: 80%;
+                  height: 80%;
+                  position: absolute;
+                  left: 50%;
+                  top: 50%;
+                  transform: translate(-50%, -50%);
+                  background-color: red;
                 "
               >
-                Hello Sandwich
+                <div
+                  id="box2-child"
+                  data-mirage-sandwich="front"
+                  data-mirage-filter="end"
+                  style="
+                    height: 20px;
+                    text-align: center;
+                    color: black;
+                    position: relative;
+                    z-index: 1;
+                    font-weight: bold;
+                  "
+                >
+                  Hello Sandwich
+                </div>
               </div>
             </div>
           </div>
@@ -351,13 +363,14 @@
           // x: -200,
           keyframes: [
             // { width: 400, height: 500 },
-            { width: 400 },
+            { width: 400, left: 400 },
+            // { right: 400 },
             // { width: 150, height: 80, duration: 0.2 },
             // { width: 80, height: 200, duration: 0.8 },
             // { width: 150, height: 80, duration: 0.2 },
           ],
           // background: "linear-gradient(rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.93) 85%, rgba(0, 0, 0, 0.1) 100%)",
-          boxShadow: "10px 10px 10px 10px black",
+          // boxShadow: "10px 10px 10px 10px black",
           borderRadius: "30px",
           duration: 1,
           ease: "power2.inOut",

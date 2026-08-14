@@ -51,6 +51,14 @@ export function extractFromStyle(style: CSSStyleDeclaration): StyleData {
     styleObject.x = matrix.m41;
     styleObject.y = matrix.m42;
     styleObject.z = matrix.m43;
+
+    styleObject.scaleX = Math.sqrt(matrix.m11 * matrix.m11 + matrix.m12 * matrix.m12 + matrix.m13 * matrix.m13);
+    styleObject.scaleY = Math.sqrt(matrix.m21 * matrix.m21 + matrix.m22 * matrix.m22 + matrix.m23 * matrix.m23);
+    styleObject.scaleZ = Math.sqrt(matrix.m31 * matrix.m31 + matrix.m32 * matrix.m32 + matrix.m33 * matrix.m33);
+  }
+
+  if (style.left || style.right || style.top || style.bottom || style.margin || style.marginLeft || style.marginTop || style.marginRight || style.marginBottom || style.padding || style.paddingLeft || style.paddingTop || style.paddingRight || style.paddingBottom) {
+    styleObject.layoutChanged = true;
   }
 
   return styleObject;
