@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 1.0.12
+
+### Patch Changes
+
+- bd2efa5: wasm
+
 ## 1.0.11
 
 ### Patch Changes
