@@ -1,5 +1,17 @@
 # mirage-engine
 
+## 0.3.22
+
+### Patch Changes
+
+- 45b60a8: wasm
+- bd2efa5: wasm
+- Updated dependencies [45b60a8]
+- Updated dependencies [bd2efa5]
+  - @mirage-engine/core@0.3.22
+  - @mirage-engine/sandwich@0.2.9
+  - @mirage-engine/painter@1.0.12
+
 ## 0.3.21
 
 ### Patch Changes
