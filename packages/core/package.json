@@ -17,7 +17,8 @@
   "dependencies": {
     "@types/three": "^0.181.0",
     "@mirage-engine/painter": "workspace:*",
-    "@mirage-engine/dom-tracker": "workspace:*"
+    "@mirage-engine/dom-tracker": "workspace:*",
+    "@mirage-engine/wasm-compute": "workspace:*"
   },
   "private": false,
   "publishConfig": {

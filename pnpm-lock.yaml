@@ -94,6 +94,9 @@ importers:
       '@mirage-engine/painter':
         specifier: workspace:*
         version: link:../painter
+      '@mirage-engine/wasm-compute':
+        specifier: workspace:*
+        version: link:../wasm-compute
       '@types/three':
         specifier: ^0.181.0
         version: 0.181.0
@@ -145,6 +148,8 @@ importers:
       '@mirage-engine/dom-tracker':
         specifier: workspace:*
         version: link:../dom-tracker
+
+  packages/wasm-compute: {}
 
 packages:
 

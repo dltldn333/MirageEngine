@@ -1,0 +1,13 @@
+{
+  "name": "@mirage-engine/wasm-compute",
+  "version": "0.1.0",
+  "private": false,
+  "files": [
+    "pkg"
+  ],
+  "main": "pkg/wasm_compute.js",
+  "types": "pkg/wasm_compute.d.ts",
+  "scripts": {
+    "build": "npx wasm-pack build --target web"
+  }
+}
