@@ -1,0 +1,163 @@
+---
+title: Releasing
+description: How changesets, CI and npm publishing fit together.
+---
+
+import { Callout, Steps } from "nextra/components";
+
+# Releasing
+
+Releases are automated with [Changesets](https://github.com/changesets/changesets).
+Nobody publishes from a laptop.
+
+## The pipeline
+
+```
+PR merged to main
+      │
+      ▼
+release.yml runs
+      │
+      ├─ pending changesets exist?
+      │      │
+      │      ├─ yes → open/update "Version Packages" PR
+      │      │         (bumps versions, writes CHANGELOGs)
+      │      │
+      │      └─ that PR merged → pnpm changeset publish → npm
+      │
+      └─ no changesets → nothing happens
+```
+
+## Workflows
+
+### `ci.yml`
+
+Runs on every push and PR to `main`:
+
+```yaml
+- pnpm install --frozen-lockfile
+- pnpm -r build
+```
+
+Node 20, pnpm 9. This is the gate — a type error anywhere fails it.
+
+### `release.yml`
+
+Runs on push to `main` and on manual dispatch. Node 24, pnpm 9. Uses
+`changesets/action@v1` with `publish: pnpm changeset publish`.
+
+Permissions: `contents: write`, `id-token: write`, `pull-requests: write`.
+Concurrency is keyed on workflow + ref, so overlapping runs cancel.
+
+## Changeset configuration
+
+```json
+{
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch"
+}
+```
+
+`updateInternalDependencies: "patch"` matters: bumping `@mirage-engine/painter`
+automatically patches `@mirage-engine/core` and `mirage-engine`, which depend on
+it. One fix deep in the tree ripples outward on its own.
+
+`access: "public"` is required — scoped packages default to restricted on npm.
+
+## Writing a changeset
+
+```bash
+pnpm changeset
+```
+
+The summary is published verbatim in the changelog, so write it for users:
+
+```md
+---
+"@mirage-engine/core": minor
+"mirage-engine": minor
+---
+
+Add `canvasSize` option to control whether the overlay canvas is allocated at
+viewport size or full document height.
+```
+
+Good summaries name the option or behaviour and say what it does. Avoid
+"fix bug" and "update logic".
+
+<Callout type="info">
+  One changeset can bump several packages. If a change spans core and painter,
+  select both — a partial bump ships a version of core that depends on an
+  unreleased painter.
+</Callout>
+
+## Version policy
+
+| Bump | Meaning |
+| :-- | :-- |
+| `patch` | Bug fix, no API change |
+| `minor` | Additive: new option, attribute or export |
+| `major` | Breaking: removal, rename, changed default |
+
+All packages are pre-1.0 except `@mirage-engine/painter`, which is at 1.x. They
+version independently — `fixed` and `linked` are both empty in the changeset
+config.
+
+## Manual release
+
+Only if the automation is broken:
+
+<Steps>
+
+### Apply pending changesets
+
+```bash
+pnpm changeset version
+```
+
+Bumps `package.json` versions and updates `CHANGELOG.md` files.
+
+### Build
+
+```bash
+pnpm -r build
+```
+
+### Publish
+
+```bash
+pnpm changeset publish
+```
+
+Publishes only packages whose version is not yet on npm, then creates git tags.
+
+### Push tags
+
+```bash
+git push --follow-tags
+```
+
+</Steps>
+
+<Callout type="warning">
+  `packages/mirage-engine` has a `prepublishOnly` hook that rebuilds. Publishing
+  a stale `dist` is still possible for the other packages — always run
+  `pnpm -r build` first.
+</Callout>
+
+## Documentation deploys
+
+`apps/docs` is a Next.js app on Vercel and deploys on push to `main`,
+independently of npm releases. Doc fixes ship without a version bump.
+
+## Release checklist
+
+- [ ] `pnpm -r build` passes locally
+- [ ] Changeset added, covering every affected package
+- [ ] Breaking changes marked `major` and explained in the summary
+- [ ] Docs updated in **both** locales for any API change
+- [ ] `apps/dev` sandbox still runs
+- [ ] Root `README.md` updated if the public API changed

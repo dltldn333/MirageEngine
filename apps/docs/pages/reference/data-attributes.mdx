@@ -1,0 +1,213 @@
+---
+title: Data Attributes
+description: Control Mirage Engine directly from your markup.
+---
+
+import { Callout } from "nextra/components";
+
+# Data Attributes
+
+Most of Mirage's behaviour is driven from markup rather than JavaScript, so it
+survives re-renders from any framework.
+
+## Overview
+
+| Attribute | Values | Purpose |
+| :-- | :-- | :-- |
+| `data-mirage-dom` | `hide` \| `show` | Fade the original DOM element out |
+| `data-mirage-filter` | filter tokens | Include/exclude from the visible layer |
+| `data-mirage-select` | filter tokens | Include/exclude from the selection layer |
+| `data-mirage-travel` | `traveler` / `native` + layer + JSON | Render-target capture and style overrides |
+| `data-mirage-shader` | JSON `ShaderHooks` | Inject custom GLSL |
+| `data-mirage-sandwich` | `front` | Lift the element above the canvas |
+| `data-mid` | *(auto)* | Stable id Mirage assigns; do not set it yourself |
+
+---
+
+## `data-mirage-dom`
+
+```html
+<div id="target" data-mirage-dom="hide">…</div>
+```
+
+Applies `opacity: 0 !important` through a stylesheet Mirage injects once
+(`#mirage-engine-styles`). The element keeps its layout box, pointer events and
+accessibility tree — only the paint is suppressed.
+
+Mirage also compensates internally: a hidden element's mesh is drawn at
+`opacity: 1` rather than inheriting the zeroed value.
+
+---
+
+## `data-mirage-filter`
+
+Controls membership in `USER_LAYER` — whether the mesh is drawn at all.
+
+| Token | Effect |
+| :-- | :-- |
+| `include-tree` | Include this element and all descendants |
+| `exclude-tree` | Exclude this element and all descendants |
+| `include-self` | Include only this element |
+| `exclude-self` | Exclude only this element |
+| `end` | Stop traversal here; skip this element and its subtree entirely |
+
+Tokens are whitespace-separated and combine:
+
+```html
+<!-- Mirror the wrapper but not its contents -->
+<section data-mirage-filter="exclude-tree include-self">
+  <p>Not mirrored</p>
+</section>
+
+<!-- Mirror the contents but not the wrapper -->
+<section data-mirage-filter="include-tree exclude-self">
+  <p>Mirrored</p>
+</section>
+```
+
+<Callout type="error">
+  `include-tree` with `exclude-tree`, or `include-self` with `exclude-self`, on
+  the same element throws. An unknown token also throws. This is intentional —
+  silent typos in markup are hard to debug.
+</Callout>
+
+`end` returns `null` immediately, so it is the cheapest way to keep a heavy
+subtree (a video player, a map, a virtualized list) out of extraction.
+
+```html
+<div data-mirage-filter="end">
+  <iframe src="https://example.com"></iframe>
+</div>
+```
+
+---
+
+## `data-mirage-select`
+
+Identical token grammar, but toggles `SELECT_LAYER` instead. Combine it with
+`layer: "selected"` to render an isolated pass containing only these elements —
+useful for outline, glow or picking effects.
+
+```html
+<div data-mirage-select="include-tree">…</div>
+```
+
+```ts
+new Mirage(target, { layer: "selected" });
+```
+
+---
+
+## `data-mirage-travel`
+
+The most powerful attribute. Two independent tokens plus an optional JSON
+object.
+
+```
+data-mirage-travel="traveler <layer> native <layer> { …styles }"
+```
+
+### `traveler`
+
+Marks the element as sampling a render target rather than a flat color.
+
+```html
+<div data-mirage-travel="traveler"></div>
+<div data-mirage-travel="traveler 2"></div>
+```
+
+The number is the capture layer (default `1`, max `10`). Everything on layers at
+or above the traveler's own `captureLayer` gets captured into the buffer it
+samples, which is how you nest travelers.
+
+<Callout type="error">
+  A traveler's layer must not be smaller than the inherited capture layer.
+  Violating this throws with the two layer numbers in the message.
+</Callout>
+
+### `native`
+
+Creates a **second mesh** for the same element on a different capture layer.
+
+```html
+<div data-mirage-travel="native 2 { backgroundColor: 'red' }"></div>
+```
+
+The visible scene keeps the real CSS appearance; the copy on layer 2 uses the
+override. So an element can look normal to the user and different inside a
+traveler's capture.
+
+### Style overrides
+
+The JSON-ish block is evaluated with `new Function("return " + json)`, so
+unquoted keys and single quotes are fine.
+
+| Key | Applies to |
+| :-- | :-- |
+| `backgroundColor`, `backgroundImage`, `opacity`, `zIndex` | Box appearance |
+| `borderRadius`, `borderColor`, `borderWidth`, `boxShadow` | Box appearance |
+| `transform` | `scale`, `scaleX/Y`, `translate`, `translateX/Y` (parsed manually) |
+| `x`, `y`, `width`, `height` | Override the native mesh's rect |
+| `color`, `fill`, `stroke` | SVG re-rasterization for the native copy |
+
+```html
+<svg
+  data-mirage-travel="native 2 { color: '#00ffcc', opacity: 0.4 }"
+  viewBox="0 0 24 24"
+>…</svg>
+```
+
+<Callout type="warning">
+  Because the value is evaluated as JavaScript, never build this attribute from
+  untrusted user input.
+</Callout>
+
+---
+
+## `data-mirage-shader`
+
+Parsed with `JSON.parse` — strict JSON, double quotes required.
+
+```html
+<div
+  data-mirage-shader='{
+    "uniforms": { "uTime": 0, "uAmp": 0.02 },
+    "uvModifier": "resultUv.x += sin(resultUv.y * 20.0 + uTime) * uAmp;",
+    "colorModifier": "finalColor.rgb *= 1.2;"
+  }'
+></div>
+```
+
+| Field | Type | Injected at |
+| :-- | :-- | :-- |
+| `uniforms` | `Record<string, number \| number[]>` | `#INJECT_DECLARATIONS` |
+| `uvModifier` | GLSL string | `#INJECT_UV_MODIFIER` |
+| `colorModifier` | GLSL string | `#INJECT_COLOR_MODIFIER` |
+
+Changing this attribute changes the material's shader hash, which forces Mirage
+to rebuild the mesh. Drive per-frame values with
+[`updateUniforms()`](/reference/mirage#updateuniforms) instead of rewriting the
+attribute.
+
+See [Custom Shaders](/guides/shaders).
+
+---
+
+## `data-mirage-sandwich`
+
+```html
+<nav data-mirage-sandwich="front">…</nav>
+```
+
+Moves the element into a fixed layer at `z-index: 9999`, above the Mirage
+canvas, leaving an invisible placeholder behind so the page layout does not
+shift. Positions re-sync every frame.
+
+See [Sandwich Layering](/guides/sandwich).
+
+---
+
+## `data-mid`
+
+Assigned automatically during extraction as a stable identifier. Read it if you
+find it useful; do not write it.

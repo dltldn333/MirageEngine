@@ -1,0 +1,148 @@
+---
+title: 메시 애니메이션
+description: Mirage 메시를 움직이는 세 가지 방법과 각각의 비용.
+---
+
+import { Callout } from "nextra/components";
+
+# 메시 애니메이션
+
+Mirage는 비용이 크게 다른 세 가지 애니메이션 경로를 제공합니다. 원하는 표현을
+할 수 있는 가장 저렴한 것을 고르세요.
+
+| 경로 | 발동 조건 | DOM 재추출? | 비용 |
+| :-- | :-- | :-- | :-- |
+| 인라인 스타일 애니메이션 | CSS / GSAP가 `element.style`에 씀 | 아니오 | 낮음 |
+| 유니폼 갱신 | `updateUniforms()` | 아니오 | 가장 낮음 |
+| 레이아웃 변경 | 클래스 교체, DOM 변형 | 예 | 높음 |
+
+## 1. DOM을 움직이고 Mirage가 따라오게 하기
+
+트래커는 `style` 속성 변경을 감시합니다. 변경을 감지하면 `Parser`가 숫자 값을
+추출하고 Mirage가 메시를 직접 수정합니다 — 추출도, 조정도 없습니다.
+
+```ts
+import gsap from "gsap";
+
+gsap.to("#card", {
+  x: 300,
+  y: 40,
+  opacity: 0.5,
+  scaleX: 1.2,
+  duration: 1.2,
+  ease: "power3.out",
+});
+```
+
+빠른 경로로 인식되는 속성:
+
+| CSS | `StyleData` 필드 |
+| :-- | :-- |
+| `transform: translate3d/translate/matrix` | `x`, `y`, `z` |
+| `transform: scale*` | `scaleX`, `scaleY`, `scaleZ` |
+| `opacity` | `opacity` |
+| `background-color` | `backgroundColor` |
+| `background-image` | `backgroundImage` |
+| `box-shadow` | `boxShadow` |
+| `border-radius` | `borderRadius` |
+| `width` / `height` | `width`, `height` |
+
+`x`/`y`는 노드의 초기 로컬 오프셋에 대한 델타로 WASM 공유 배열에 기록됩니다.
+그래서 부모→자식 누적 패스를 통해 자식들이 자동으로 따라옵니다.
+
+<Callout type="warning">
+  `left`, `top`, `margin`, `padding`은 `layoutChanged`를 설정하며, 해당 요소와
+  등록된 모든 하위 요소에 `getBoundingClientRect()`를 강제합니다. 대신
+  `transform`으로 애니메이션하세요 — 빠른 경로를 유지합니다.
+</Callout>
+
+## 2. 유니폼을 직접 애니메이션
+
+순수하게 시각적인 변화라면 DOM을 아예 건너뛰세요.
+
+```ts
+const el = document.querySelector("#card") as HTMLElement;
+const t0 = performance.now();
+
+mirage.getTracker().onRender.add(() => {
+  const t = (performance.now() - t0) / 1000;
+
+  mirage.updateUniforms(el, {
+    opacity: 0.5 + 0.5 * Math.sin(t * 2),
+    borderRadius: 12 + 8 * Math.sin(t),
+    backgroundColor: [Math.sin(t) * 0.5 + 0.5, 0.2, 0.8, 1],
+  });
+});
+```
+
+DOM을 전혀 건드리지 않으므로 mutation 레코드가 하나도 생기지 않습니다. 호버
+글로우, 맥동하는 테두리, 셰이더 파라미터에 딱 맞습니다.
+
+내장 유니폼 키: `width`, `height`, `borderRadius`, `borderWidth`,
+`backgroundColor`, `borderColor`, `opacity`, `bgOpacity`, `borderOpacity`,
+`texture`, `backgroundImage`, `boxShadow`. 그 외에는
+[`data-mirage-shader`](/ko/guides/shaders)로 먼저 선언해야 합니다.
+
+## 3. 클래스 교체와 레이아웃 변경
+
+클래스를 추가하면 트리가 `DIRTY_RECT | DIRTY_STYLE`로 표시되고, 짧은 디바운스
+뒤 다음 프레임에 Mirage가 재추출합니다.
+
+```ts
+card.classList.add("expanded");
+```
+
+정확하지만 서브트리를 다시 순회합니다. 개별 상태 전환에는 괜찮고, 프레임 단위
+변화에는 부적절합니다.
+
+<Callout type="info">
+  타깃의 `transitionend`와 `animationend`도 재추출을 예약합니다(50ms
+  디바운스). 중간 프레임이 빠른 경로를 탔더라도 최종 상태는 정확해집니다.
+</Callout>
+
+## 스크롤 기반 효과
+
+스크롤 위치는 DOM 작업 없이 얻을 수 있습니다.
+
+```ts
+const tracker = mirage.getTracker();
+const hero = document.querySelector("#hero") as HTMLElement;
+
+tracker.onScrollChange.add((scrollX, scrollY) => {
+  mirage.updateUniforms(hero, {
+    uScroll: scrollY / window.innerHeight,
+  });
+});
+```
+
+`onScrollChange`는 내부 구독자가 없어서 온전히 여러분 것입니다.
+
+<Callout type="info">
+  스크롤이 멈춘 뒤 150ms 디바운스로 `DIRTY_RECT` 재추출이 별도로 예약됩니다.
+  sticky나 패럴랙스 요소에서 생긴 오차를 바로잡습니다.
+</Callout>
+
+## 프레임 훅
+
+```ts
+const tracker = mirage.getTracker();
+
+tracker.onBeforeRender.add(() => {
+  // 레이아웃 동기화 전 — Sandwich도 여기서 실행됨
+});
+
+tracker.onRender.add(() => {
+  // 메시 동기화 후, 드로우 콜 직전
+});
+```
+
+둘 다 `Set`이므로 `.delete(fn)`으로 해제합니다. 정리할 때 반드시
+해제하세요 — 파괴된 `Mirage`를 붙잡고 있는 클로저는 매 프레임 예외를 던집니다.
+
+## 성능 체크리스트
+
+- `left` / `top`보다 `transform`을 선호하세요
+- 시각적 변화만 있다면 클래스 교체보다 `updateUniforms()`
+- 관련된 변경은 여러 번 쓰지 말고 한 번의 스타일 쓰기로 묶으세요
+- `data-mirage-shader`를 프레임마다 다시 쓰지 마세요 — 메시가 재생성됩니다
+- 컴포넌트 언마운트 시 프레임 훅을 해제하세요

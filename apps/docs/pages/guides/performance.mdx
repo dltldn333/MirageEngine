@@ -1,0 +1,191 @@
+---
+title: Performance
+description: What costs frames in Mirage Engine, and how to get them back.
+---
+
+import { Callout } from "nextra/components";
+
+# Performance
+
+Mirage does DOM measurement, texture generation and WebGL rendering on the same
+thread as your app. Most performance work is about doing less of the first one.
+
+## Where the time goes
+
+| Stage | Frequency | Dominant cost |
+| :-- | :-- | :-- |
+| Extraction | Only when dirty | `getBoundingClientRect` + `getComputedStyle` per node |
+| Text line measurement | On content change | `Range.getClientRects()` per token |
+| Reconciliation | After extraction | Mesh create/update/dispose |
+| WASM transform | Every frame | One linear pass over a `Float32Array` |
+| Traveler capture | Every frame | One scissored scene draw **per traveler** |
+| Final draw | Every frame | Scene complexity |
+
+Only the last three run unconditionally. Extraction is gated behind the dirty
+flag — that gate is the single most important thing to protect.
+
+## 1. Exclude what you do not need
+
+The cheapest node is one that is never visited.
+
+```html
+<div data-mirage-filter="end">
+  <iframe src="…"></iframe>
+  <video src="…"></video>
+</div>
+```
+
+`end` aborts the recursion immediately. Use it on media embeds, maps, third-party
+widgets, virtualized lists and anything offscreen by design.
+
+## 2. Keep `canvasSize: "viewport"`
+
+The default allocates the canvas at window size plus a 200 px overscan, so a
+40,000 px tall page costs the same as a short one.
+
+```ts
+new Mirage(target, { mode: "overlay", canvasSize: "viewport" });
+```
+
+<Callout type="warning">
+  `canvasSize: "document"` allocates a framebuffer the height of the whole
+  target, multiplied by `devicePixelRatio` and `quality`. On a long page this
+  exceeds `MAX_TEXTURE_SIZE` and fails or crawls. It also disables
+  `IntersectionObserver` texture culling.
+</Callout>
+
+## 3. Tune `quality`
+
+`quality` is a resolution multiplier on text canvases, SVG rasterization and
+render targets. Memory scales with its square.
+
+```ts
+new Mirage(target, { quality: "medium" }); // 2 — the default
+```
+
+| Value | Factor | When |
+| :-- | :-- | :-- |
+| `"low"` | 1 | Mobile, dense text, many travelers |
+| `"medium"` | 2 | Default; good on most displays |
+| `"high"` | 4 | Large display type, retina hero sections |
+| `number` | custom | e.g. `1.5` as a compromise |
+
+Adapt at runtime:
+
+```ts
+const isMobile = window.matchMedia("(max-width: 768px)").matches;
+const dpr = window.devicePixelRatio;
+
+new Mirage(target, { quality: isMobile ? "low" : dpr > 2 ? 2 : "high" });
+```
+
+## 4. Animate on the fast path
+
+Writing inline `transform` / `opacity` patches meshes without re-extracting.
+Changing classes, `left`/`top`, margins or padding forces a full re-measure.
+
+```ts
+gsap.to(el, { x: 200, opacity: 0.4 });        // fast path
+el.style.left = "200px";                       // triggers layoutChanged
+```
+
+See [Animating Meshes](/guides/animation).
+
+## 5. Budget travelers
+
+`captureRenderTarget` renders the scene once **per traveler mesh** — not once
+per layer. Ten travelers means ten extra scene draws every frame.
+
+- Prefer one large traveler over many small ones
+- Keep `travelerClipArea` only as wide as your displacement needs
+- Do not raise the layer number unless you are actually nesting
+
+## 6. Stop when nothing is visible
+
+```ts
+document.addEventListener("visibilitychange", () => {
+  document.hidden ? mirage.stop() : mirage.start();
+});
+
+const io = new IntersectionObserver(([entry]) => {
+  entry.isIntersecting ? mirage.start() : mirage.stop();
+});
+io.observe(target);
+```
+
+`stop()` ends the `requestAnimationFrame` loop and disconnects the observer
+while keeping the scene, so restarting is instant.
+
+## 7. Debounce resize
+
+```ts
+new Mirage(target, {
+  resizeDebounce: {
+    delay: 200,
+    onStart: () => mirage.getCanvas().style.setProperty("opacity", "0.4"),
+    onEnd: () => mirage.getCanvas().style.removeProperty("opacity"),
+  },
+});
+```
+
+Resize forces a full re-extract plus renderer and render-target reallocation.
+The 150 ms default is usually right; raise it on heavy pages.
+
+## Texture memory
+
+`TextureLifecycleManager` observes image elements with a 300 px root margin and
+disposes textures that scroll out of view, reloading them on return.
+
+<Callout type="info">
+  This culling is only active when `mode === "overlay"` **and**
+  `canvasSize === "viewport"`. Any other combination keeps every texture
+  resident for the lifetime of the page.
+</Callout>
+
+Images are decoded off the main thread with `createImageBitmap` where possible;
+SVG data URLs fall back to `Image` decoding.
+
+## Text cost
+
+Text is the most expensive thing Mirage measures. `extractTextLines` walks
+tokens and calls `Range.getClientRects()` on each — and falls back to
+**per-character** iteration for tokens that wrap mid-word (`word-break:
+break-all`, CJK text without spaces).
+
+- Avoid `word-break: break-all` on long passages inside the mirrored subtree
+- Exclude body copy you are not going to shade
+- Each text line becomes its own mesh and its own canvas texture, so a
+  50-line paragraph is 50 meshes
+
+## Measuring
+
+```ts
+const tracker = mirage.getTracker();
+
+let last = performance.now();
+tracker.onRender.add(() => {
+  const now = performance.now();
+  const fps = 1000 / (now - last);
+  last = now;
+  if (fps < 45) console.warn("frame budget exceeded", fps.toFixed(1));
+});
+
+tracker.onLayoutChange.add((mask) => {
+  console.time("extract");
+  queueMicrotask(() => console.timeEnd("extract"));
+});
+```
+
+In Chrome DevTools → Performance, look for long tasks under `renderLoop`. Time
+concentrated in `getBoundingClientRect` / `getComputedStyle` means extraction is
+running too often — check what is dirtying the tree.
+
+## Quick checklist
+
+- [ ] Heavy subtrees marked `data-mirage-filter="end"`
+- [ ] `canvasSize` left at `"viewport"`
+- [ ] `quality` lowered on mobile
+- [ ] Animations use `transform` / `opacity` or `updateUniforms()`
+- [ ] Traveler count in the single digits
+- [ ] `stop()` on hidden tabs
+- [ ] Frame hooks unsubscribed on teardown

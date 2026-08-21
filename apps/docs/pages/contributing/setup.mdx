@@ -1,0 +1,176 @@
+---
+title: Development Setup
+description: Get the Mirage Engine monorepo running locally.
+---
+
+import { Callout, Steps, FileTree } from "nextra/components";
+
+# Development Setup
+
+## Prerequisites
+
+| Tool | Version | Needed for |
+| :-- | :-- | :-- |
+| Node.js | 20+ (CI uses 20, release uses 24) | Everything |
+| pnpm | 9 | Workspace management — npm and yarn will not work |
+| Rust + `wasm-pack` | stable | Only if you touch `packages/wasm-compute` |
+
+<Callout type="warning">
+  This repo uses pnpm workspaces with `workspace:*` protocol links. Installing
+  with npm or yarn will fail to resolve the internal packages.
+</Callout>
+
+## Clone and install
+
+<Steps>
+
+### Clone
+
+```bash
+git clone https://github.com/dltldn333/MirageEngine.git
+cd MirageEngine
+```
+
+### Install
+
+```bash
+pnpm install
+```
+
+This links every internal package, so an edit in `packages/painter` is visible
+to `packages/core` immediately.
+
+### Build all packages
+
+```bash
+pnpm -r build
+```
+
+Run this once before starting the docs or dev app — they import built output for
+some entry points.
+
+### Start the sandbox
+
+```bash
+pnpm dev
+```
+
+Runs `apps/dev` (Vite) — a plain HTML playground for exercising the engine.
+
+</Steps>
+
+## Repository layout
+
+<FileTree>
+  <FileTree.Folder name="MirageEngine" defaultOpen>
+    <FileTree.Folder name="packages" defaultOpen>
+      <FileTree.Folder name="mirage-engine"><FileTree.File name="public facade" /></FileTree.Folder>
+      <FileTree.Folder name="core"><FileTree.File name="Engine, Syncer, Renderer, Extractor" /></FileTree.Folder>
+      <FileTree.Folder name="dom-tracker"><FileTree.File name="Tracker, Parser" /></FileTree.Folder>
+      <FileTree.Folder name="painter"><FileTree.File name="materials + GLSL" /></FileTree.Folder>
+      <FileTree.Folder name="sandwich"><FileTree.File name="SandwichRenderer" /></FileTree.Folder>
+      <FileTree.Folder name="wasm-compute"><FileTree.File name="Rust crate" /></FileTree.Folder>
+    </FileTree.Folder>
+    <FileTree.Folder name="apps">
+      <FileTree.Folder name="docs"><FileTree.File name="this site (Nextra)" /></FileTree.Folder>
+    </FileTree.Folder>
+    <FileTree.Folder name="dev"><FileTree.File name="Vite sandbox" /></FileTree.Folder>
+    <FileTree.Folder name=".changeset"><FileTree.File name="pending version bumps" /></FileTree.Folder>
+  </FileTree.Folder>
+</FileTree>
+
+## Common commands
+
+| Command | Effect |
+| :-- | :-- |
+| `pnpm install` | Install and link the workspace |
+| `pnpm -r build` | Build every package |
+| `pnpm dev` | Run the Vite sandbox (`dev`) |
+| `pnpm --filter docs dev` | Run this documentation site |
+| `pnpm --filter @mirage-engine/painter build` | Build one package |
+| `pnpm changeset` | Record a version bump |
+| `pnpm clean` | Remove `node_modules` and `dist` everywhere |
+
+## Working on the docs
+
+```bash
+pnpm --filter docs dev
+```
+
+Opens the Nextra site on `http://localhost:3000`.
+
+Docs are bilingual. English lives at the root of `pages/`, Korean under
+`pages/ko/` with the same tree:
+
+```
+pages/
+  _meta.json              ← English nav
+  index.mdx               → /
+  guides/
+    _meta.json
+    modes.mdx             → /guides/modes
+  ko/
+    _meta.json            ← Korean nav
+    index.mdx             → /ko
+    guides/
+      _meta.json
+      modes.mdx           → /ko/guides/modes
+```
+
+<Callout type="info">
+  Locales are **directory-based**, not Next.js i18n routing. Nextra 2's
+  `page.<locale>.mdx` convention strips the suffix in its own page map but
+  never emits matching Next.js routes, so every path 404s. Plain directories
+  give real routes, and a real 404 for a typo.
+</Callout>
+
+<Callout type="error">
+  Adding a page in only one locale leaves the other with a dead link. Always add
+  both files and both `_meta.json` entries, even if the second is a rough
+  translation.
+</Callout>
+
+Links inside `pages/ko/**` must be written with the `/ko` prefix
+(`/ko/guides/modes`, not `/guides/modes`), and component imports need one extra
+`../` because the file sits one level deeper.
+
+To add a locale: create `pages/<locale>/**` mirroring the English tree, add a
+`STRINGS` entry in `theme.config.tsx`, add it to `LOCALES` in
+`components/LocaleSwitch.tsx`, and add a `type: "page"` entry to the root
+`pages/_meta.json`.
+
+## Working on the WASM package
+
+Only needed if you change `packages/wasm-compute/src/lib.rs`.
+
+```bash
+rustup target add wasm32-unknown-unknown
+cargo install wasm-pack
+
+pnpm --filter @mirage-engine/wasm-compute build
+```
+
+This runs `wasm-pack build --target web`, regenerating `pkg/`. `@mirage-engine/core`
+imports directly from `pkg/wasm_compute.js`.
+
+<Callout type="info">
+  `pkg/` is committed, so contributors who do not touch Rust never need a
+  toolchain. If you rebuild it, commit the regenerated output.
+</Callout>
+
+## Editor setup
+
+The repo is TypeScript with a shared `tsconfig.base.json`. Recommended:
+
+- **TypeScript** — use the workspace version, not VS Code's bundled one
+- **Prettier** — default settings; the codebase is 2-space, double-quoted
+- **Shader languages support** — syntax highlighting for `.glsl`
+
+## Troubleshooting the setup
+
+| Symptom | Fix |
+| :-- | :-- |
+| `Cannot find module '@mirage-engine/core'` | Run `pnpm -r build` — packages resolve to `dist` |
+| `ERR_PNPM_NO_MATCHING_VERSION workspace:*` | You used npm or yarn; delete `node_modules` and use pnpm |
+| Docs 404 on a page you added | Missing the `.en` / `.ko` counterpart or the `_meta` entry |
+| WASM import fails | `pkg/` is missing; build the wasm package or pull it from git |

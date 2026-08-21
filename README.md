@@ -42,19 +42,22 @@ npm install mirage-engine three
 
 ## Usage
 
-### Use simple
+### Simple
 
 ```ts
 import { Mirage } from "mirage-engine";
 
 const target = document.querySelector("#target") as HTMLElement;
 
-const mirage = new Mirage(target);
+const mirage = new Mirage(target, {});
 
-mirage.start();
+await mirage.start();
 ```
 
-### Use option
+`config` is required — pass `{}` for defaults. `start()` is async because it
+boots the WebAssembly module on first call.
+
+### With options
 
 ```ts
 import { Mirage } from "mirage-engine";
@@ -63,12 +66,29 @@ const target = document.querySelector("#target") as HTMLElement;
 const container = document.querySelector("#container") as HTMLElement;
 
 const mirage = new Mirage(target, {
-  textQuality: "low", //default is "medium" (== 2) ("low" | "medium" | "high" | number;)
-  mode: "duplicate", //default is "overaly" ("overlay" | "duplicate")
-  container: container, //The container option is only available in "duplicate" mode.
+  quality: "low",       // default "medium" (== 2)  ("low" | "medium" | "high" | number)
+  mode: "duplicate",    // default "overlay"        ("overlay" | "duplicate")
+  container,            // "duplicate" mode only
 });
 
-mirage.start();
+await mirage.start();
 ```
+
+### Lifecycle
+
+```ts
+mirage.stop();    // pause the render loop, keep the scene
+mirage.destroy(); // stop, dispose the renderer, remove the canvas
+```
+
+## Documentation
+
+Full documentation, in English and Korean:
+**https://mirage-engine.vercel.app**
+
+- [Quick Start](https://mirage-engine.vercel.app/get-started/quick-start)
+- [Configuration](https://mirage-engine.vercel.app/api/configuration)
+- [Data Attributes](https://mirage-engine.vercel.app/api/data-attributes)
+- [Contributing](https://mirage-engine.vercel.app/contributing/setup)
 
 **License | MIT © dltldn333**

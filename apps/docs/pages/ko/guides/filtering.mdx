@@ -1,0 +1,153 @@
+---
+title: 요소 필터링
+description: DOM의 어떤 부분을 미러링할지 정확히 지정합니다.
+---
+
+import { Callout } from "nextra/components";
+
+# 요소 필터링
+
+기본적으로 Mirage는 타깃 서브트리 전체를 미러링합니다. 두 개의 마크업 속성으로
+범위를 좁힐 수 있습니다. `data-mirage-filter`는 **가시** 레이어를,
+`data-mirage-select`는 병렬로 존재하는 **선택** 레이어를 제어합니다.
+
+## 왜 필터링하나
+
+- **성능.** 추출은 모든 요소를 순회하며 `getBoundingClientRect`와
+  `getComputedStyle`을 호출합니다. 무거운 서브트리를 빼는 것이 가장 큰
+  성능 개선입니다.
+- **정확성.** `iframe`, `video`, `canvas`, 지도 위젯은 의미 있게 미러링할 수
+  없습니다. CSS에서 유래한 외형이 없으니까요.
+- **연출.** WebGL 패스에 몇 개 요소만 넣고 싶을 수 있습니다.
+
+## 다섯 개의 토큰
+
+| 토큰 | 자기 자신 | 하위 요소 |
+| :-- | :-- | :-- |
+| `include-tree` | 포함 | 포함 |
+| `exclude-tree` | 제외 | 제외 |
+| `include-self` | 포함 | 변화 없음 |
+| `exclude-self` | 제외 | 변화 없음 |
+| `end` | 순회 중단 — 아래로는 방문조차 하지 않음 |
+
+`*-tree` 토큰은 자식에게 전달되는 상속 흐름을 바꾸고, `*-self` 토큰은 이 요소
+자신의 플래그만 바꿉니다. 서로 다른 대상에 작용하기 때문에, 하나씩 조합하는
+것이 "래퍼는 포함하되 내용물은 제외"를 표현하는 정석입니다.
+
+## 패턴
+
+### 무거운 서브트리 통째로 건너뛰기
+
+```html
+<div data-mirage-filter="end">
+  <iframe src="https://maps.example.com"></iframe>
+</div>
+```
+
+`end`는 재귀에서 즉시 반환합니다. 내부는 측정조차 하지 않습니다. 가장 저렴한
+제외 방법입니다.
+
+### 옵트인 방식 미러링
+
+루트에서 전부 제외한 뒤 필요한 부분만 다시 포함합니다.
+
+```html
+<main id="target" data-mirage-filter="exclude-tree">
+  <p>미러링 안 됨.</p>
+
+  <section data-mirage-filter="include-tree">
+    <h2>미러링 됨</h2>
+    <p>이것도 됨.</p>
+  </section>
+</main>
+```
+
+### 래퍼만
+
+```html
+<div data-mirage-filter="exclude-tree include-self">
+  <img src="huge.png" />
+</div>
+```
+
+컨테이너의 배경·테두리·라운드는 미러링되고 이미지는 안 됩니다.
+
+### 내용물만
+
+```html
+<div data-mirage-filter="include-tree exclude-self">
+  <span>미러링되는 텍스트</span>
+</div>
+```
+
+래퍼가 레이아웃 용도로만 존재해서 원치 않는 배경 쿼드를 그리게 될 때 유용합니다.
+
+<Callout type="error">
+  같은 요소에 `include-tree` + `exclude-tree`, 또는 `include-self` +
+  `exclude-self`를 쓰면 예외가 납니다. 인식할 수 없는 토큰도 마찬가지입니다.
+  오타를 조용히 무시하는 대신 크게 실패하도록 설계되어 있습니다.
+</Callout>
+
+## 텍스트 노드는 self 플래그를 상속합니다
+
+미묘하지만 중요한 규칙입니다. 자식 요소는 **tree** 흐름을 상속하고, 자식
+텍스트 노드는 **self** 플래그를 상속합니다.
+
+```html
+<p data-mirage-filter="exclude-self">
+  이 텍스트는 여전히 미러링됩니다.
+  <span>이 span도 마찬가지입니다.</span>
+</p>
+```
+
+문단 박스를 제외해도 그 안의 텍스트는 사라지지 않습니다. 둘 다 빼려면
+`exclude-tree`를 쓰세요.
+
+## 선택 레이어
+
+`data-mirage-select`는 문법이 같지만 `SELECT_LAYER`를 토글하며, Three.js 채널
+`1`에 매핑됩니다. 가시성과 완전히 독립적이라 요소는 보이면서 선택될 수도,
+둘 중 하나만일 수도, 아무것도 아닐 수도 있습니다.
+
+```html
+<div data-mirage-select="include-tree">
+  <button class="cta">지금 구매</button>
+</div>
+```
+
+```ts
+// 선택된 요소만 렌더링
+const selection = new Mirage(target, { layer: "selected" });
+await selection.start();
+```
+
+같은 타깃에 Mirage 인스턴스를 두 개 돌리세요 — 하나는 `layer: "base"`, 하나는
+`layer: "selected"` — 그러면 일반 렌더 위에 외곽선이나 글로우 패스를 합성할 수
+있습니다.
+
+## 자동으로 제외되는 것
+
+속성과 관계없이 씬 그래프에 절대 들어가지 않는 것들이 있습니다.
+
+| 제외 대상 | 이유 |
+| :-- | :-- |
+| `width === 0` 또는 `height === 0` | 미러링할 박스가 없음 |
+| `display: none` | 레이아웃 박스가 없음 |
+| 공백만 있는 텍스트 노드 | 그릴 것이 없음 |
+| `<svg>`의 자식 | SVG는 통째로 직렬화되어 하나의 텍스처가 됨 |
+
+## 디버깅
+
+```ts
+import { extractSceneGraph, USER_LAYER } from "@mirage-engine/core";
+
+const graph = extractSceneGraph(target, undefined, USER_LAYER);
+
+function walk(node, depth = 0) {
+  const on = node.visibility & USER_LAYER ? "✓" : "✗";
+  console.log(`${"  ".repeat(depth)}${on} ${node.type} ${node.element.nodeName}`);
+  node.children.forEach((c) => walk(c, depth + 1));
+}
+
+walk(graph);
+```

@@ -1,0 +1,64 @@
+---
+title: Mirage Engine이란?
+description: Mirage Engine은 살아 있는 HTML DOM 요소를 실시간으로 WebGL 씬에 미러링합니다.
+---
+
+import { Callout, Cards, Card } from "nextra/components";
+import { MiragePlayground } from "../../../components/MiragePlayground";
+
+# Mirage Engine이란?
+
+> **HTML DOM 요소를 실시간으로 WebGL 씬에 미러링하는 엔진입니다.**
+
+Mirage Engine은 이미 존재하는 DOM 트리 — 위치, 크기, 색상, 테두리, 그림자,
+이미지, 텍스트 — 를 읽어서 캔버스 위에 Three.js 메시로 다시 그립니다. 그리고
+DOM을 계속 관찰하다가 무언가 움직이거나, 스타일이 바뀌거나, 내용이 달라지면
+다시 동기화합니다.
+
+여러분은 하던 대로 HTML과 CSS를 쓰면 됩니다. Mirage는 거기에 셰이딩하고,
+왜곡하고, 애니메이션할 수 있는 WebGL 사본을 만들어 줍니다.
+
+## WebGL로 직접 만들면 되지 않나요?
+
+UI를 WebGL로 직접 만든다는 건 브라우저 레이아웃 엔진 전체를 포기한다는
+뜻입니다. flexbox, grid, 텍스트 셰이핑, 접근성, 폼 컨트롤, 히트 테스팅까지요.
+Mirage는 둘 중 하나를 고를 필요가 없다는 입장입니다.
+
+| | 순수 DOM | 순수 WebGL | Mirage Engine |
+| :-- | :-- | :-- | :-- |
+| 레이아웃 엔진 | 브라우저 | 직접 구현 | 브라우저 |
+| 접근성 / SEO | 가능 | 불가 | 가능 (실제 DOM이 남아 있음) |
+| 픽셀 단위 셰이더 효과 | 불가 | 가능 | 가능 |
+| 텍스트 렌더링 | 브라우저 | 아틀라스 수작업 | 브라우저 메트릭 → 캔버스 텍스처 |
+
+## 동작 방식
+
+Mirage는 매 애니메이션 프레임마다 4단계 루프를 돕니다.
+
+1. **Track(추적)** — `MutationObserver`와 스크롤/리사이즈 리스너가 트리를
+   더티로 표시하고, *무엇이* 바뀌었는지 비트마스크로 분류합니다.
+2. **Extract(추출)** — 더티 트리를 순회하며 rect, 계산된 스타일, 텍스트 줄,
+   레이어 플래그를 담은 `SceneNode` 그래프로 평탄화합니다.
+3. **Reconcile(조정)** — 각 `SceneNode`를 캐시된 `THREE.Mesh`와 매칭해서
+   생성 / 갱신 / 해제합니다. 머티리얼은 Painter 패키지가 만듭니다.
+4. **Render(렌더)** — traveler 레이어를 렌더 타깃에 캡처한 뒤 씬을 그립니다.
+
+중첩 노드의 위치 계산은 Rust/WebAssembly 모듈로 넘깁니다. 부모/자식 오프셋이
+담긴 평탄한 `Float32Array`를 한 번에 훑기 때문에 깊은 트리에서도 비용이 낮습니다.
+
+<Callout type="info">
+  각 단계를 담당하는 클래스까지 포함한 전체 파이프라인은
+  [아키텍처](/ko/contributing/architecture) 문서를 참고하세요.
+</Callout>
+
+## 라이브 데모
+
+<MiragePlayground />
+
+## 다음 단계
+
+<Cards>
+  <Card title="설치" href="/ko/get-started/installation" />
+  <Card title="빠른 시작" href="/ko/get-started/quick-start" />
+  <Card title="핵심 개념" href="/ko/get-started/concepts" />
+</Cards>

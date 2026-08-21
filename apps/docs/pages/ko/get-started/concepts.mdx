@@ -1,0 +1,138 @@
+---
+title: 핵심 개념
+description: Mirage Engine 문서 전반에서 사용하는 용어 정리.
+---
+
+import { Callout } from "nextra/components";
+
+# 핵심 개념
+
+## 타깃 (Target)
+
+생성자에 넘기는 단 하나의 요소입니다. Mirage는 이 요소와 모든 하위 요소를
+순회합니다. 바깥에 있는 것은 전부 무시합니다.
+
+타깃은 문서에 붙어 있어야 하고 레이아웃 박스가 0이 아니어야 합니다. `overlay`
+모드에서는 타깃의 **부모**에 캔버스가 마운트됩니다.
+
+## 씬 그래프와 `SceneNode`
+
+추출 패스마다 `SceneNode` 트리가 만들어집니다 — 요소마다 하나, 텍스트 노드마다
+하나입니다. 각 노드는 페이지 좌표계 rect, 확정된 `BoxStyles`, 줄 단위 텍스트
+박스, 그리고 어떤 Three.js 레이어에 속할지 결정하는 플래그를 담습니다.
+
+```ts
+interface SceneNode {
+  id: string;
+  type: "BOX" | "TEXT";
+  element: HTMLElement;
+  rect: NodeRect;
+  styles: BoxStyles;
+  textLines?: { text: string; rect: NodeRect }[];
+  visibility: Visibility;
+  isTraveler: boolean;
+  captureLayer: number;
+  wasmIndex?: number;
+  children: SceneNode[];
+}
+```
+
+## BOX 노드와 TEXT 노드
+
+- **BOX** — 요소입니다. 배경색, 그라디언트, 테두리, 라운드, 그림자, 이미지를
+  그리는 `ShaderMaterial` 메시 하나가 됩니다.
+- **TEXT** — 텍스트 노드입니다. 투명한 부모 메시(`BG_MESH`)와 렌더된 *줄*마다
+  하나씩의 자식 메시가 됩니다. 각 줄은 2D 캔버스에 그려진 뒤 `CanvasTexture`로
+  업로드됩니다.
+
+줄 단위로 쪼개는 이 방식 덕분에, 줄바꿈된 문단이 하나의 쿼드에 늘어나지 않고
+제자리에 정확히 놓입니다.
+
+## 더티 마스크 (Dirty mask)
+
+트래커는 변경이 있을 때마다 전체를 다시 추출하지 않습니다. 무엇이 바뀌었는지
+비트마스크로 OR 연산해서 아래로 전달합니다.
+
+| 플래그 | 값 | 의미 |
+| :-- | :-- | :-- |
+| `DIRTY_RECT` | `1 << 0` | 위치 이동 또는 크기 변경 |
+| `DIRTY_STYLE` | `1 << 1` | 시각 스타일 변경 |
+| `DIRTY_ZINDEX` | `1 << 2` | 스택 순서 변경 |
+| `DIRTY_STRUCTURE` | `1 << 3` | 자식 추가/제거 |
+| `DIRTY_CONTENT` | `1 << 4` | 텍스트 내용 변경 |
+
+## 가시성 레이어
+
+서로 독립적인 두 비트 플래그가 "그릴지"와 "선택 상태인지"를 결정합니다.
+
+```ts
+const USER_LAYER   = 1 << 0; // 눈에 보이는 씬에 그림
+const SELECT_LAYER = 1 << 1; // 추가로 선택 레이어에도 그림
+```
+
+이 플래그는 Three.js 레이어 채널로 매핑됩니다.
+
+| 채널 | 상수 | 용도 |
+| :-- | :-- | :-- |
+| `0` | `THREE_LAYERS.BASE` | 일반 가시 씬 |
+| `1` | `THREE_LAYERS.SELECTED` | 선택적으로 쓰는 선택 패스 |
+| `31 - n` | `THREE_LAYERS.getCaptureLayer(n)` | traveler 캡처 버퍼 `n` |
+| `31` | `THREE_LAYERS.HIDDEN` | 추출은 되지만 그리지 않음 |
+
+마크업에서는 [`data-mirage-filter`와
+`data-mirage-select`](/ko/guides/filtering)로 제어합니다.
+
+## Traveler
+
+**traveler**는 단색 대신 렌더 타깃을 샘플링하는 메시입니다. 먼저 캡처해 둔
+뒤쪽 씬을 다시 입력으로 넣는 방식이죠. 실제 페이지 콘텐츠에 반응하는 굴절,
+간유리, 렌즈 효과를 이렇게 만듭니다. [Traveler와 레이어](/ko/guides/traveler)를
+참고하세요.
+
+## 네이티브 스타일 (Native styles)
+
+`data-mirage-travel`에는 스타일 오버라이드 JSON 객체를 함께 넣을 수 있습니다.
+이 값이 있으면 Mirage는 같은 요소에 대해 오버라이드가 적용된 **두 번째
+메시**("네이티브 메시")를 만들고 다른 캡처 레이어에 배정합니다. 덕분에 한
+요소가 가시 씬에서는 이렇게, traveler 캡처 안에서는 저렇게 보이도록 만들 수
+있습니다.
+
+## 퀄리티 팩터
+
+`quality`는 텍스트 캔버스, SVG 래스터화, 렌더 타깃 해상도에 적용되는
+디바이스 픽셀 배수입니다.
+
+| 값 | 배수 |
+| :-- | :-- |
+| `"low"` | `1` |
+| `"medium"` *(기본)* | `2` |
+| `"high"` | `4` |
+| `number` | 해당 숫자 (최소 `0.1`) |
+
+## 프레임 루프
+
+```
+requestAnimationFrame
+  ├─ onBeforeRender    → Sandwich가 DOM 레이어 위치 동기화
+  ├─ onLayoutChange    → 추출 + 조정 (더티일 때만)
+  ├─ onScrollChange    → 스크롤 델타
+  ├─ onStyleChange     → 재추출 없이 유니폼만 빠르게 갱신
+  └─ onRender          → wasm 트랜스폼 패스 후 드로우
+```
+
+<Callout type="info">
+  매 프레임 반드시 도는 건 `onRender` 뿐입니다. 추출은 더티 플래그 뒤에
+  게이팅되어 있고, 이 점이 큰 페이지에서도 Mirage가 버티는 이유입니다.
+</Callout>
+
+## 공유 메모리 (WASM)
+
+부모/자식 오프셋은 Rust 모듈과 공유하는 하나의 `Float32Array`에 노드당
+5개 float으로 저장됩니다.
+
+```
+[ parentIndex, localX, localY, worldX, worldY ]
+```
+
+`update_physics`가 프레임마다 한 번 훑으며 위에서 아래로 월드 좌표를
+누적합니다. JavaScript는 복사 없이 결과를 읽습니다.

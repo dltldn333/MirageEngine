@@ -1,0 +1,181 @@
+---
+title: Mirage
+description: The Mirage class — the single public entry point of mirage-engine.
+---
+
+import { Callout } from "nextra/components";
+
+# `Mirage`
+
+The public facade. It owns an `Engine` and, optionally, a `SandwichRenderer`.
+
+```ts
+import { Mirage } from "mirage-engine";
+```
+
+## Constructor
+
+```ts
+new Mirage(target: HTMLElement, config: MirageConfig)
+```
+
+| Parameter | Type | Description |
+| :-- | :-- | :-- |
+| `target` | `HTMLElement` | The subtree root to mirror. Must be in the document with a non-zero box. |
+| `config` | `MirageConfig` | Options. See [Configuration](/reference/configuration). |
+
+Throws `[Mirage] Target element is required.` when `target` is falsy, and
+`[Mirage] Cannot find a container (parent or option).` when no mount container
+can be resolved.
+
+<Callout type="warning">
+  `config` is **required**. Pass an empty object (`{}`) if you want every
+  default — `new Mirage(el)` throws because the constructor reads
+  `config.sandwich`.
+</Callout>
+
+The constructor performs all synchronous setup: it injects the global
+stylesheet, resolves the mount container, and builds the registry, renderer and
+syncer. Nothing renders until you call `start()`.
+
+## Methods
+
+### `start()`
+
+```ts
+start(): Promise<void>
+```
+
+Boots the WebAssembly module (first call only), starts the DOM tracker and
+begins the render loop. If sandwich layering is enabled, initializes it too.
+
+Async — always await it before touching meshes or uniforms.
+
+```ts
+await mirage.start();
+```
+
+Calling `start()` after `stop()` resumes the loop. `Tracker.start()` is
+idempotent, so a redundant call is harmless.
+
+### `stop()`
+
+```ts
+stop(): void
+```
+
+Disconnects the `MutationObserver`, removes the resize/transition listeners,
+clears pending timers and ends the `requestAnimationFrame` loop. The scene,
+meshes and canvas stay in memory, so `start()` picks up where it left off.
+
+Use this when a tab is hidden or a route is inactive.
+
+### `destroy()`
+
+```ts
+destroy(): void
+```
+
+Stops the loop, disposes the `WebGLRenderer`, removes the canvas from the DOM
+and disposes tracked textures.
+
+<Callout type="warning">
+  After `destroy()` the instance is spent — create a new `Mirage` rather than
+  calling `start()` again.
+</Callout>
+
+### `getCanvas()`
+
+```ts
+getCanvas(): HTMLCanvasElement
+```
+
+Returns the canvas Mirage created and mounted. Useful for applying your own CSS
+(`filter`, `mix-blend-mode`, `mask-image`) or reading pixels.
+
+```ts
+mirage.getCanvas().style.mixBlendMode = "screen";
+```
+
+### `getTracker()`
+
+```ts
+getTracker(): Tracker
+```
+
+Returns the underlying [`Tracker`](/reference/packages#mirage-enginedom-tracker) so you
+can subscribe to lifecycle hooks.
+
+```ts
+const tracker = mirage.getTracker();
+
+tracker.onRender.add(() => {
+  // runs every frame, after Mirage has synced meshes
+});
+
+tracker.onLayoutChange.add((mask, deletions) => {
+  console.log("layout changed", mask, deletions.size);
+});
+```
+
+Available hook sets: `onBeforeRender`, `onLayoutChange`, `onScrollChange`,
+`onStyleChange`, `onRender`. Each is a plain `Set`, so remove a listener with
+`tracker.onRender.delete(fn)`.
+
+### `updateUniforms()`
+
+```ts
+updateUniforms(element: HTMLElement, uniforms: Record<string, any>): void
+```
+
+Writes uniform values straight into the material of the mesh that mirrors
+`element`, plus all of its child meshes and its native mesh if one exists. This
+is the fast path — it skips extraction and reconciliation entirely.
+
+```ts
+const card = document.querySelector("#card") as HTMLElement;
+
+mirage.updateUniforms(card, {
+  uTime: performance.now() / 1000,
+  opacity: 0.5,
+  backgroundColor: "rgb(255, 0, 0)",
+});
+```
+
+Recognized built-in keys: `width`, `height`, `borderRadius`, `borderWidth`,
+`backgroundColor`, `borderColor`, `opacity`, `bgOpacity`, `borderOpacity`,
+`texture`, `backgroundImage`, `boxShadow`. Any other key is forwarded to a
+custom uniform of the same name — declare it via
+[`data-mirage-shader`](/guides/shaders) first.
+
+Silently does nothing if the element has no mesh yet.
+
+### `test()`
+
+```ts
+test(): void
+```
+
+Internal debugging aid. Binds arrow keys to move the mesh mirroring `#box2`.
+Not part of the supported API; do not ship it.
+
+## Complete lifecycle
+
+```ts
+import { Mirage } from "mirage-engine";
+
+const target = document.querySelector("#app") as HTMLElement;
+const mirage = new Mirage(target, { mode: "overlay", quality: "high" });
+
+await mirage.start();
+
+const tracker = mirage.getTracker();
+const onFrame = () => {
+  mirage.updateUniforms(target, { uTime: performance.now() / 1000 });
+};
+tracker.onRender.add(onFrame);
+
+// later
+tracker.onRender.delete(onFrame);
+mirage.destroy();
+```

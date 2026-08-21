@@ -1,0 +1,191 @@
+---
+title: 성능
+description: Mirage Engine에서 프레임을 잡아먹는 요소와 되찾는 방법.
+---
+
+import { Callout } from "nextra/components";
+
+# 성능
+
+Mirage는 DOM 측정, 텍스처 생성, WebGL 렌더링을 여러분 앱과 같은 스레드에서
+수행합니다. 성능 작업의 대부분은 첫 번째를 덜 하는 것에 관한 것입니다.
+
+## 시간은 어디로 가나
+
+| 단계 | 빈도 | 주요 비용 |
+| :-- | :-- | :-- |
+| 추출 | 더티일 때만 | 노드당 `getBoundingClientRect` + `getComputedStyle` |
+| 텍스트 줄 측정 | 내용 변경 시 | 토큰당 `Range.getClientRects()` |
+| 조정 | 추출 후 | 메시 생성/갱신/해제 |
+| WASM 트랜스폼 | 매 프레임 | `Float32Array` 선형 1회 순회 |
+| Traveler 캡처 | 매 프레임 | **traveler당** 시저 씬 드로우 1회 |
+| 최종 드로우 | 매 프레임 | 씬 복잡도 |
+
+무조건 실행되는 건 마지막 셋뿐입니다. 추출은 더티 플래그 뒤에 게이팅되어
+있고, 그 게이트를 지키는 것이 가장 중요합니다.
+
+## 1. 필요 없는 것은 제외하세요
+
+가장 저렴한 노드는 아예 방문하지 않는 노드입니다.
+
+```html
+<div data-mirage-filter="end">
+  <iframe src="…"></iframe>
+  <video src="…"></video>
+</div>
+```
+
+`end`는 재귀를 즉시 중단합니다. 미디어 임베드, 지도, 서드파티 위젯, 가상 스크롤
+리스트, 설계상 화면 밖인 것들에 사용하세요.
+
+## 2. `canvasSize: "viewport"`를 유지하세요
+
+기본값은 캔버스를 윈도우 크기 + 200px 오버스캔으로 할당하므로, 40,000px 높이의
+페이지도 짧은 페이지와 비용이 같습니다.
+
+```ts
+new Mirage(target, { mode: "overlay", canvasSize: "viewport" });
+```
+
+<Callout type="warning">
+  `canvasSize: "document"`는 타깃 전체 높이만큼의 프레임버퍼를 할당하고, 여기에
+  `devicePixelRatio`와 `quality`가 곱해집니다. 긴 페이지에서는
+  `MAX_TEXTURE_SIZE`를 넘겨 실패하거나 매우 느려집니다. `IntersectionObserver`
+  텍스처 컬링도 꺼집니다.
+</Callout>
+
+## 3. `quality` 조정
+
+`quality`는 텍스트 캔버스, SVG 래스터화, 렌더 타깃의 해상도 배수입니다.
+메모리는 제곱으로 늘어납니다.
+
+```ts
+new Mirage(target, { quality: "medium" }); // 2 — 기본값
+```
+
+| 값 | 배수 | 적합한 상황 |
+| :-- | :-- | :-- |
+| `"low"` | 1 | 모바일, 텍스트가 빽빽한 화면, traveler가 많을 때 |
+| `"medium"` | 2 | 기본값. 대부분의 디스플레이에서 무난 |
+| `"high"` | 4 | 큰 타이포, 레티나 히어로 섹션 |
+| `number` | 사용자 지정 | 예: 절충안으로 `1.5` |
+
+런타임에 적응시키기:
+
+```ts
+const isMobile = window.matchMedia("(max-width: 768px)").matches;
+const dpr = window.devicePixelRatio;
+
+new Mirage(target, { quality: isMobile ? "low" : dpr > 2 ? 2 : "high" });
+```
+
+## 4. 빠른 경로로 애니메이션하세요
+
+인라인 `transform` / `opacity`를 쓰면 재추출 없이 메시만 수정됩니다. 클래스
+변경, `left`/`top`, 마진, 패딩은 전체 재측정을 강제합니다.
+
+```ts
+gsap.to(el, { x: 200, opacity: 0.4 });        // 빠른 경로
+el.style.left = "200px";                       // layoutChanged 발동
+```
+
+[메시 애니메이션](/ko/guides/animation)을 참고하세요.
+
+## 5. traveler 개수를 관리하세요
+
+`captureRenderTarget`은 레이어당이 아니라 **traveler 메시당** 씬을 한 번씩
+렌더링합니다. traveler가 10개면 매 프레임 씬 드로우가 10번 추가됩니다.
+
+- 작은 traveler 여러 개보다 큰 traveler 하나
+- `travelerClipArea`는 변위에 필요한 만큼만
+- 실제로 중첩하는 게 아니라면 레이어 번호를 올리지 마세요
+
+## 6. 보이지 않을 때는 멈추세요
+
+```ts
+document.addEventListener("visibilitychange", () => {
+  document.hidden ? mirage.stop() : mirage.start();
+});
+
+const io = new IntersectionObserver(([entry]) => {
+  entry.isIntersecting ? mirage.start() : mirage.stop();
+});
+io.observe(target);
+```
+
+`stop()`은 `requestAnimationFrame` 루프를 끝내고 옵저버를 끊되 씬은 유지하므로
+재시작이 즉각적입니다.
+
+## 7. 리사이즈 디바운스
+
+```ts
+new Mirage(target, {
+  resizeDebounce: {
+    delay: 200,
+    onStart: () => mirage.getCanvas().style.setProperty("opacity", "0.4"),
+    onEnd: () => mirage.getCanvas().style.removeProperty("opacity"),
+  },
+});
+```
+
+리사이즈는 전체 재추출과 렌더러·렌더 타깃 재할당을 강제합니다. 기본 150ms면
+보통 충분하고, 무거운 페이지에서는 더 올리세요.
+
+## 텍스처 메모리
+
+`TextureLifecycleManager`는 300px 루트 마진으로 이미지 요소를 관찰하며, 화면
+밖으로 스크롤된 텍스처를 해제하고 돌아오면 다시 로드합니다.
+
+<Callout type="info">
+  이 컬링은 `mode === "overlay"` **그리고** `canvasSize === "viewport"`일 때만
+  동작합니다. 다른 조합에서는 모든 텍스처가 페이지 수명 내내 메모리에
+  남습니다.
+</Callout>
+
+이미지는 가능하면 `createImageBitmap`으로 메인 스레드 밖에서 디코딩되고, SVG
+data URL은 `Image` 디코딩으로 폴백합니다.
+
+## 텍스트 비용
+
+텍스트는 Mirage가 측정하는 것 중 가장 비쌉니다. `extractTextLines`는 토큰을
+순회하며 각각에 `Range.getClientRects()`를 호출하고, 단어 중간에서 줄바꿈되는
+토큰(`word-break: break-all`, 공백 없는 CJK 텍스트)에서는 **글자 단위** 순회로
+폴백합니다.
+
+- 미러링 대상 안의 긴 문단에는 `word-break: break-all`을 피하세요
+- 셰이딩하지 않을 본문 텍스트는 제외하세요
+- 텍스트 줄 하나가 각각 메시 하나와 캔버스 텍스처 하나가 됩니다. 50줄짜리
+  문단은 메시 50개입니다
+
+## 측정
+
+```ts
+const tracker = mirage.getTracker();
+
+let last = performance.now();
+tracker.onRender.add(() => {
+  const now = performance.now();
+  const fps = 1000 / (now - last);
+  last = now;
+  if (fps < 45) console.warn("프레임 예산 초과", fps.toFixed(1));
+});
+
+tracker.onLayoutChange.add((mask) => {
+  console.time("extract");
+  queueMicrotask(() => console.timeEnd("extract"));
+});
+```
+
+Chrome DevTools → Performance에서 `renderLoop` 아래의 long task를 보세요.
+`getBoundingClientRect` / `getComputedStyle`에 시간이 몰려 있다면 추출이 너무
+자주 도는 것이므로, 무엇이 트리를 더럽히는지 확인하세요.
+
+## 빠른 체크리스트
+
+- [ ] 무거운 서브트리에 `data-mirage-filter="end"` 적용
+- [ ] `canvasSize`는 `"viewport"` 유지
+- [ ] 모바일에서 `quality` 하향
+- [ ] 애니메이션은 `transform` / `opacity` 또는 `updateUniforms()`
+- [ ] traveler 개수는 한 자릿수
+- [ ] 숨겨진 탭에서 `stop()`
+- [ ] 정리 시 프레임 훅 해제

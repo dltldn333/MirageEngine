@@ -1,0 +1,43 @@
+name: 📖 Documentation issue
+description: Something in the docs is wrong, missing or untranslated
+labels: ["documentation"]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page URL
+      placeholder: "https://mirage-engine.vercel.app/ko/guides/traveler"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: locale
+    attributes:
+      label: Locale
+      options:
+        - English
+        - 한국어
+        - Both
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of problem
+      options:
+        - Factually wrong / does not match the code
+        - Missing information
+        - Missing translation
+        - Broken link or example
+        - Typo / wording
+    validations:
+      required: true
+
+  - type: textarea
+    id: detail
+    attributes:
+      label: Details
+      description: Quote the passage and describe what it should say
+    validations:
+      required: true

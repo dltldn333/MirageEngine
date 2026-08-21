@@ -1,0 +1,111 @@
+---
+title: 렌더링 모드
+description: overlay와 duplicate, viewport와 document 캔버스 중에서 고르기.
+---
+
+import { Callout } from "nextra/components";
+
+# 렌더링 모드
+
+캔버스가 어디에 놓이는지, 얼마나 큰지를 서로 독립적인 두 선택으로 정합니다.
+
+## `mode` — 캔버스 위치
+
+### `overlay` (기본)
+
+캔버스가 **타깃의 부모**의 첫 자식으로 마운트되어 원본 콘텐츠 위에 쌓입니다.
+`pointer-events`가 `none`이라 모든 클릭이 아래의 실제 DOM으로 통과합니다.
+
+```ts
+new Mirage(target, { mode: "overlay" });
+```
+
+살아 있는 UI의 *겉모습만 바꾸면서* 상호작용은 그대로 유지하고 싶을 때
+사용합니다. `data-mirage-dom="hide"`와 함께 쓰면 사용자에게는 WebGL 버전만
+보입니다.
+
+### `duplicate`
+
+캔버스가 **별도의 컨테이너**에 마운트되고 타깃의 사본을 보여 줍니다. 원본은
+제자리에 그대로 보입니다. 사용자가 실제로 보는 대상이 사본이므로
+`pointer-events`는 `auto`입니다.
+
+```ts
+new Mirage(target, {
+  mode: "duplicate",
+  container: document.querySelector("#preview") as HTMLElement,
+});
+```
+
+`container`를 생략하면 타깃의 부모로 대체됩니다.
+
+프리뷰, 썸네일, 미니맵, 같은 콘텐츠의 스타일 다른 두 번째 뷰에 사용합니다.
+
+### 비교
+
+| | `overlay` | `duplicate` |
+| :-- | :-- | :-- |
+| 캔버스 위치 | 타깃 위에 `fixed` 또는 `absolute` | `container` 안 일반 흐름 |
+| `pointer-events` | `none` | `auto` |
+| 원본 DOM | 보통 `data-mirage-dom`으로 숨김 | 그대로 보임 |
+| `canvasSize` 옵션 | 적용됨 | 무시됨 (항상 타깃 박스) |
+| 대표 용도 | 셰이더 입힌 라이브 UI | 프리뷰 / 두 번째 뷰 |
+
+---
+
+## `canvasSize` — 캔버스 크기
+
+`overlay` 모드에서만 의미가 있습니다.
+
+### `viewport` (기본)
+
+캔버스를 `window.innerWidth/Height`에 사방 **200px 오버스캔**을 더한 크기로
+잡고, `position: fixed`로 `-200px, -200px`에 고정합니다.
+
+메시는 뷰포트 좌표계에 배치되고 스크롤은 오프셋으로 적용됩니다. 화면 밖
+콘텐츠도 씬 그래프에는 존재하지만 래스터화 비용은 거의 0입니다.
+
+```ts
+new Mirage(target, { mode: "overlay", canvasSize: "viewport" });
+```
+
+<Callout type="info">
+  오버스캔 여백 덕분에 빠르게 스크롤할 때 가장자리에서 요소가 튀어나오듯
+  나타나는 현상이 없습니다.
+</Callout>
+
+### `document`
+
+캔버스가 타깃의 전체 바운딩 박스와 같아지고, 타깃 오프셋 위치에 `absolute`로
+배치됩니다.
+
+```ts
+new Mirage(target, { mode: "overlay", canvasSize: "document" });
+```
+
+<Callout type="warning">
+  12,000px 높이의 페이지는 12,000px 높이의 프레임버퍼를 뜻합니다 — 여기에
+  `devicePixelRatio`와 `quality`가 곱해집니다. 많은 GPU에서
+  `MAX_TEXTURE_SIZE`를 넘겨 프레임이 떨어지거나 할당에 실패합니다. 효과가
+  정말로 뷰포트 밖 콘텐츠를 샘플링해야 할 때만 쓰세요.
+</Callout>
+
+| | `viewport` | `document` |
+| :-- | :-- | :-- |
+| 캔버스 크기 | 윈도우 + 400px | 타깃 박스 전체 |
+| CSS position | `fixed` | `absolute` |
+| 긴 페이지 비용 | 일정 | 페이지 높이에 비례 |
+| 텍스처 컬링 | 활성 | 비활성 |
+| 적합한 곳 | 스크롤 페이지 | 높이가 고정된 짧은 섹션 |
+
+<Callout type="info">
+  `IntersectionObserver` 기반 텍스처 컬링은 `mode === "overlay"`이면서
+  `canvasSize === "viewport"`일 때만 켜집니다. 다른 조합에서는 모든 이미지
+  텍스처가 메모리에 상주합니다.
+</Callout>
+
+## 선택 기준
+
+- 스크롤되는 사이트 전체에 셰이더 효과 → `overlay` + `viewport`
+- 높이가 고정된 히어로 섹션에 굴절 효과 → `overlay` + `document`
+- 에디터 옆의 라이브 프리뷰 패널 → `duplicate`

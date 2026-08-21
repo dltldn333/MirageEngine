@@ -1,0 +1,130 @@
+---
+title: 빠른 시작
+description: 열 줄 남짓으로 첫 DOM 서브트리를 WebGL에 미러링합니다.
+---
+
+import { Callout, Steps, Tabs } from "nextra/components";
+
+# 빠른 시작
+
+<Steps>
+
+### 미러링할 서브트리 지정
+
+Mirage는 요소 하나와 그 내부 전체를 미러링합니다. id를 붙여 주세요.
+
+```html
+<div id="target">
+  <h1>Hello, Mirage</h1>
+  <p>이 문단은 WebGL에서 텍스처가 입혀진 평면이 됩니다.</p>
+  <button>여전히 진짜로 클릭되는 버튼</button>
+</div>
+```
+
+<Callout type="info">
+  타깃에는 부모 요소가 있어야 합니다 — Mirage가 부모의 첫 자식으로 캔버스를
+  마운트하기 때문입니다. `document.body`는 되지만, 문서에 붙지 않은 노드는
+  안 됩니다.
+</Callout>
+
+### 엔진 생성 후 시작
+
+```ts
+import { Mirage } from "mirage-engine";
+
+const target = document.querySelector("#target") as HTMLElement;
+
+const mirage = new Mirage(target, {
+  mode: "overlay",
+  quality: "medium",
+});
+
+await mirage.start();
+```
+
+`start()`는 첫 호출에서 WebAssembly 모듈을 부팅하기 때문에 비동기입니다.
+메시를 건드리기 전에 반드시 `await` 하거나 `.then()`으로 이어 주세요.
+
+### 원본 DOM 숨기기 (선택)
+
+`overlay` 모드에서는 WebGL 사본이 살아 있는 DOM *위에* 그려지므로 기본적으로
+둘 다 보입니다. `data-mirage-dom="hide"`를 붙이면 상호작용과 접근성은
+유지한 채 원본만 사라지게 할 수 있습니다.
+
+```html
+<div id="target" data-mirage-dom="hide">…</div>
+```
+
+<Callout type="warning">
+  이 속성은 `display: none`이 아니라 `opacity: 0`을 적용합니다 — 요소는 여전히
+  레이아웃 공간을 차지하고, 클릭을 받고, 스크린 리더에도 읽힙니다. 의도된
+  동작입니다. Mirage가 미러링하려면 실제 레이아웃 박스가 필요하니까요.
+</Callout>
+
+### 정리
+
+```ts
+mirage.stop();    // 렌더 루프만 멈춤, 씬은 유지
+mirage.destroy(); // 정지 + 렌더러 해제 + 캔버스 제거
+```
+
+</Steps>
+
+## 전체 예제
+
+```ts
+import { Mirage } from "mirage-engine";
+
+const target = document.querySelector("#target") as HTMLElement;
+
+const mirage = new Mirage(target, {
+  mode: "overlay",        // "overlay" (기본) | "duplicate"
+  canvasSize: "viewport", // "viewport" (기본) | "document"
+  quality: "medium",      // "low" | "medium" | "high" | number
+  resizeDebounce: { delay: 150 },
+});
+
+await mirage.start();
+
+// 탭이 백그라운드로 가면 일시정지
+document.addEventListener("visibilitychange", () => {
+  document.hidden ? mirage.stop() : mirage.start();
+});
+
+// 언마운트 시 정리
+window.addEventListener("beforeunload", () => mirage.destroy());
+```
+
+## duplicate 모드
+
+`overlay`는 원본을 제자리에서 덮습니다. `duplicate`는 사본을 다른 컨테이너에
+렌더링해서 같은 서브트리를 두 곳에 보여 줍니다.
+
+```ts
+const target = document.querySelector("#target") as HTMLElement;
+const container = document.querySelector("#preview") as HTMLElement;
+
+const mirage = new Mirage(target, {
+  mode: "duplicate",
+  container, // duplicate 모드에서만 유효
+});
+
+await mirage.start();
+```
+
+자세한 비교는 [렌더링 모드](/ko/guides/modes)를 참고하세요.
+
+## 자주 하는 실수
+
+| 증상 | 원인 | 해결 |
+| :-- | :-- | :-- |
+| `Cannot find a container` 예외 | 타깃에 부모가 없거나, duplicate 모드인데 마운트된 부모가 없음 | 타깃을 먼저 문서에 붙이세요 |
+| 아무것도 안 보임 | `start()`를 await 하지 않았거나 타깃의 width/height가 0 | `await mirage.start()`, 타깃에 레이아웃 박스 부여 |
+| 내용이 두 번 보임 | overlay 모드인데 원본이 그대로 보임 | `data-mirage-dom="hide"` 추가 |
+| 텍스트가 흐릿함 | 기기 대비 `quality`가 낮음 | `"high"`로 올리거나 `3` 같은 숫자 지정 |
+
+## 다음 단계
+
+- [핵심 개념](/ko/get-started/concepts) — 문서 전반에서 쓰는 용어
+- [설정](/ko/reference/configuration) — 모든 옵션과 기본값
+- [데이터 속성](/ko/reference/data-attributes) — 마크업으로 Mirage 제어하기

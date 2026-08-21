@@ -1,0 +1,180 @@
+---
+title: Mirage
+description: mirage-engine의 유일한 공개 진입점인 Mirage 클래스.
+---
+
+import { Callout } from "nextra/components";
+
+# `Mirage`
+
+공개 파사드입니다. 내부에 `Engine`을 소유하고, 선택적으로 `SandwichRenderer`를
+함께 가집니다.
+
+```ts
+import { Mirage } from "mirage-engine";
+```
+
+## 생성자
+
+```ts
+new Mirage(target: HTMLElement, config: MirageConfig)
+```
+
+| 매개변수 | 타입 | 설명 |
+| :-- | :-- | :-- |
+| `target` | `HTMLElement` | 미러링할 서브트리 루트. 문서에 붙어 있고 박스 크기가 0이 아니어야 합니다. |
+| `config` | `MirageConfig` | 옵션. [설정](/ko/reference/configuration) 참고. |
+
+`target`이 falsy면 `[Mirage] Target element is required.`, 마운트 컨테이너를
+찾지 못하면 `[Mirage] Cannot find a container (parent or option).` 예외를
+던집니다.
+
+<Callout type="warning">
+  `config`는 **필수**입니다. 전부 기본값으로 쓰려면 빈 객체(`{}`)를 넘기세요 —
+  생성자가 `config.sandwich`를 읽기 때문에 `new Mirage(el)`은 예외를 던집니다.
+</Callout>
+
+생성자는 동기 초기화를 전부 수행합니다. 전역 스타일시트를 주입하고, 마운트
+컨테이너를 결정하고, 레지스트리·렌더러·싱커를 만듭니다. `start()`를 호출하기
+전까지는 아무것도 그리지 않습니다.
+
+## 메서드
+
+### `start()`
+
+```ts
+start(): Promise<void>
+```
+
+WebAssembly 모듈을 부팅하고(최초 1회), DOM 트래커를 시작하고, 렌더 루프를
+돌리기 시작합니다. 샌드위치 레이어링이 켜져 있으면 함께 초기화합니다.
+
+비동기입니다 — 메시나 유니폼을 건드리기 전에 반드시 await 하세요.
+
+```ts
+await mirage.start();
+```
+
+`stop()` 이후에 `start()`를 부르면 루프가 재개됩니다. `Tracker.start()`는
+멱등이라 중복 호출해도 문제없습니다.
+
+### `stop()`
+
+```ts
+stop(): void
+```
+
+`MutationObserver`를 끊고, 리사이즈/트랜지션 리스너를 제거하고, 대기 중인
+타이머를 정리한 뒤 `requestAnimationFrame` 루프를 종료합니다. 씬·메시·캔버스는
+메모리에 남아 있어서 `start()`가 이어서 재개합니다.
+
+탭이 숨겨졌거나 라우트가 비활성일 때 쓰세요.
+
+### `destroy()`
+
+```ts
+destroy(): void
+```
+
+루프를 멈추고, `WebGLRenderer`를 해제하고, 캔버스를 DOM에서 제거하고, 추적 중인
+텍스처를 정리합니다.
+
+<Callout type="warning">
+  `destroy()` 이후의 인스턴스는 재사용할 수 없습니다 — `start()`를 다시 부르지
+  말고 새 `Mirage`를 만드세요.
+</Callout>
+
+### `getCanvas()`
+
+```ts
+getCanvas(): HTMLCanvasElement
+```
+
+Mirage가 만들어 마운트한 캔버스를 반환합니다. 직접 CSS(`filter`,
+`mix-blend-mode`, `mask-image`)를 입히거나 픽셀을 읽을 때 유용합니다.
+
+```ts
+mirage.getCanvas().style.mixBlendMode = "screen";
+```
+
+### `getTracker()`
+
+```ts
+getTracker(): Tracker
+```
+
+내부 [`Tracker`](/ko/reference/packages#mirage-enginedom-tracker)를 반환해서 라이프사이클
+훅을 구독할 수 있게 합니다.
+
+```ts
+const tracker = mirage.getTracker();
+
+tracker.onRender.add(() => {
+  // Mirage가 메시를 동기화한 뒤, 매 프레임 실행
+});
+
+tracker.onLayoutChange.add((mask, deletions) => {
+  console.log("레이아웃 변경", mask, deletions.size);
+});
+```
+
+사용 가능한 훅: `onBeforeRender`, `onLayoutChange`, `onScrollChange`,
+`onStyleChange`, `onRender`. 전부 평범한 `Set`이므로
+`tracker.onRender.delete(fn)`으로 해제합니다.
+
+### `updateUniforms()`
+
+```ts
+updateUniforms(element: HTMLElement, uniforms: Record<string, any>): void
+```
+
+`element`를 미러링하는 메시의 머티리얼에 유니폼 값을 직접 씁니다. 자식 메시와
+네이티브 메시가 있으면 함께 적용됩니다. 추출과 조정을 완전히 건너뛰는 빠른
+경로입니다.
+
+```ts
+const card = document.querySelector("#card") as HTMLElement;
+
+mirage.updateUniforms(card, {
+  uTime: performance.now() / 1000,
+  opacity: 0.5,
+  backgroundColor: "rgb(255, 0, 0)",
+});
+```
+
+내장 키: `width`, `height`, `borderRadius`, `borderWidth`, `backgroundColor`,
+`borderColor`, `opacity`, `bgOpacity`, `borderOpacity`, `texture`,
+`backgroundImage`, `boxShadow`. 그 외의 키는 같은 이름의 커스텀 유니폼으로
+전달되므로, 먼저 [`data-mirage-shader`](/ko/guides/shaders)로 선언해야 합니다.
+
+메시가 아직 없으면 아무 일도 하지 않고 조용히 반환합니다.
+
+### `test()`
+
+```ts
+test(): void
+```
+
+내부 디버깅용입니다. `#box2`를 미러링하는 메시를 방향키로 움직입니다. 지원
+API가 아니므로 프로덕션에 쓰지 마세요.
+
+## 전체 라이프사이클
+
+```ts
+import { Mirage } from "mirage-engine";
+
+const target = document.querySelector("#app") as HTMLElement;
+const mirage = new Mirage(target, { mode: "overlay", quality: "high" });
+
+await mirage.start();
+
+const tracker = mirage.getTracker();
+const onFrame = () => {
+  mirage.updateUniforms(target, { uTime: performance.now() / 1000 });
+};
+tracker.onRender.add(onFrame);
+
+// 나중에
+tracker.onRender.delete(onFrame);
+mirage.destroy();
+```
