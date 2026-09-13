@@ -3,19 +3,11 @@
     "title": "Home",
     "type": "page",
     "display": "hidden",
-    "theme": {
-      "layout": "full",
-      "timestamp": false
-    }
+    "theme": { "layout": "full", "timestamp": false }
   },
-  "get-started": {
-    "title": "Get Started",
-    "type": "page"
-  },
-  "contact": {
-    "title": "Contact ↗",
-    "type": "page",
-    "href": "https://github.com/dltldn333/MirageEngine",
-    "newWindow": true
-  }
+  "get-started": { "title": "Get Started", "type": "page" },
+  "guides": { "title": "Guides", "type": "page" },
+  "reference": { "title": "Reference", "type": "page" },
+  "contributing": { "title": "Contributing", "type": "page" },
+  "ko": { "title": "한국어", "type": "page" }
 }

@@ -1,0 +1,229 @@
+---
+title: Packages
+description: The Mirage Engine monorepo package map and each package's public API.
+---
+
+import { Callout, FileTree } from "nextra/components";
+
+# Packages
+
+Mirage Engine is a pnpm monorepo. `mirage-engine` is the package you normally
+install; the rest are published so you can pick just one piece.
+
+| Package | npm | Depends on |
+| :-- | :-- | :-- |
+| `mirage-engine` | [↗](https://www.npmjs.com/package/mirage-engine) | core, painter, sandwich |
+| `@mirage-engine/core` | [↗](https://www.npmjs.com/package/@mirage-engine/core) | painter, dom-tracker, wasm-compute |
+| `@mirage-engine/painter` | [↗](https://www.npmjs.com/package/@mirage-engine/painter) | three *(peer)* |
+| `@mirage-engine/dom-tracker` | [↗](https://www.npmjs.com/package/@mirage-engine/dom-tracker) | — |
+| `@mirage-engine/sandwich` | [↗](https://www.npmjs.com/package/@mirage-engine/sandwich) | dom-tracker |
+| `@mirage-engine/wasm-compute` | internal | Rust / wasm-bindgen |
+
+<FileTree>
+  <FileTree.Folder name="packages" defaultOpen>
+    <FileTree.Folder name="mirage-engine"><FileTree.File name="core/Mirage.ts" /></FileTree.Folder>
+    <FileTree.Folder name="core">
+      <FileTree.File name="core/Engine.ts" />
+      <FileTree.File name="core/Syncer.ts" />
+      <FileTree.File name="renderer/Renderer.ts" />
+      <FileTree.File name="dom/Extractor.ts" />
+      <FileTree.File name="animation/Animator.ts" />
+      <FileTree.File name="store/MeshRegistry.ts" />
+      <FileTree.File name="store/TextureLifecycleManager.ts" />
+      <FileTree.File name="wasm/WasmSynchronizer.ts" />
+    </FileTree.Folder>
+    <FileTree.Folder name="dom-tracker">
+      <FileTree.File name="Tracker.ts" />
+      <FileTree.File name="Parser.ts" />
+    </FileTree.Folder>
+    <FileTree.Folder name="painter">
+      <FileTree.File name="Painter.ts" />
+      <FileTree.File name="Box/BoxGenerator.ts" />
+      <FileTree.File name="Text/TextGenerator.ts" />
+      <FileTree.File name="Text/FontMetricsManager.ts" />
+      <FileTree.File name="tools/parser.ts" />
+    </FileTree.Folder>
+    <FileTree.Folder name="sandwich"><FileTree.File name="index.ts" /></FileTree.Folder>
+    <FileTree.Folder name="wasm-compute"><FileTree.File name="src/lib.rs" /></FileTree.Folder>
+  </FileTree.Folder>
+</FileTree>
+
+---
+
+## `@mirage-engine/core`
+
+Everything except the facade. Use it if you are building your own wrapper.
+
+```ts
+import { Engine, WasmSynchronizer } from "@mirage-engine/core";
+import type { CoreConfig, SceneNode, Quality } from "@mirage-engine/core";
+```
+
+### `Engine`
+
+| Method | Signature | Notes |
+| :-- | :-- | :-- |
+| `constructor` | `(target, config: CoreConfig)` | Injects styles, resolves container, builds Renderer + Syncer |
+| `start` | `(): Promise<void>` | Boots wasm, starts the tracker |
+| `stop` | `(): void` | Stops the tracker |
+| `dispose` | `(): void` | Stops and disposes the renderer |
+| `getTracker` | `(): Tracker` | Underlying DOM tracker |
+| `getCanvas` | `(): HTMLCanvasElement` | Mounted canvas |
+| `updateUniforms` | `(el, uniforms): void` | Fast-path uniform write |
+
+Also exported: the full type surface (`SceneNode`, `NodeRect`, `Visibility`,
+`THREE_LAYERS`, `ATTR_*` constants, `DIRTY_*` flags, `WASM_STRIDE` and the
+`OFFSET_*` indices).
+
+---
+
+## `@mirage-engine/painter`
+
+DOM-accurate Three.js materials, standalone. No DOM observation — you supply
+the styles.
+
+```ts
+import { Painter, TextGenerator, createBoxMaterial } from "@mirage-engine/painter";
+```
+
+### `Painter`
+
+```ts
+Painter.create(
+  type: "BOX" | "TEXT",
+  styles: BoxStyles | TextStyles,
+  content: string,
+  width: number,
+  height: number,
+  quality?: number,
+  texture?: THREE.Texture | null,
+  shaderHooks?: ShaderHooks,
+): THREE.Material
+
+Painter.update(material, type, styles, content, width, height, quality?, texture?): void
+
+Painter.forceUpdateUniforms(material: THREE.ShaderMaterial, values: BoxUniformValues): void
+```
+
+```ts
+import * as THREE from "three";
+import { Painter } from "@mirage-engine/painter";
+
+const material = Painter.create("BOX", {
+  backgroundColor: "rgb(20, 20, 30)",
+  backgroundImage: "linear-gradient(45deg, #f00, #00f)",
+  opacity: 1,
+  zIndex: 0,
+  borderRadius: "16px",
+  borderColor: "rgba(255,255,255,0.2)",
+  borderWidth: "2px",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+}, "", 320, 180);
+
+const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+mesh.scale.set(320, 180, 1);
+```
+
+### `TextGenerator`
+
+A `THREE.MeshBasicMaterial` subclass that paints text onto a `CanvasTexture`.
+
+```ts
+const mat = new TextGenerator("Hello", textStyles, 200, 40, 2);
+mat.updateText("Goodbye", textStyles, 200, 40);
+mat.dispose();
+```
+
+### CSS parsers
+
+`parsePixelValue`, `parseColor`, `splitByComma`, `parseLinearGradient` and
+`parseBoxShadow` are exported for reuse. They accept the string forms
+`getComputedStyle` returns.
+
+```ts
+import { parseLinearGradient } from "@mirage-engine/painter";
+
+parseLinearGradient("linear-gradient(45deg, red 0%, blue 100%)");
+// { angle: 0.785…, stops: [ { color, alpha, stop }, … ] }
+```
+
+---
+
+## `@mirage-engine/dom-tracker`
+
+Batched DOM observation with no rendering opinion. Zero dependencies.
+
+```ts
+import { Tracker, extractFromStyle } from "@mirage-engine/dom-tracker";
+
+const tracker = new Tracker(document.body, { resizeDebounce: { delay: 200 } });
+
+tracker.onLayoutChange.add((mask, deletions) => { /* … */ });
+tracker.onStyleChange.add((styles) => { /* Map<HTMLElement, StyleData> */ });
+tracker.onRender.add(() => { /* every frame */ });
+
+tracker.start();
+```
+
+| Hook | Payload | Fires |
+| :-- | :-- | :-- |
+| `onBeforeRender` | — | Every frame, first |
+| `onLayoutChange` | `(mask: number, deletions: Set<HTMLElement>)` | Only when the tree is dirty |
+| `onScrollChange` | `(scrollX, scrollY)` | When window scroll changed |
+| `onStyleChange` | `Map<HTMLElement, StyleData>` | When inline styles mutated |
+| `onRender` | — | Every frame, last |
+
+Each hook is a `Set`, so `add` / `delete` manage subscriptions.
+
+<Callout type="info">
+  Mirage itself subscribes to `onLayoutChange`, `onStyleChange` and `onRender`.
+  `onScrollChange` fires but has no built-in subscriber — it is there for you.
+</Callout>
+
+---
+
+## `@mirage-engine/sandwich`
+
+DOM teleportation: lift elements above a canvas while keeping page layout intact.
+
+```ts
+import { SandwichRenderer } from "@mirage-engine/sandwich";
+
+const sandwich = new SandwichRenderer({ frontSelector: "[data-hud]" });
+sandwich.init();
+```
+
+| Method | Purpose |
+| :-- | :-- |
+| `init()` | Create layers, hijack front elements, wire hooks, start the tracker |
+| `useTracker(tracker)` | Reuse an existing tracker instead of creating one |
+
+Mirage calls `useTracker(engine.getTracker())` automatically so both share one
+`requestAnimationFrame` loop.
+
+---
+
+## `@mirage-engine/wasm-compute`
+
+Rust crate compiled with `wasm-pack`. Not meant for direct use.
+
+```rust
+pub struct MemoryManager { /* Vec<f32> */ }
+
+impl MemoryManager {
+    pub fn new(capacity: usize) -> MemoryManager;
+    pub fn get_pointer(&self) -> *const f32;
+    pub fn get_length(&self) -> usize;
+    pub fn update_physics(&mut self, node_count: usize);
+}
+```
+
+Layout is five floats per node:
+
+```
+[ parentIndex, localX, localY, worldX, worldY ]
+```
+
+`update_physics` walks nodes in order, adding each parent's world position to
+the child's local offset. Because extraction emits parents before children, one
+forward pass resolves the whole tree.

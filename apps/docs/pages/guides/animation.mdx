@@ -1,0 +1,151 @@
+---
+title: Animating Meshes
+description: Three ways to move Mirage meshes, and when each one is the right cost.
+---
+
+import { Callout } from "nextra/components";
+
+# Animating Meshes
+
+Mirage gives you three animation paths with very different costs. Pick the
+cheapest one that expresses what you need.
+
+| Path | Triggered by | Re-extracts DOM? | Cost |
+| :-- | :-- | :-- | :-- |
+| Inline style animation | CSS / GSAP writing `element.style` | No | Low |
+| Uniform updates | `updateUniforms()` | No | Lowest |
+| Layout change | Class swap, DOM mutation | Yes | High |
+
+## 1. Animate the DOM, let Mirage follow
+
+The tracker watches `style` attribute mutations. When it sees one, `Parser`
+extracts the numeric values and Mirage patches the mesh directly — no
+extraction, no reconciliation.
+
+```ts
+import gsap from "gsap";
+
+gsap.to("#card", {
+  x: 300,
+  y: 40,
+  opacity: 0.5,
+  scaleX: 1.2,
+  duration: 1.2,
+  ease: "power3.out",
+});
+```
+
+Recognized fast-path properties:
+
+| CSS | `StyleData` field |
+| :-- | :-- |
+| `transform: translate3d/translate/matrix` | `x`, `y`, `z` |
+| `transform: scale*` | `scaleX`, `scaleY`, `scaleZ` |
+| `opacity` | `opacity` |
+| `background-color` | `backgroundColor` |
+| `background-image` | `backgroundImage` |
+| `box-shadow` | `boxShadow` |
+| `border-radius` | `borderRadius` |
+| `width` / `height` | `width`, `height` |
+
+For `x`/`y`, the value is written into the WASM shared array as a delta on the
+node's initial local offset, so children follow automatically through the
+parent-to-child accumulation pass.
+
+<Callout type="warning">
+  `left`, `top`, `margin` and `padding` set `layoutChanged`, which forces a
+  `getBoundingClientRect()` on the element and every registered descendant.
+  Animate with `transform` instead — it stays on the fast path.
+</Callout>
+
+## 2. Animate uniforms directly
+
+For anything purely visual, skip the DOM entirely.
+
+```ts
+const el = document.querySelector("#card") as HTMLElement;
+const t0 = performance.now();
+
+mirage.getTracker().onRender.add(() => {
+  const t = (performance.now() - t0) / 1000;
+
+  mirage.updateUniforms(el, {
+    opacity: 0.5 + 0.5 * Math.sin(t * 2),
+    borderRadius: 12 + 8 * Math.sin(t),
+    backgroundColor: [Math.sin(t) * 0.5 + 0.5, 0.2, 0.8, 1],
+  });
+});
+```
+
+This never touches the DOM, so it triggers no mutation records at all. It is the
+right tool for hover glows, pulsing borders and shader parameters.
+
+Built-in uniform keys: `width`, `height`, `borderRadius`, `borderWidth`,
+`backgroundColor`, `borderColor`, `opacity`, `bgOpacity`, `borderOpacity`,
+`texture`, `backgroundImage`, `boxShadow`. Anything else must be declared via
+[`data-mirage-shader`](/guides/shaders).
+
+## 3. Class swaps and layout changes
+
+Adding a class marks the tree `DIRTY_RECT | DIRTY_STYLE`, and Mirage
+re-extracts on the next frame after a short debounce.
+
+```ts
+card.classList.add("expanded");
+```
+
+Correct, but it walks the subtree again. Fine for discrete state changes,
+wrong for anything per-frame.
+
+<Callout type="info">
+  `transitionend` and `animationend` on the target also schedule a re-extract
+  (50 ms debounce) so the final resting state is exact even if intermediate
+  frames took the fast path.
+</Callout>
+
+## Scroll-driven effects
+
+Scroll position is available without any DOM work:
+
+```ts
+const tracker = mirage.getTracker();
+const hero = document.querySelector("#hero") as HTMLElement;
+
+tracker.onScrollChange.add((scrollX, scrollY) => {
+  mirage.updateUniforms(hero, {
+    uScroll: scrollY / window.innerHeight,
+  });
+});
+```
+
+`onScrollChange` has no internal subscriber, so it is entirely yours.
+
+<Callout type="info">
+  A separate 150 ms debounce after scrolling stops schedules a `DIRTY_RECT`
+  re-extract, which corrects any drift from sticky or parallax elements.
+</Callout>
+
+## Frame hooks
+
+```ts
+const tracker = mirage.getTracker();
+
+tracker.onBeforeRender.add(() => {
+  // before layout sync — Sandwich also runs here
+});
+
+tracker.onRender.add(() => {
+  // after meshes are synced, right before the draw call
+});
+```
+
+Both are `Set`s, so unsubscribe with `.delete(fn)`. Always unsubscribe on
+teardown — a stale closure holding a destroyed `Mirage` will throw every frame.
+
+## Performance checklist
+
+- Prefer `transform` over `left` / `top`
+- Prefer `updateUniforms()` over class swaps for visual-only changes
+- Batch related changes into one style write instead of many
+- Do not rewrite `data-mirage-shader` per frame — it rebuilds the mesh
+- Unsubscribe frame hooks when the component unmounts

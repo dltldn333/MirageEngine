@@ -1,0 +1,48 @@
+name: ✨ Feature request
+description: Suggest a capability / 새로운 기능을 제안합니다
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the use case before the implementation — the answer is often an
+        existing `data-*` attribute.
+        구현보다 사용 사례를 먼저 설명해 주세요. 이미 있는 `data-*` 속성이 답인
+        경우가 많습니다.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to build?
+      description: The end result you want, not the API you imagine
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: What have you tried?
+      description: Which existing options, attributes or hooks fell short, and how
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API (optional)
+      render: ts
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Which package?
+      multiple: true
+      options:
+        - mirage-engine
+        - "@mirage-engine/core"
+        - "@mirage-engine/painter"
+        - "@mirage-engine/dom-tracker"
+        - "@mirage-engine/sandwich"
+        - "@mirage-engine/wasm-compute"
+        - docs
+        - not sure

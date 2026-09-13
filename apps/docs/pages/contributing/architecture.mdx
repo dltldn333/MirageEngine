@@ -1,0 +1,212 @@
+---
+title: Architecture
+description: How a DOM mutation becomes a rendered frame, class by class.
+---
+
+import { Callout, Steps } from "nextra/components";
+
+# Architecture
+
+## Package dependency graph
+
+```
+              mirage-engine  (facade)
+                     │
+        ┌────────────┼────────────┐
+        ▼            ▼            ▼
+      core       sandwich      (types)
+        │            │
+   ┌────┼────┐       │
+   ▼    ▼    ▼       ▼
+painter │  wasm-  dom-tracker
+        └── compute
+```
+
+`dom-tracker` has zero dependencies. `painter` depends only on `three`. Every
+arrow points down — there are no cycles.
+
+## The frame pipeline
+
+<Steps>
+
+### `Tracker` decides *something changed*
+
+`packages/dom-tracker/src/Tracker.ts`
+
+A `MutationObserver` watches `childList`, `attributes`, `characterData` and
+`subtree`. Each record contributes bits to `pendingMask`:
+
+| Mutation | Bits set |
+| :-- | :-- |
+| `childList` | `DIRTY_STRUCTURE` |
+| `style` attribute | `DIRTY_RECT \| DIRTY_STYLE` + parsed `StyleData` |
+| `class` attribute | `DIRTY_RECT \| DIRTY_STYLE` |
+| `data-*` attribute | `DIRTY_RECT \| DIRTY_STYLE` (+ `DIRTY_STRUCTURE` for `data-mirage*`) |
+| `characterData` | `DIRTY_CONTENT \| DIRTY_RECT` |
+
+Structural changes flush immediately; everything else waits on a 200 ms
+debounce, which collapses a burst of edits into one extraction.
+
+`renderLoop` then fires five hook sets in order: `onBeforeRender`,
+`onLayoutChange` (only if dirty), `onScrollChange`, `onStyleChange`, `onRender`.
+
+### `Syncer` wires hooks to work
+
+`packages/core/src/core/Syncer.ts`
+
+`Syncer` owns no loop of its own — it is the adapter between tracker hooks and
+renderer calls.
+
+```ts
+tracker.onLayoutChange.add((mask, deletions) => {
+  renderer.updateScroll();
+  const graph = extractSceneGraph(target, mask, USER_LAYER, /* … */ ctx);
+  renderer.syncScene(graph, deletions);
+  renderer.saveInitialLocals(sharedArray);
+});
+
+tracker.onStyleChange.add((styles) => animateMeshByData(registry, styles, sharedArray));
+
+tracker.onRender.add(() => {
+  renderer.updateScroll();
+  wasmSync.updatePhysics(lastNodeCount);
+  renderer.syncMeshesByWasm(sharedArray);
+  renderer.render();
+});
+```
+
+### `Extractor` flattens the DOM
+
+`packages/core/src/dom/Extractor.ts`
+
+One recursive function, `extractSceneGraph`, produces the `SceneNode` tree. Per
+node it:
+
+- reads `getBoundingClientRect()` and `getComputedStyle()`
+- parses `data-mirage-filter` / `-select` into visibility bits
+- parses `data-mirage-travel` into `isTraveler`, `captureLayer`, `nativeLayer`
+  and native style overrides
+- parses `data-mirage-shader` into `ShaderHooks`
+- resolves `imageSrc` for `<img>`, inline-serialized `<svg>`, or
+  `background-image`
+- splits text nodes into per-line boxes with `Range.getClientRects()`
+- assigns `wasmIndex` and writes `[parent, localX, localY]` into shared memory
+
+Because parents are visited before children, the shared array comes out in
+topological order — which is what lets the WASM pass resolve in one sweep.
+
+### `Renderer` reconciles meshes
+
+`packages/core/src/renderer/Renderer.ts`
+
+`syncScene` detects resize/move, then calls `reconcileNode` recursively:
+
+- look up the mesh in `MeshRegistry` by element
+- if the shader hash changed, dispose and rebuild
+- otherwise update scale, position, layers and material uniforms
+- `TEXT` nodes go through `reconcileTextChild`, which rebuilds one child mesh
+  per line when content or style changed
+- register/unregister image textures with `TextureLifecycleManager`
+
+Deleted elements arrive in `pendingDeletions` and their meshes, geometries,
+materials and textures are disposed.
+
+### WASM resolves positions
+
+`packages/wasm-compute/src/lib.rs`
+
+```rust
+for i in 0..node_count {
+    let offset = i * 5;
+    let parent = buffer[offset];
+    if parent >= 0.0 {
+        let p = parent as usize * 5;
+        buffer[offset + 3] = buffer[p + 3] + buffer[offset + 1];
+        buffer[offset + 4] = buffer[p + 4] + buffer[offset + 2];
+    } else {
+        buffer[offset + 3] = buffer[offset + 1];
+        buffer[offset + 4] = buffer[offset + 2];
+    }
+}
+```
+
+`syncMeshesByWasm` then reads world coordinates and converts them to WebGL
+space, applying scroll offset (skipped for `position: fixed` meshes).
+
+### Render
+
+Travelers first: for each layer, the camera switches to capture channel
+`31 - n`, a scissor box is set per traveler, and the scene renders into that
+layer's `WebGLRenderTarget`. Then the camera returns to base and the visible
+frame is drawn, with per-mesh scissor hooks applied for `overflow: hidden`
+clipping.
+
+</Steps>
+
+## Key data structures
+
+### `MeshRegistry`
+
+A `WeakMap<HTMLElement, THREE.Mesh>`. Weak keys mean a removed element's mesh
+becomes collectible without bookkeeping. Text nodes are keyed by their parent
+element plus an index, since a `Text` node is not a valid `WeakMap` key on its
+own.
+
+### `TextureLifecycleManager`
+
+Three `WeakMap`s (texture, load status, url) plus an `IntersectionObserver` with
+a 300 px root margin. Off-screen textures are disposed and reloaded on return.
+Culling is enabled only in `overlay` + `viewport` mode.
+
+### Shared memory
+
+`WASM_STRIDE = 5` floats per node, pre-allocated for 10,000 nodes at
+`Syncer.start()`. The JS view is `new Float32Array(wasm.memory.buffer, ptr, len)`
+— the same bytes, no copying.
+
+<Callout type="warning">
+  A page with more than 10,000 mirrored nodes will write past the allocation.
+  There is currently no growth path; that is a known limitation.
+</Callout>
+
+## Layer allocation
+
+Channels are allocated from both ends to avoid collisions:
+
+```
+0  BASE                    ← normal visible scene
+1  SELECTED                ← data-mirage-select pass
+…
+21 getCaptureLayer(10)     ← traveler layer 10
+…
+30 getCaptureLayer(1)      ← traveler layer 1
+31 HIDDEN                  ← extracted but never drawn
+```
+
+## Why the design is shaped this way
+
+**Extraction is gated, rendering is not.** Rendering every frame is cheap and
+predictable. Extraction is not — it forces synchronous layout. So Mirage renders
+unconditionally and extracts only behind a dirty flag.
+
+**Text is split per line.** One quad per text node would stretch wrapped text.
+Measuring each line and giving it its own mesh keeps typography exact at the
+cost of more meshes.
+
+**Positions live in WASM, not JS.** A parent-to-child accumulation over a flat
+typed array is cache-friendly and avoids per-node object traversal in JS.
+
+**`WeakMap` for element caches.** Elements come and go with framework
+re-renders. Weak keys mean no leak and no manual invalidation.
+
+## Historical design notes
+
+The repository root carries two engineering logs worth reading before changing
+the sync or native paths:
+
+- `cbrs_troubleshooting.md` — why camera-based scrolling was replaced with
+  per-frame rect synchronization (the "200 ms teleport" bug with Lenis and
+  virtual scroll). Note it predates the WASM pass, so the function names in it
+  are stale.
+- `native_troubleshooting.md` — style pollution, layer-reset and SVG override
+  bugs found while building `data-mirage-travel="native"`.

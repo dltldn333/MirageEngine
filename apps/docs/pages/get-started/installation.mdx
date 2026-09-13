@@ -1,0 +1,161 @@
+---
+title: Installation
+description: Install Mirage Engine and its Three.js peer dependency.
+---
+
+import { Callout, Tabs, Steps } from "nextra/components";
+
+# Installation
+
+## Install
+
+Mirage Engine ships as an ES module with bundled type declarations.
+`three` is a **peer dependency** — install it yourself so your app controls the version.
+
+<Tabs items={["npm", "pnpm", "yarn", "bun"]}>
+  <Tabs.Tab>
+
+```bash
+npm install mirage-engine three
+```
+
+</Tabs.Tab>
+  <Tabs.Tab>
+
+```bash
+pnpm add mirage-engine three
+```
+
+</Tabs.Tab>
+  <Tabs.Tab>
+
+```bash
+yarn add mirage-engine three
+```
+
+</Tabs.Tab>
+  <Tabs.Tab>
+
+```bash
+bun add mirage-engine three
+```
+
+</Tabs.Tab>
+</Tabs>
+
+## Requirements
+
+| Requirement | Version | Note |
+| :-- | :-- | :-- |
+| `three` | `^0.160.0` | Peer dependency, not bundled |
+| Browser | WebGL2 + `MutationObserver` + `IntersectionObserver` | All evergreen browsers |
+| Module format | ESM | The package is `"type": "module"` |
+
+<Callout type="warning">
+  Mirage touches `window`, `document` and `WebGLRenderingContext` in its
+  constructor. It cannot run during server-side rendering — see
+  [SSR frameworks](#ssr-frameworks) below.
+</Callout>
+
+## Verify the install
+
+```ts
+import { Mirage } from "mirage-engine";
+
+const target = document.querySelector("#target") as HTMLElement;
+const mirage = new Mirage(target, {});
+
+await mirage.start();
+console.log(mirage.getCanvas()); // <canvas> injected next to your target
+```
+
+If you see a canvas element logged and your target visually duplicated, the
+install is working.
+
+## SSR frameworks
+
+Import and construct Mirage only on the client.
+
+<Tabs items={["Next.js", "Nuxt", "SvelteKit"]}>
+  <Tabs.Tab>
+```tsx
+"use client";
+import { useEffect, useRef } from "react";
+
+export function MirageLayer() {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    let mirage: import("mirage-engine").Mirage | undefined;
+
+    (async () => {
+      const { Mirage } = await import("mirage-engine");
+      mirage = new Mirage(ref.current!, { mode: "overlay" });
+      await mirage.start();
+    })();
+
+    return () => mirage?.destroy();
+  }, []);
+
+  return <div ref={ref}>{/* your normal markup */}</div>;
+}
+```
+  </Tabs.Tab>
+  <Tabs.Tab>
+```vue
+<script setup lang="ts">
+import { onMounted, onBeforeUnmount, ref } from "vue";
+
+const root = ref<HTMLElement | null>(null);
+let mirage: any;
+
+onMounted(async () => {
+  const { Mirage } = await import("mirage-engine");
+  mirage = new Mirage(root.value!, { mode: "overlay" });
+  await mirage.start();
+});
+
+onBeforeUnmount(() => mirage?.destroy());
+</script>
+
+<template>
+  <div ref="root"><!-- your normal markup --></div>
+</template>
+```
+  </Tabs.Tab>
+  <Tabs.Tab>
+```svelte
+<script lang="ts">
+  import { onMount } from "svelte";
+
+  let root: HTMLElement;
+
+  onMount(async () => {
+    const { Mirage } = await import("mirage-engine");
+    const mirage = new Mirage(root, { mode: "overlay" });
+    await mirage.start();
+    return () => mirage.destroy();
+  });
+</script>
+
+<div bind:this={root}><!-- your normal markup --></div>
+```
+  </Tabs.Tab>
+</Tabs>
+
+## Sub-packages
+
+`mirage-engine` already bundles everything you need. The internals are also
+published separately if you want just one piece:
+
+| Package | Use it when |
+| :-- | :-- |
+| [`@mirage-engine/painter`](/reference/packages#mirage-enginepainter) | You want DOM-accurate Three.js materials without the DOM sync |
+| [`@mirage-engine/dom-tracker`](/reference/packages#mirage-enginedom-tracker) | You want the batched DOM observer on its own |
+| [`@mirage-engine/sandwich`](/reference/packages#mirage-enginesandwich) | You want DOM layering above a canvas without Mirage |
+| [`@mirage-engine/core`](/reference/packages#mirage-enginecore) | You are building your own facade over `Engine` |
+
+## Next steps
+
+Continue to the [Quick Start](/get-started/quick-start).

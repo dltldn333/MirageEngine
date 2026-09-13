@@ -1,0 +1,9 @@
+{
+  "modes": "렌더링 모드",
+  "filtering": "요소 필터링",
+  "traveler": "Traveler와 레이어",
+  "shaders": "커스텀 셰이더",
+  "animation": "메시 애니메이션",
+  "sandwich": "샌드위치 레이어링",
+  "performance": "성능"
+}

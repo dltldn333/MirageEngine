@@ -1,0 +1,65 @@
+---
+title: What is Mirage Engine?
+description: Mirage Engine mirrors live HTML DOM elements into a WebGL scene in real time.
+---
+
+import { Callout, Cards, Card } from "nextra/components";
+import { MiragePlayground } from "../../components/MiragePlayground";
+
+# What is Mirage Engine?
+
+> **An engine that mirrors HTML DOM elements to a WebGL scene in real time.**
+
+Mirage Engine reads your existing DOM tree — position, size, colors, borders,
+shadows, images and text — and rebuilds it as Three.js meshes on a canvas. It
+keeps watching the DOM and re-synchronizes whenever something moves, restyles or
+changes content.
+
+You keep writing HTML and CSS. Mirage gives you a WebGL copy of it that you can
+shade, distort and animate.
+
+## Why not just write WebGL?
+
+Building UI in WebGL means giving up the entire browser layout engine: flexbox,
+grid, text shaping, accessibility, form controls, hit-testing. Mirage's position
+is that you should not have to choose.
+
+| | Plain DOM | Plain WebGL | Mirage Engine |
+| :-- | :-- | :-- | :-- |
+| Layout engine | Browser | You | Browser |
+| Accessibility / SEO | Yes | No | Yes (real DOM stays) |
+| Per-pixel shader effects | No | Yes | Yes |
+| Text rendering | Browser | Manual atlas work | Browser metrics → canvas texture |
+
+## How it works
+
+Mirage runs a four-stage loop on every animation frame:
+
+1. **Track** — a `MutationObserver` plus scroll/resize listeners mark the tree
+   dirty and classify *what* changed with a bitmask.
+2. **Extract** — the dirty tree is walked and flattened into a `SceneNode` graph
+   carrying rects, computed styles, text lines and layer flags.
+3. **Reconcile** — each `SceneNode` is matched to a cached `THREE.Mesh`, which is
+   created, updated or disposed. Materials come from the Painter package.
+4. **Render** — traveler layers are captured into render targets, then the scene
+   is drawn.
+
+Position math for nested nodes is offloaded to a Rust/WebAssembly module that
+walks a flat `Float32Array` of parent/child offsets, so deep trees stay cheap.
+
+<Callout type="info">
+  Read [Architecture](/contributing/architecture) for the full pipeline with the
+  responsible class for each stage.
+</Callout>
+
+## Live demo
+
+<MiragePlayground />
+
+## Next steps
+
+<Cards>
+  <Card title="Installation" href="/get-started/installation" />
+  <Card title="Quick Start" href="/get-started/quick-start" />
+  <Card title="Core Concepts" href="/get-started/concepts" />
+</Cards>
