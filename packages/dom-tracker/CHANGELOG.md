@@ -1,5 +1,11 @@
 # @mirage-engine/dom-tracker
 
+## 0.3.12
+
+### Patch Changes
+
+- c36d306: readme use writeme
+
 ## 0.3.11
 
 ### Patch Changes
