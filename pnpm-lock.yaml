@@ -20,6 +20,9 @@ importers:
       vite-plugin-dts:
         specifier: ^3.0.0
         version: 3.9.1(rollup@3.29.5)(typescript@5.9.3)(vite@4.5.14)
+      writeme-cli:
+        specifier: ^0.1.0
+        version: 0.1.0
 
   apps/docs:
     dependencies:
@@ -2730,6 +2733,11 @@ packages:
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
     engines: {node: '>= 8'}
+    hasBin: true
+
+  writeme-cli@0.1.0:
+    resolution: {integrity: sha512-1GCurNW6UOL6VAj5HVKbaLGX+Z+rrH5wQPG2WAwAj5oA2uq6rJ1tLaH/u5NqY2N50Zn7X/myesMHmw40Og350g==}
+    engines: {node: '>=18'}
     hasBin: true
 
   yallist@2.1.2:
@@ -5826,6 +5834,8 @@ snapshots:
   which@2.0.2:
     dependencies:
       isexe: 2.0.0
+
+  writeme-cli@0.1.0: {}
 
   yallist@2.1.2: {}
 
