@@ -1,5 +1,13 @@
 # @mirage-engine/sandwich
 
+## 0.2.9
+
+### Patch Changes
+
+- bd2efa5: wasm
+- Updated dependencies [bd2efa5]
+  - @mirage-engine/dom-tracker@0.3.11
+
 ## 0.2.8
 
 ### Patch Changes

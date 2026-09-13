@@ -1,5 +1,11 @@
 # @mirage-engine/dom-tracker
 
+## 0.3.11
+
+### Patch Changes
+
+- bd2efa5: wasm
+
 ## 0.3.10
 
 ### Patch Changes

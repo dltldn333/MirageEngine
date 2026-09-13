@@ -1,5 +1,14 @@
 # dev
 
+## 1.0.24
+
+### Patch Changes
+
+- Updated dependencies [45b60a8]
+- Updated dependencies [bd2efa5]
+  - mirage-engine@0.3.22
+  - @mirage-engine/sandwich@0.2.9
+
 ## 1.0.23
 
 ### Patch Changes
