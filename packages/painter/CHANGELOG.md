@@ -1,5 +1,11 @@
 # @mirage-engine/painter
 
+## 1.0.13
+
+### Patch Changes
+
+- c36d306: readme use writeme
+
 ## 1.0.12
 
 ### Patch Changes

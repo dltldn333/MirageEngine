@@ -1,5 +1,13 @@
 # @mirage-engine/sandwich
 
+## 0.2.10
+
+### Patch Changes
+
+- c36d306: readme use writeme
+- Updated dependencies [c36d306]
+  - @mirage-engine/dom-tracker@0.3.12
+
 ## 0.2.9
 
 ### Patch Changes

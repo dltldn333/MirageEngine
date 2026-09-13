@@ -1,5 +1,14 @@
 # dev
 
+## 1.0.25
+
+### Patch Changes
+
+- c36d306: readme use writeme
+- Updated dependencies [c36d306]
+  - mirage-engine@0.3.23
+  - @mirage-engine/sandwich@0.2.10
+
 ## 1.0.24
 
 ### Patch Changes

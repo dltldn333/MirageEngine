@@ -1,5 +1,13 @@
 # docs
 
+## 1.0.32
+
+### Patch Changes
+
+- c36d306: readme use writeme
+- Updated dependencies [c36d306]
+  - mirage-engine@0.3.23
+
 ## 1.0.31
 
 ### Patch Changes
