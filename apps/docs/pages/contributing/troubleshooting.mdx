@@ -1,0 +1,156 @@
+---
+title: Troubleshooting
+description: Known failure modes, their causes and their fixes.
+---
+
+import { Callout } from "nextra/components";
+
+# Troubleshooting
+
+## Nothing renders
+
+| Check | How |
+| :-- | :-- |
+| Was `start()` awaited? | `await mirage.start()` — it is async because of WASM boot |
+| Does the target have a box? | `target.getBoundingClientRect()` must be non-zero |
+| Is the target in the document? | A detached node has no parent to mount into |
+| Is the canvas in the DOM? | `mirage.getCanvas().parentElement` |
+| Any WebGL context error? | Check the console for context-lost warnings |
+
+An element with `width: 0`, `height: 0` or `display: none` is skipped during
+extraction by design.
+
+## Content appears twice
+
+Expected in `overlay` mode — the WebGL copy is drawn over a still-visible
+original. Add `data-mirage-dom="hide"`:
+
+```html
+<div id="target" data-mirage-dom="hide">…</div>
+```
+
+If it still shows, the injected `#mirage-engine-styles` rule may be losing to a
+more specific selector of yours. The rule is:
+
+```css
+[data-mirage-dom="hide"] { opacity: 0 !important; }
+```
+
+## Text is blurry
+
+Raise `quality`. Text is rasterized to a canvas at `devicePixelRatio × quality`.
+
+```ts
+new Mirage(target, { quality: "high" }); // factor 4
+```
+
+If it is blurry only after a resize, the resize debounce has not fired yet —
+textures regenerate at the end of the debounce window.
+
+## Text is positioned wrong
+
+Each line becomes its own mesh, measured with `Range.getClientRects()`. Common
+causes of drift:
+
+- a webfont loaded **after** extraction — re-extract on `document.fonts.ready`
+- `letter-spacing` or `word-spacing` in unusual units
+- `text-transform` — measurement uses rendered glyphs, so this normally works,
+  but exotic combinations can drift
+
+```ts
+await document.fonts.ready;
+await mirage.start();
+```
+
+## Images do not appear
+
+| Cause | Fix |
+| :-- | :-- |
+| CORS | The image is fetched with `fetch()`; the server must send permissive CORS headers |
+| Not yet loaded | Textures load asynchronously and pop in a frame later |
+| Culled | Outside the 300 px `IntersectionObserver` margin — scroll it into view |
+| Unsupported source | Only `<img>`, inline `<svg>` and `background-image: url()` are read |
+
+Check the console for `[MirageEngine] Failed to load texture:`.
+
+## Traveler shows a hard edge
+
+The capture area is smaller than your UV displacement, so you are sampling
+pixels that were never written. Widen it:
+
+```ts
+new Mirage(target, { travelerClipArea: "150%" });
+```
+
+## Traveler is black
+
+- No render target for that layer — `createRenderTarget()` only runs once a
+  `data-mirage-travel` element is found in the DOM. Ensure the attribute is
+  present before `start()`, or that the tracker has seen it since.
+- Nothing is on the captured layer. Elements are captured only if their
+  `captureLayer` is at or above the traveler's.
+
+## Shader has no effect
+
+| Cause | Fix |
+| :-- | :-- |
+| Attribute is not strict JSON | `JSON.parse` throws; use double quotes everywhere |
+| Assigning to `gl_FragColor` in `colorModifier` | Write to `finalColor` instead |
+| Uniform not declared | Add it to `uniforms` before setting it via `updateUniforms()` |
+| Mesh rebuilding every frame | You are rewriting the attribute; use `updateUniforms()` |
+
+## Frame rate collapses
+
+Work through [Performance](/guides/performance). The usual culprits:
+
+1. `canvasSize: "document"` on a long page
+2. No `data-mirage-filter="end"` on heavy subtrees
+3. Animating `left` / `top` instead of `transform`
+4. Too many travelers — each one costs a full scene draw
+5. `quality: "high"` on a mobile GPU
+
+## Scroll drifts or lags
+
+Mirage synchronizes by polling the target's rect each frame, so custom scrolling
+(Lenis, virtual scroll, GSAP ScrollSmoother) should work without configuration.
+If elements lag:
+
+- confirm the element is inside the mirrored target
+- `position: fixed` elements skip the scroll offset by design — check that the
+  computed position is actually what you expect
+- a 150 ms post-scroll debounce triggers a corrective re-extract; drift that
+  persists past that is a real bug worth reporting
+
+## `Cannot find a container (parent or option)`
+
+The target has no `parentElement`, or `duplicate` mode was used with no
+`container` and no parent. Attach the target to the document before constructing
+Mirage.
+
+## Sandwich elements drift
+
+The front element follows its placeholder's rect. If the placeholder was removed
+or set to `display: none`, there is nothing to follow. Also check that your
+framework has not re-parented the hijacked element back.
+
+## More than 10,000 nodes
+
+Shared memory is pre-allocated for 10,000 nodes (`10000 * WASM_STRIDE`) at
+`Syncer.start()`. Beyond that, writes run past the buffer.
+
+<Callout type="warning">
+  There is no growth path today. Filter the tree down with
+  `data-mirage-filter="end"` on subtrees you do not need mirrored.
+</Callout>
+
+## Memory grows over time
+
+- Are you calling `destroy()` when the component unmounts?
+- Are frame hooks unsubscribed? `tracker.onRender.delete(fn)`
+- Texture culling is off unless `overlay` + `viewport`
+
+## Filing a bug
+
+Include the Mirage and `three` versions, browser, OS, GPU, the full config
+object, a minimal reproduction, and any console output. Reports with a
+reproduction get fixed; reports without one usually do not.

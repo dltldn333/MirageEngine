@@ -1,7 +1,24 @@
 import React, { useState } from "react";
 import { Sandpack } from "@codesandbox/sandpack-react";
+import { useRouter } from "next/router";
+import { currentLocale } from "./LocaleSwitch";
+
+const LABELS = {
+  en: {
+    mode: "Engine Mode",
+    quality: "Text Quality",
+    highlight: "Highlight Canvas",
+  },
+  ko: {
+    mode: "엔진 모드",
+    quality: "텍스트 품질",
+    highlight: "캔버스 강조",
+  },
+} as const;
 
 export const MiragePlayground = () => {
+  const { pathname } = useRouter();
+  const t = LABELS[currentLocale(pathname)];
   const [mode, setMode] = useState<"duplicate" | "overlay">("duplicate");
   const [quality, setQuality] = useState("medium");
   const [isHighlighted, setIsHighlighted] = useState(false);
@@ -110,7 +127,7 @@ const target = document.getElementById("target");
 
 const mirage = new Mirage(target, {
   mode: "${mode}",
-  textQuality: "${quality}"
+  quality: "${quality}"
 });
 
 mirage.start();
@@ -150,7 +167,7 @@ mirage.start();
               letterSpacing: "1px",
             }}
           >
-            Engine Mode
+            {t.mode}
           </p>
           <div style={{ display: "flex", gap: "12px" }}>
             <label
@@ -205,7 +222,7 @@ mirage.start();
               letterSpacing: "1px",
             }}
           >
-            Text Quality
+            {t.quality}
           </p>
           <select
             value={quality}
@@ -255,7 +272,7 @@ mirage.start();
                 accentColor: "hsl(var(--nextra-primary-hue), 100%, 50%)",
               }}
             />
-            Highlight Canvas
+            {t.highlight}
           </label>
         </div>
       </div>
@@ -265,8 +282,8 @@ mirage.start();
         theme="dark"
         customSetup={{
           dependencies: {
-            "mirage-engine": "0.2.11",
-            three: "^0.150.0",
+            "mirage-engine": "0.3.21",
+            three: "^0.160.0",
           },
         }}
         files={{

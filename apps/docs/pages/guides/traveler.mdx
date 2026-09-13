@@ -1,0 +1,158 @@
+---
+title: Traveler & Layers
+description: Capture the scene into a render target and sample it back for refraction and glass effects.
+---
+
+import { Callout, Steps } from "nextra/components";
+
+# Traveler & Layers
+
+A **traveler** is an element whose material samples a texture of the scene
+*behind it* instead of a flat color. That is the primitive behind refraction,
+frosted glass, heat haze and lensing that react to real page content.
+
+## How capture works
+
+<Steps>
+
+### Layers are assigned during extraction
+
+Every node gets a `captureLayer`, inherited from its parent and bumped when a
+`data-mirage-travel` token appears. Meshes are enabled on Three.js channel
+`31 - n` for every layer `n` at or above their own `captureLayer`.
+
+### Travelers are grouped per layer
+
+The renderer keeps `travelersByLayer[]` — one `Set<THREE.Mesh>` per layer — and
+one `WebGLRenderTarget` per layer, allocated lazily the first time a traveler
+appears in the DOM.
+
+### Each frame, capture then draw
+
+For layer `n`, the camera switches to channel `31 - n`, a scissor box is set
+around each traveler, and the scene is rendered into that layer's render target.
+Only the region behind each traveler is rasterized.
+
+Then the camera returns to the base channel and the visible frame is drawn, with
+travelers sampling their layer's target through `screenUv`.
+
+</Steps>
+
+## Basic traveler
+
+```html
+<div class="glass" data-mirage-travel="traveler"></div>
+```
+
+```css
+.glass {
+  width: 300px;
+  height: 200px;
+  border-radius: 24px;
+  backdrop-filter: blur(0px); /* purely for the DOM fallback */
+}
+```
+
+The default layer is `1`. Everything on layer 1 or above is captured, then this
+element paints the capture.
+
+## Distorting the capture
+
+A plain traveler is a mirror. Add a `uvModifier` to make it interesting.
+
+```html
+<div
+  class="glass"
+  data-mirage-travel="traveler"
+  data-mirage-shader='{
+    "uniforms": { "uTime": 0, "uStrength": 0.03 },
+    "uvModifier": "resultUv += vec2(sin(resultUv.y * 30.0 + uTime) * uStrength, cos(resultUv.x * 30.0 + uTime) * uStrength);"
+  }'
+></div>
+```
+
+```ts
+const glass = document.querySelector(".glass") as HTMLElement;
+
+mirage.getTracker().onRender.add(() => {
+  mirage.updateUniforms(glass, { uTime: performance.now() / 1000 });
+});
+```
+
+<Callout type="info">
+  For a traveler, `resultUv` starts as `screenUv` — normalized device
+  coordinates, not local UV. Offsetting it samples neighbouring *screen*
+  content, which is what makes the distortion look like real refraction.
+</Callout>
+
+## Nesting travelers
+
+Layers exist so travelers can see each other in a defined order. A traveler on
+layer 2 is captured into layer 1's buffer, so a layer-1 traveler can show it.
+
+```html
+<div data-mirage-travel="traveler 1">
+  <div data-mirage-travel="traveler 2"></div>
+</div>
+```
+
+<Callout type="error">
+  A child traveler's layer must be greater than or equal to the inherited
+  capture layer. Going backwards throws:
+  `Traveler layer (1) cannot be smaller than inherited capture layer (2)`.
+</Callout>
+
+Maximum is **10** layers (`ATTR_TRAVEL.MAX_LAYERS`).
+
+## Capture area
+
+By default the scissor box matches the traveler's own size. A distortion that
+samples outside that box reads unwritten pixels and shows a hard edge. Widen the
+capture with `travelerClipArea`:
+
+```ts
+new Mirage(target, { travelerClipArea: "150%" }); // 1.5× the traveler
+new Mirage(target, { travelerClipArea: "60px" }); // 60 px padding all around
+new Mirage(target, { travelerClipArea: 2 });      // 2× the traveler
+```
+
+Rule of thumb: make the capture area at least as large as your maximum UV
+displacement, converted back to pixels.
+
+## Native styles: two looks for one element
+
+`native` creates a second mesh for the same element on another capture layer,
+with style overrides applied. The user sees the real CSS; the traveler sees
+your override.
+
+```html
+<h1 data-mirage-travel="native 2 { color: '#ff0055', opacity: 1 }">
+  Look through the glass
+</h1>
+
+<div data-mirage-travel="traveler 2" class="lens"></div>
+```
+
+The heading renders normally on the page, but appears hot pink inside the lens.
+
+For SVG, overriding `color`, `fill` or `stroke` re-serializes the SVG with those
+values inlined and rasterizes a separate texture — so icons can genuinely change
+color inside a traveler.
+
+```html
+<svg data-mirage-travel="native 2 { color: '#00ffcc' }" viewBox="0 0 24 24">
+  <path fill="currentColor" d="…" />
+</svg>
+```
+
+Overridable keys: `backgroundColor`, `backgroundImage`, `opacity`, `zIndex`,
+`borderRadius`, `borderColor`, `borderWidth`, `boxShadow`, `transform`, plus
+`x`, `y`, `width`, `height` to move or resize the native copy independently.
+
+## Performance notes
+
+- Each layer allocates a full render target at `canvas × quality`. Ten layers at
+  `quality: "high"` is a lot of VRAM — most effects need one or two.
+- Capture renders the scene once **per traveler**, not per layer. Fifty
+  travelers on one layer means fifty scissored draws per frame.
+- Render targets are created lazily, so pages with no travelers pay nothing.

@@ -1,0 +1,211 @@
+---
+title: 데이터 속성
+description: 마크업에서 직접 Mirage Engine을 제어합니다.
+---
+
+import { Callout } from "nextra/components";
+
+# 데이터 속성
+
+Mirage의 동작 대부분은 JavaScript가 아니라 마크업으로 제어합니다. 그래서 어떤
+프레임워크가 리렌더해도 설정이 유지됩니다.
+
+## 한눈에 보기
+
+| 속성 | 값 | 용도 |
+| :-- | :-- | :-- |
+| `data-mirage-dom` | `hide` \| `show` | 원본 DOM 요소를 시각적으로 숨김 |
+| `data-mirage-filter` | 필터 토큰 | 가시 레이어에 포함/제외 |
+| `data-mirage-select` | 필터 토큰 | 선택 레이어에 포함/제외 |
+| `data-mirage-travel` | `traveler` / `native` + 레이어 + JSON | 렌더 타깃 캡처와 스타일 오버라이드 |
+| `data-mirage-shader` | `ShaderHooks` JSON | 커스텀 GLSL 주입 |
+| `data-mirage-sandwich` | `front` | 요소를 캔버스 위로 올림 |
+| `data-mid` | *(자동)* | Mirage가 부여하는 안정적 id. 직접 설정하지 마세요 |
+
+---
+
+## `data-mirage-dom`
+
+```html
+<div id="target" data-mirage-dom="hide">…</div>
+```
+
+Mirage가 한 번만 주입하는 스타일시트(`#mirage-engine-styles`)를 통해
+`opacity: 0 !important`를 적용합니다. 요소는 레이아웃 박스, 포인터 이벤트,
+접근성 트리를 그대로 유지하고 페인트만 사라집니다.
+
+Mirage 내부에서도 이를 보정합니다. 숨겨진 요소의 메시는 0이 된 값을 상속하지
+않고 `opacity: 1`로 그려집니다.
+
+---
+
+## `data-mirage-filter`
+
+`USER_LAYER` 포함 여부, 즉 메시를 그릴지 말지를 제어합니다.
+
+| 토큰 | 효과 |
+| :-- | :-- |
+| `include-tree` | 이 요소와 모든 하위 요소 포함 |
+| `exclude-tree` | 이 요소와 모든 하위 요소 제외 |
+| `include-self` | 이 요소만 포함 |
+| `exclude-self` | 이 요소만 제외 |
+| `end` | 여기서 순회 중단. 이 요소와 서브트리 전체를 건너뜀 |
+
+토큰은 공백으로 구분하며 조합할 수 있습니다.
+
+```html
+<!-- 래퍼는 미러링하되 내용물은 제외 -->
+<section data-mirage-filter="exclude-tree include-self">
+  <p>미러링 안 됨</p>
+</section>
+
+<!-- 내용물은 미러링하되 래퍼는 제외 -->
+<section data-mirage-filter="include-tree exclude-self">
+  <p>미러링 됨</p>
+</section>
+```
+
+<Callout type="error">
+  같은 요소에 `include-tree`와 `exclude-tree`, 또는 `include-self`와
+  `exclude-self`를 함께 쓰면 예외가 납니다. 알 수 없는 토큰도 예외입니다.
+  마크업의 오타는 조용히 넘어가면 디버깅이 어렵기 때문에 의도한 동작입니다.
+</Callout>
+
+`end`는 즉시 `null`을 반환하므로, 무거운 서브트리(비디오 플레이어, 지도,
+가상 스크롤 리스트)를 추출에서 빼는 가장 저렴한 방법입니다.
+
+```html
+<div data-mirage-filter="end">
+  <iframe src="https://example.com"></iframe>
+</div>
+```
+
+---
+
+## `data-mirage-select`
+
+토큰 문법은 동일하지만 `USER_LAYER` 대신 `SELECT_LAYER`를 토글합니다.
+`layer: "selected"`와 함께 쓰면 이 요소들만 담긴 별도 패스를 렌더링할 수
+있습니다. 외곽선, 글로우, 피킹 효과에 유용합니다.
+
+```html
+<div data-mirage-select="include-tree">…</div>
+```
+
+```ts
+new Mirage(target, { layer: "selected" });
+```
+
+---
+
+## `data-mirage-travel`
+
+가장 강력한 속성입니다. 독립적인 두 토큰과 선택적 JSON 객체로 구성됩니다.
+
+```
+data-mirage-travel="traveler <레이어> native <레이어> { …스타일 }"
+```
+
+### `traveler`
+
+단색 대신 렌더 타깃을 샘플링하는 요소로 표시합니다.
+
+```html
+<div data-mirage-travel="traveler"></div>
+<div data-mirage-travel="traveler 2"></div>
+```
+
+숫자는 캡처 레이어입니다(기본 `1`, 최대 `10`). traveler 자신의 `captureLayer`
+이상인 레이어의 모든 것이 traveler가 샘플링할 버퍼에 캡처됩니다. traveler를
+중첩할 수 있는 이유입니다.
+
+<Callout type="error">
+  traveler의 레이어는 상속받은 캡처 레이어보다 작을 수 없습니다. 위반하면 두
+  레이어 번호가 담긴 메시지와 함께 예외가 발생합니다.
+</Callout>
+
+### `native`
+
+같은 요소에 대해 다른 캡처 레이어에 놓이는 **두 번째 메시**를 만듭니다.
+
+```html
+<div data-mirage-travel="native 2 { backgroundColor: 'red' }"></div>
+```
+
+가시 씬에는 실제 CSS 모습이 그대로 남고, 레이어 2의 사본에는 오버라이드가
+적용됩니다. 사용자에게는 평범해 보이는 요소가 traveler 캡처 안에서는 다르게
+보이도록 만들 수 있습니다.
+
+### 스타일 오버라이드
+
+JSON 형태의 블록은 `new Function("return " + json)`으로 평가되므로, 따옴표 없는
+키와 작은따옴표를 써도 됩니다.
+
+| 키 | 적용 대상 |
+| :-- | :-- |
+| `backgroundColor`, `backgroundImage`, `opacity`, `zIndex` | 박스 외형 |
+| `borderRadius`, `borderColor`, `borderWidth`, `boxShadow` | 박스 외형 |
+| `transform` | `scale`, `scaleX/Y`, `translate`, `translateX/Y` (직접 파싱) |
+| `x`, `y`, `width`, `height` | 네이티브 메시의 rect 재정의 |
+| `color`, `fill`, `stroke` | 네이티브 사본용 SVG 재래스터화 |
+
+```html
+<svg
+  data-mirage-travel="native 2 { color: '#00ffcc', opacity: 0.4 }"
+  viewBox="0 0 24 24"
+>…</svg>
+```
+
+<Callout type="warning">
+  값이 JavaScript로 평가되므로, 신뢰할 수 없는 사용자 입력으로 이 속성을 절대
+  구성하지 마세요.
+</Callout>
+
+---
+
+## `data-mirage-shader`
+
+`JSON.parse`로 파싱합니다 — 엄격한 JSON이라 큰따옴표가 필수입니다.
+
+```html
+<div
+  data-mirage-shader='{
+    "uniforms": { "uTime": 0, "uAmp": 0.02 },
+    "uvModifier": "resultUv.x += sin(resultUv.y * 20.0 + uTime) * uAmp;",
+    "colorModifier": "finalColor.rgb *= 1.2;"
+  }'
+></div>
+```
+
+| 필드 | 타입 | 주입 위치 |
+| :-- | :-- | :-- |
+| `uniforms` | `Record<string, number \| number[]>` | `#INJECT_DECLARATIONS` |
+| `uvModifier` | GLSL 문자열 | `#INJECT_UV_MODIFIER` |
+| `colorModifier` | GLSL 문자열 | `#INJECT_COLOR_MODIFIER` |
+
+이 속성이 바뀌면 머티리얼의 셰이더 해시가 바뀌어 Mirage가 메시를 다시
+만듭니다. 매 프레임 바뀌는 값은 속성을 다시 쓰지 말고
+[`updateUniforms()`](/ko/reference/mirage#updateuniforms)로 넘기세요.
+
+[커스텀 셰이더](/ko/guides/shaders)를 참고하세요.
+
+---
+
+## `data-mirage-sandwich`
+
+```html
+<nav data-mirage-sandwich="front">…</nav>
+```
+
+요소를 Mirage 캔버스 위, `z-index: 9999`의 고정 레이어로 옮기고, 원래 자리에는
+보이지 않는 placeholder를 남겨 레이아웃이 밀리지 않게 합니다. 위치는 매
+프레임 재동기화됩니다.
+
+[샌드위치 레이어링](/ko/guides/sandwich)을 참고하세요.
+
+---
+
+## `data-mid`
+
+추출 과정에서 안정적 식별자로 자동 부여됩니다. 읽는 건 자유지만 직접 쓰지
+마세요.

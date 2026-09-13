@@ -1,0 +1,155 @@
+---
+title: 트러블슈팅
+description: 알려진 실패 유형과 원인, 해결책.
+---
+
+import { Callout } from "nextra/components";
+
+# 트러블슈팅
+
+## 아무것도 렌더링되지 않음
+
+| 확인 | 방법 |
+| :-- | :-- |
+| `start()`를 await 했나요? | `await mirage.start()` — WASM 부팅 때문에 비동기입니다 |
+| 타깃에 박스가 있나요? | `target.getBoundingClientRect()`가 0이 아니어야 합니다 |
+| 타깃이 문서에 있나요? | 분리된 노드는 마운트할 부모가 없습니다 |
+| 캔버스가 DOM에 있나요? | `mirage.getCanvas().parentElement` |
+| WebGL 컨텍스트 오류는? | 콘솔에서 context-lost 경고를 확인하세요 |
+
+`width: 0`, `height: 0`, `display: none`인 요소는 설계상 추출에서 제외됩니다.
+
+## 콘텐츠가 두 번 보임
+
+`overlay` 모드에서는 정상입니다 — 여전히 보이는 원본 위에 WebGL 사본이
+그려집니다. `data-mirage-dom="hide"`를 추가하세요.
+
+```html
+<div id="target" data-mirage-dom="hide">…</div>
+```
+
+그래도 보인다면 주입된 `#mirage-engine-styles` 규칙이 더 구체적인 여러분의
+셀렉터에 밀렸을 수 있습니다. 규칙은 다음과 같습니다.
+
+```css
+[data-mirage-dom="hide"] { opacity: 0 !important; }
+```
+
+## 텍스트가 흐릿함
+
+`quality`를 올리세요. 텍스트는 `devicePixelRatio × quality` 해상도로 캔버스에
+래스터화됩니다.
+
+```ts
+new Mirage(target, { quality: "high" }); // 배수 4
+```
+
+리사이즈 직후에만 흐릿하다면 리사이즈 디바운스가 아직 발화하지 않은
+것입니다 — 텍스처는 디바운스 창이 끝날 때 재생성됩니다.
+
+## 텍스트 위치가 어긋남
+
+각 줄이 별도 메시가 되며 `Range.getClientRects()`로 측정됩니다. 어긋나는 흔한
+원인:
+
+- 웹폰트가 추출 **이후에** 로드됨 — `document.fonts.ready` 이후 재추출하세요
+- 특이한 단위의 `letter-spacing` 또는 `word-spacing`
+- `text-transform` — 렌더된 글리프를 측정하므로 보통은 정상이지만, 특수한
+  조합에서는 어긋날 수 있습니다
+
+```ts
+await document.fonts.ready;
+await mirage.start();
+```
+
+## 이미지가 안 나옴
+
+| 원인 | 해결 |
+| :-- | :-- |
+| CORS | 이미지는 `fetch()`로 가져오므로 서버가 허용적인 CORS 헤더를 보내야 합니다 |
+| 아직 로드 전 | 텍스처는 비동기 로드라 한 프레임 뒤에 나타납니다 |
+| 컬링됨 | 300px `IntersectionObserver` 마진 밖입니다 — 화면 안으로 스크롤하세요 |
+| 지원하지 않는 소스 | `<img>`, 인라인 `<svg>`, `background-image: url()`만 읽습니다 |
+
+콘솔에서 `[MirageEngine] Failed to load texture:`를 확인하세요.
+
+## traveler에 딱딱한 경계선이 보임
+
+캡처 영역이 UV 변위보다 작아서 기록되지 않은 픽셀을 샘플링하고 있습니다.
+넓히세요.
+
+```ts
+new Mirage(target, { travelerClipArea: "150%" });
+```
+
+## traveler가 검게 나옴
+
+- 해당 레이어의 렌더 타깃이 없습니다 — `createRenderTarget()`은 DOM에서
+  `data-mirage-travel` 요소가 발견된 뒤에만 실행됩니다. `start()` 전에 속성이
+  있는지, 혹은 트래커가 그 뒤로 인식했는지 확인하세요.
+- 캡처된 레이어에 아무것도 없습니다. 요소는 자기 `captureLayer`가 traveler의
+  것 이상일 때만 캡처됩니다.
+
+## 셰이더가 적용되지 않음
+
+| 원인 | 해결 |
+| :-- | :-- |
+| 속성이 엄격한 JSON이 아님 | `JSON.parse`가 실패합니다. 전부 큰따옴표를 쓰세요 |
+| `colorModifier`에서 `gl_FragColor`에 대입 | 대신 `finalColor`에 쓰세요 |
+| 유니폼 미선언 | `updateUniforms()`로 설정하기 전에 `uniforms`에 추가하세요 |
+| 매 프레임 메시가 재생성됨 | 속성을 다시 쓰고 있습니다. `updateUniforms()`를 쓰세요 |
+
+## 프레임률이 무너짐
+
+[성능](/ko/guides/performance) 문서를 따라가세요. 흔한 원인:
+
+1. 긴 페이지에서 `canvasSize: "document"`
+2. 무거운 서브트리에 `data-mirage-filter="end"` 미적용
+3. `transform` 대신 `left` / `top` 애니메이션
+4. traveler가 너무 많음 — 하나당 씬 드로우 한 번
+5. 모바일 GPU에서 `quality: "high"`
+
+## 스크롤이 밀리거나 늦음
+
+Mirage는 매 프레임 타깃의 rect를 폴링해 동기화하므로, 커스텀 스크롤(Lenis,
+가상 스크롤, GSAP ScrollSmoother)도 설정 없이 동작해야 합니다. 요소가
+늦는다면:
+
+- 그 요소가 미러링 타깃 안에 있는지 확인하세요
+- `position: fixed` 요소는 설계상 스크롤 오프셋을 건너뜁니다 — 계산된 위치가
+  실제로 기대한 값인지 확인하세요
+- 스크롤이 멈춘 뒤 150ms 디바운스로 보정 재추출이 걸립니다. 그 이후에도 남는
+  어긋남은 실제 버그이니 리포트해 주세요
+
+## `Cannot find a container (parent or option)`
+
+타깃에 `parentElement`가 없거나, `duplicate` 모드인데 `container`도 부모도
+없습니다. Mirage를 만들기 전에 타깃을 문서에 붙이세요.
+
+## 샌드위치 요소가 떠다님
+
+front 요소는 자기 placeholder의 rect를 따라갑니다. placeholder가 제거됐거나
+`display: none`이면 따라갈 대상이 없습니다. 프레임워크가 이관된 요소를 다시
+원위치로 되돌리지 않았는지도 확인하세요.
+
+## 노드가 10,000개를 넘음
+
+공유 메모리는 `Syncer.start()`에서 10,000 노드(`10000 * WASM_STRIDE`) 분량으로
+선할당됩니다. 그 이상은 버퍼 밖으로 쓰게 됩니다.
+
+<Callout type="warning">
+  현재 확장 경로가 없습니다. 미러링이 필요 없는 서브트리에
+  `data-mirage-filter="end"`를 걸어 트리를 줄이세요.
+</Callout>
+
+## 메모리가 계속 증가함
+
+- 컴포넌트 언마운트 시 `destroy()`를 부르고 있나요?
+- 프레임 훅을 해제했나요? `tracker.onRender.delete(fn)`
+- 텍스처 컬링은 `overlay` + `viewport`가 아니면 꺼져 있습니다
+
+## 버그 제보
+
+Mirage와 `three` 버전, 브라우저, OS, GPU, config 객체 전체, 최소 재현 코드,
+콘솔 출력을 포함하세요. 재현 코드가 있는 제보는 고쳐지고, 없는 제보는 보통
+그렇지 않습니다.

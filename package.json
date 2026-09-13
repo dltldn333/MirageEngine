@@ -4,10 +4,8 @@
   "scripts": {
     "dev": "pnpm --filter dev dev",
     "build": "pnpm -r build",
-
     "changeset": "changeset",
     "version-packages": "changeset version",
-    
     "test": "pnpm -r test",
     "clean": "rm -rf node_modules packages/*/node_modules packages/*/dist"
   },
@@ -15,6 +13,7 @@
     "@changesets/cli": "^2.29.8",
     "typescript": "^5.0.0",
     "vite": "^4.0.0",
-    "vite-plugin-dts": "^3.0.0"
+    "vite-plugin-dts": "^3.0.0",
+    "writeme-cli": "^0.1.0"
   }
 }

@@ -1,0 +1,174 @@
+---
+title: 개발 환경 설정
+description: Mirage Engine 모노레포를 로컬에서 실행합니다.
+---
+
+import { Callout, Steps, FileTree } from "nextra/components";
+
+# 개발 환경 설정
+
+## 사전 요구사항
+
+| 도구 | 버전 | 필요한 이유 |
+| :-- | :-- | :-- |
+| Node.js | 20+ (CI는 20, 릴리스는 24) | 전부 |
+| pnpm | 9 | 워크스페이스 관리 — npm과 yarn은 동작하지 않습니다 |
+| Rust + `wasm-pack` | stable | `packages/wasm-compute`를 건드릴 때만 |
+
+<Callout type="warning">
+  이 저장소는 `workspace:*` 프로토콜 링크를 쓰는 pnpm 워크스페이스입니다. npm이나
+  yarn으로 설치하면 내부 패키지를 해석하지 못합니다.
+</Callout>
+
+## 클론과 설치
+
+<Steps>
+
+### 클론
+
+```bash
+git clone https://github.com/dltldn333/MirageEngine.git
+cd MirageEngine
+```
+
+### 설치
+
+```bash
+pnpm install
+```
+
+모든 내부 패키지가 링크되므로 `packages/painter`의 수정이 `packages/core`에
+즉시 반영됩니다.
+
+### 전체 패키지 빌드
+
+```bash
+pnpm -r build
+```
+
+docs나 dev 앱을 띄우기 전에 한 번 실행하세요. 일부 진입점이 빌드 결과물을
+import합니다.
+
+### 샌드박스 실행
+
+```bash
+pnpm dev
+```
+
+`apps/dev`(Vite)를 실행합니다 — 엔진을 굴려 보는 순수 HTML 놀이터입니다.
+
+</Steps>
+
+## 저장소 구조
+
+<FileTree>
+  <FileTree.Folder name="MirageEngine" defaultOpen>
+    <FileTree.Folder name="packages" defaultOpen>
+      <FileTree.Folder name="mirage-engine"><FileTree.File name="공개 파사드" /></FileTree.Folder>
+      <FileTree.Folder name="core"><FileTree.File name="Engine, Syncer, Renderer, Extractor" /></FileTree.Folder>
+      <FileTree.Folder name="dom-tracker"><FileTree.File name="Tracker, Parser" /></FileTree.Folder>
+      <FileTree.Folder name="painter"><FileTree.File name="머티리얼 + GLSL" /></FileTree.Folder>
+      <FileTree.Folder name="sandwich"><FileTree.File name="SandwichRenderer" /></FileTree.Folder>
+      <FileTree.Folder name="wasm-compute"><FileTree.File name="Rust 크레이트" /></FileTree.Folder>
+    </FileTree.Folder>
+    <FileTree.Folder name="apps">
+      <FileTree.Folder name="docs"><FileTree.File name="이 사이트 (Nextra)" /></FileTree.Folder>
+    </FileTree.Folder>
+    <FileTree.Folder name="dev"><FileTree.File name="Vite 샌드박스" /></FileTree.Folder>
+    <FileTree.Folder name=".changeset"><FileTree.File name="대기 중인 버전 범프" /></FileTree.Folder>
+  </FileTree.Folder>
+</FileTree>
+
+## 자주 쓰는 명령
+
+| 명령 | 효과 |
+| :-- | :-- |
+| `pnpm install` | 워크스페이스 설치 및 링크 |
+| `pnpm -r build` | 전체 패키지 빌드 |
+| `pnpm dev` | Vite 샌드박스(`dev`) 실행 |
+| `pnpm --filter docs dev` | 이 문서 사이트 실행 |
+| `pnpm --filter @mirage-engine/painter build` | 특정 패키지만 빌드 |
+| `pnpm changeset` | 버전 범프 기록 |
+| `pnpm clean` | 전체 `node_modules`와 `dist` 제거 |
+
+## 문서 작업하기
+
+```bash
+pnpm --filter docs dev
+```
+
+`http://localhost:3000`에서 Nextra 사이트가 열립니다.
+
+문서는 이중 언어입니다. 영어는 `pages/` 루트에, 한국어는 같은 구조로
+`pages/ko/` 아래에 있습니다.
+
+```
+pages/
+  _meta.json              ← 영어 내비게이션
+  index.mdx               → /
+  guides/
+    _meta.json
+    modes.mdx             → /guides/modes
+  ko/
+    _meta.json            ← 한국어 내비게이션
+    index.mdx             → /ko
+    guides/
+      _meta.json
+      modes.mdx           → /ko/guides/modes
+```
+
+<Callout type="info">
+  로케일은 Next.js i18n 라우팅이 아니라 **디렉터리 기반**입니다. Nextra 2의
+  `page.<locale>.mdx` 규칙은 자체 페이지 맵에서만 접미사를 떼어낼 뿐 대응하는
+  Next.js 라우트를 만들지 않아서 모든 경로가 404가 됩니다. 평범한 디렉터리는
+  실제 라우트를 만들고, 오타에는 제대로 404를 냅니다.
+</Callout>
+
+<Callout type="error">
+  한쪽 로케일에만 페이지를 추가하면 다른 쪽에 죽은 링크가 남습니다. 두 번째가
+  거친 번역이더라도 항상 두 파일과 두 `_meta.json` 항목을 함께 추가하세요.
+</Callout>
+
+`pages/ko/**` 안의 링크는 반드시 `/ko` 접두사를 붙여 쓰고(`/guides/modes`가
+아니라 `/ko/guides/modes`), 파일이 한 단계 더 깊으므로 컴포넌트 import에도
+`../`가 하나 더 필요합니다.
+
+로케일 추가 방법: 영어 트리를 그대로 옮긴 `pages/<locale>/**`를 만들고,
+`theme.config.tsx`에 `STRINGS` 항목을, `components/LocaleSwitch.tsx`의
+`LOCALES`에 항목을, 루트 `pages/_meta.json`에 `type: "page"` 항목을 추가하세요.
+
+## WASM 패키지 작업하기
+
+`packages/wasm-compute/src/lib.rs`를 수정할 때만 필요합니다.
+
+```bash
+rustup target add wasm32-unknown-unknown
+cargo install wasm-pack
+
+pnpm --filter @mirage-engine/wasm-compute build
+```
+
+`wasm-pack build --target web`이 실행되어 `pkg/`가 다시 생성됩니다.
+`@mirage-engine/core`는 `pkg/wasm_compute.js`에서 직접 import합니다.
+
+<Callout type="info">
+  `pkg/`는 커밋되어 있으므로 Rust를 건드리지 않는 기여자는 툴체인이 필요 없습니다.
+  다시 빌드했다면 생성된 결과물도 함께 커밋하세요.
+</Callout>
+
+## 에디터 설정
+
+저장소는 공유 `tsconfig.base.json`을 쓰는 TypeScript 프로젝트입니다. 권장 설정:
+
+- **TypeScript** — VS Code 내장 버전 대신 워크스페이스 버전 사용
+- **Prettier** — 기본 설정. 코드베이스는 2칸 들여쓰기, 큰따옴표
+- **셰이더 언어 지원** — `.glsl` 구문 강조
+
+## 설정 트러블슈팅
+
+| 증상 | 해결 |
+| :-- | :-- |
+| `Cannot find module '@mirage-engine/core'` | `pnpm -r build` 실행 — 패키지가 `dist`로 해석됩니다 |
+| `ERR_PNPM_NO_MATCHING_VERSION workspace:*` | npm이나 yarn을 썼습니다. `node_modules` 삭제 후 pnpm 사용 |
+| 추가한 문서 페이지가 404 | `.en` / `.ko` 짝이나 `_meta` 항목 누락 |
+| WASM import 실패 | `pkg/`가 없습니다. wasm 패키지를 빌드하거나 git에서 받으세요 |

@@ -1,0 +1,161 @@
+---
+title: Contribution Workflow
+description: Branching, commits, changesets and pull requests.
+---
+
+import { Callout, Steps } from "nextra/components";
+
+# Contribution Workflow
+
+<Steps>
+
+### Open an issue first
+
+For bugs, include a minimal reproduction, the browser and GPU, and the Mirage
+version. For features, describe the use case before the implementation — the
+answer is often an existing `data-*` attribute.
+
+### Branch from `main`
+
+```bash
+git checkout main
+git pull
+git checkout -b fix/traveler-scissor-offset
+```
+
+| Prefix | For |
+| :-- | :-- |
+| `feat/` | New capability |
+| `fix/` | Bug fix |
+| `docs/` | Documentation only |
+| `refactor/` | No behaviour change |
+| `perf/` | Performance work |
+| `chore/` | Tooling, CI, dependencies |
+
+### Make the change
+
+Match the surrounding code. The codebase is 2-space indented, double-quoted,
+semicolon-terminated TypeScript. Public API gets explicit types; internals may
+infer.
+
+Keep the change scoped to one package where possible. If you must touch several,
+say why in the PR description.
+
+### Verify it builds
+
+```bash
+pnpm -r build
+```
+
+CI runs exactly this on Node 20. A type error in any package fails the build.
+
+<Callout type="warning">
+  There is no test suite yet. Until there is, verify manually in `apps/dev`
+  (`pnpm dev`) and describe what you checked in the PR — browsers tested,
+  scenarios exercised.
+</Callout>
+
+### Add a changeset
+
+Any change to a published package needs one.
+
+```bash
+pnpm changeset
+```
+
+Select the affected packages, pick a bump level, and write a user-facing
+summary — it lands verbatim in the changelog.
+
+| Bump | Use for |
+| :-- | :-- |
+| `patch` | Bug fixes, internal refactors, docs in a package README |
+| `minor` | New options, new attributes, new exports |
+| `major` | Removals, renames, changed defaults |
+
+<Callout type="info">
+  Docs-only changes under `apps/docs` do not need a changeset — `docs` is
+  private and not published.
+</Callout>
+
+### Commit
+
+Conventional Commits:
+
+```
+fix(core): correct scissor offset for nested travelers
+feat(painter): support repeating-linear-gradient
+docs(guides): add Korean translation for performance
+```
+
+### Open a pull request
+
+Describe:
+
+- what changed and why
+- how you verified it (browsers, scenarios)
+- screenshots or a screen recording for anything visual
+- breaking changes, called out explicitly
+
+</Steps>
+
+## Adding a new `data-*` attribute
+
+The pattern is consistent — follow all five steps:
+
+1. **Declare it** in `packages/core/src/types/attributes.ts`:
+
+   ```ts
+   export const ATTR_THING = {
+     NAME: "data-mirage-thing",
+     KEY: "mirageThing",
+     VALUES: { ON: "on" },
+   } as const;
+   ```
+
+2. **Parse it** in `Extractor.ts` via `element.dataset[ATTR_THING.KEY]`, and
+   throw on invalid tokens — silent failures in markup are painful to debug.
+
+3. **Carry it** on `SceneNode` in `types/common.ts`.
+
+4. **Consume it** in `Renderer.reconcileNode` or wherever it applies.
+
+5. **Document it** in `apps/docs/pages/reference/data-attributes.mdx` **and**
+   `apps/docs/pages/ko/reference/data-attributes.mdx` — both locales.
+
+## Adding a package
+
+```bash
+mkdir -p packages/thing/src
+```
+
+Copy `package.json`, `tsconfig.json` and `vite.config.ts` from a similar package
+(`dom-tracker` is the simplest). Requirements:
+
+- name it `@mirage-engine/thing`
+- `"type": "module"`, with `main` / `module` / `types` pointing into `dist`
+- a `build` script running `vite build`
+- internal dependencies declared as `"workspace:*"`
+- `three` as a `peerDependency` if used, never a direct dependency
+
+`pnpm-workspace.yaml` already globs `packages/*`, so no registration is needed.
+
+## Style conventions
+
+| Area | Convention |
+| :-- | :-- |
+| Files | `PascalCase.ts` for classes, `camelCase.ts` for utilities |
+| Errors | Prefix with `[Mirage]` or `[MirageEngine]` |
+| Constants | `SCREAMING_SNAKE` in `types/` |
+| Public API | Explicit return types |
+| Comments | Explain *why*, not *what* |
+| Korean comments | Fine — the codebase already mixes both |
+
+## Reporting a bug
+
+Include:
+
+- Mirage version and `three` version
+- browser, OS, GPU (`chrome://gpu` helps)
+- the full config object you passed
+- a minimal HTML/CSS reproduction
+- console errors, including any WebGL warnings

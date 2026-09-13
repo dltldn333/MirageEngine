@@ -1,0 +1,57 @@
+---
+title: Mirage Engine
+description: HTML DOM 요소를 실시간으로 WebGL 씬에 미러링하는 엔진.
+---
+
+import { Cards, Card } from "nextra/components";
+import { MiragePlayground } from "../../components/MiragePlayground";
+import Link from "next/link";
+import { Hero } from "../../components/Hero";
+
+<Hero />
+
+<h2
+  style={{
+    marginTop: "4rem",
+    marginBottom: "4rem",
+    textAlign: "center",
+    fontSize: "2.5rem",
+  }}
+>
+  Mirage Engine으로 이런 것들을 할 수 있어요!
+</h2>
+
+<div style={{ display: "flex", justifyContent: "center" }}>
+  <MiragePlayground />
+</div>
+
+<div style={{ maxWidth: "900px", margin: "6rem auto 4rem" }}>
+
+## 시작하기
+
+<Cards>
+  <Card title="Mirage Engine이란?" href="/ko/get-started/introduction" />
+  <Card title="설치" href="/ko/get-started/installation" />
+  <Card title="빠른 시작" href="/ko/get-started/quick-start" />
+  <Card title="핵심 개념" href="/ko/get-started/concepts" />
+</Cards>
+
+## 더 알아보기
+
+<Cards>
+  <Card title="렌더링 모드" href="/ko/guides/modes" />
+  <Card title="Traveler와 레이어" href="/ko/guides/traveler" />
+  <Card title="커스텀 셰이더" href="/ko/guides/shaders" />
+  <Card title="성능" href="/ko/guides/performance" />
+</Cards>
+
+## 레퍼런스
+
+<Cards>
+  <Card title="Mirage API" href="/ko/reference/mirage" />
+  <Card title="설정" href="/ko/reference/configuration" />
+  <Card title="데이터 속성" href="/ko/reference/data-attributes" />
+  <Card title="기여하기" href="/ko/contributing/setup" />
+</Cards>
+
+</div>

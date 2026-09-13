@@ -1,0 +1,77 @@
+name: 🐛 Bug report
+description: Something does not work as documented / 문서와 다르게 동작합니다
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please include a minimal reproduction. Reports without one are usually
+        not actionable.
+        최소 재현 코드를 포함해 주세요. 없으면 대응이 어렵습니다.
+
+  - type: input
+    id: version
+    attributes:
+      label: mirage-engine version
+      placeholder: "0.3.21"
+    validations:
+      required: true
+
+  - type: input
+    id: three-version
+    attributes:
+      label: three version
+      placeholder: "0.160.0"
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: Browser / OS / GPU
+      description: chrome://gpu helps for the GPU line
+      placeholder: "Chrome 130 / macOS 15 / Apple M2"
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Config object
+      description: The full object you passed to `new Mirage(target, config)`
+      render: ts
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead
+      description: Include console output and any WebGL warnings
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: A CodeSandbox/StackBlitz link, or inline HTML + CSS + JS
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checked
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked the [troubleshooting page](https://mirage-engine.vercel.app/contributing/troubleshooting)
+          required: true
+        - label: I searched existing issues
+          required: true

@@ -1,0 +1,114 @@
+---
+title: Rendering Modes
+description: Choose between overlay and duplicate, and between viewport and document canvases.
+---
+
+import { Callout } from "nextra/components";
+
+# Rendering Modes
+
+Two independent choices decide where the canvas lives and how big it is.
+
+## `mode` — where the canvas goes
+
+### `overlay` (default)
+
+The canvas is mounted as the first child of the **target's parent** and stacked
+over the original content. `pointer-events` is `none`, so every click passes
+through to the real DOM underneath.
+
+```ts
+new Mirage(target, { mode: "overlay" });
+```
+
+Use it when you want to *replace the look* of live UI while keeping it fully
+interactive. Pair it with `data-mirage-dom="hide"` so the user sees only the
+WebGL version.
+
+### `duplicate`
+
+The canvas is mounted into a **separate container** and shows a copy of the
+target. The original stays visible where it is. `pointer-events` is `auto`,
+because the copy is what the user actually looks at.
+
+```ts
+new Mirage(target, {
+  mode: "duplicate",
+  container: document.querySelector("#preview") as HTMLElement,
+});
+```
+
+If you omit `container`, it falls back to the target's parent.
+
+Use it for previews, thumbnails, mini-maps, or a stylized second view of the
+same content.
+
+### Comparison
+
+| | `overlay` | `duplicate` |
+| :-- | :-- | :-- |
+| Canvas position | `fixed` or `absolute` over the target | Normal flow inside `container` |
+| `pointer-events` | `none` | `auto` |
+| Original DOM | Usually hidden with `data-mirage-dom` | Stays visible |
+| `canvasSize` option | Applies | Ignored (always the target's box) |
+| Typical use | Shader-skinned live UI | Preview / second view |
+
+---
+
+## `canvasSize` — how big the canvas is
+
+Only meaningful in `overlay` mode.
+
+### `viewport` (default)
+
+The canvas is sized to `window.innerWidth/Height` plus a **200 px overscan**
+margin on each side, and pinned with `position: fixed` at `-200px, -200px`.
+
+Meshes are positioned in viewport space and scroll is applied as an offset.
+Off-screen content still exists in the scene graph but costs almost nothing to
+rasterize.
+
+```ts
+new Mirage(target, { mode: "overlay", canvasSize: "viewport" });
+```
+
+<Callout type="info">
+  The overscan margin is what stops elements from popping in at the edges during
+  fast scrolling.
+</Callout>
+
+### `document`
+
+The canvas matches the target's full bounding box and is positioned `absolute`
+at the target's offset.
+
+```ts
+new Mirage(target, { mode: "overlay", canvasSize: "document" });
+```
+
+<Callout type="warning">
+  A 12,000 px tall page means a 12,000 px tall framebuffer — multiplied by
+  `devicePixelRatio` and by `quality`. This exceeds `MAX_TEXTURE_SIZE` on many
+  GPUs and will drop frames or fail to allocate. Only use `document` when an
+  effect genuinely needs to sample content outside the viewport.
+</Callout>
+
+| | `viewport` | `document` |
+| :-- | :-- | :-- |
+| Canvas size | Window + 400 px | Full target box |
+| CSS position | `fixed` | `absolute` |
+| Cost on long pages | Flat | Grows with page height |
+| Texture culling | Enabled | Disabled |
+| Best for | Scrolling pages | Short, fixed-height sections |
+
+<Callout type="info">
+  Texture culling via `IntersectionObserver` is only enabled when
+  `mode === "overlay"` and `canvasSize === "viewport"`. In any other combination
+  every image texture stays resident.
+</Callout>
+
+## Choosing
+
+- Full-page shader treatment on a scrolling site → `overlay` + `viewport`
+- A hero section with a fixed height and a refraction effect → `overlay` + `document`
+- Live preview panel next to an editor → `duplicate`

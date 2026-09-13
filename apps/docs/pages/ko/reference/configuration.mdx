@@ -1,0 +1,179 @@
+---
+title: 설정
+description: MirageConfig의 모든 옵션과 타입, 기본값.
+---
+
+import { Callout } from "nextra/components";
+
+# 설정
+
+```ts
+import type { MirageConfig } from "mirage-engine";
+```
+
+`MirageConfig`는 코어 설정에 샌드위치 옵션을 더한 타입입니다.
+
+```ts
+type MirageConfig = CoreConfig & {
+  sandwich?: boolean | SandwichConfig;
+};
+
+type CoreConfig = OverlayConfig | DuplicateConfig;
+```
+
+`mode`로 구별되는 유니온이라, `mode: "duplicate"`라고 써야 TypeScript가
+`container`를 제안합니다.
+
+## 공통 옵션
+
+두 모드 모두에서 사용할 수 있습니다.
+
+| 옵션 | 타입 | 기본값 | 설명 |
+| :-- | :-- | :-- | :-- |
+| `quality` | `"low"` \| `"medium"` \| `"high"` \| `number` | `"medium"` | 텍스트 캔버스·SVG 래스터화·렌더 타깃의 디바이스 픽셀 배수. |
+| `layer` | `"base"` \| `"selected"` \| `number` | `"base"` | 카메라가 렌더링할 Three.js 레이어 채널. |
+| `resizeDebounce` | `boolean` \| `ResizeConfig` | `true` | 윈도우 리사이즈 디바운스. `true`는 150ms. |
+| `travelerClipArea` | `` `${number}px` `` \| `` `${number}%` `` \| `number` | `1` | traveler 레이어 캡처 시 시저 박스 크기. |
+| `debug` | `boolean` | — | 타입에는 있지만 엔진이 **아직 읽지 않습니다**. |
+| `style` | `{ zIndex?: string }` | — | 타입에는 있지만 엔진이 **아직 읽지 않습니다**. |
+
+### `quality`
+
+```ts
+new Mirage(target, { quality: "high" }); // 배수 4
+new Mirage(target, { quality: 3 });      // 배수 3
+```
+
+| 값 | 배수 |
+| :-- | :-- |
+| `"low"` | `1` |
+| `"medium"` | `2` |
+| `"high"` | `4` |
+| `number` | 해당 숫자 (최소 `0.1`) |
+
+값이 높을수록 텍스트와 렌더 타깃이 선명해지지만 메모리는 제곱으로 늘어납니다.
+[성능](/ko/guides/performance) 문서를 참고하세요.
+
+### `layer`
+
+```ts
+new Mirage(target, { layer: "selected" });
+```
+
+`"base"`는 채널 `0`을 렌더링합니다. `"selected"`는 채널 `1`을 렌더링하므로
+[`data-mirage-select`](/ko/guides/filtering)가 붙은 요소만 보입니다. 숫자를 넣으면
+해당 채널을 직접 지정합니다.
+
+### `resizeDebounce`
+
+```ts
+type ResizeConfig = {
+  delay?: number;     // 기본 150 (ms)
+  onStart?: () => void;
+  onEnd?: () => void;
+};
+```
+
+```ts
+new Mirage(target, {
+  resizeDebounce: {
+    delay: 250,
+    onStart: () => document.body.classList.add("is-resizing"),
+    onEnd: () => document.body.classList.remove("is-resizing"),
+  },
+});
+```
+
+`false`로 두면 리사이즈 이벤트마다 재추출합니다. 정확하지만 비쌉니다.
+
+### `travelerClipArea`
+
+각 traveler 메시 뒤쪽 씬을 얼마나 캡처할지 정합니다.
+
+| 형태 | 의미 |
+| :-- | :-- |
+| `1` (숫자) | traveler 자기 크기 대비 비율 |
+| `"120%"` | 비율(퍼센트 표기) |
+| `"40px"` | traveler 박스 주변에 더할 고정 여백 |
+
+굴절 효과가 자기 영역 밖 콘텐츠를 샘플링하는데 가장자리가 잘려 보이면 이 값을
+키우세요.
+
+## overlay 모드
+
+```ts
+interface OverlayConfig extends BaseConfig {
+  mode?: "overlay";
+  canvasSize?: "viewport" | "document";
+}
+```
+
+| 옵션 | 타입 | 기본값 | 설명 |
+| :-- | :-- | :-- | :-- |
+| `mode` | `"overlay"` | `"overlay"` | 캔버스를 타깃 위 제자리에 마운트. |
+| `canvasSize` | `"viewport"` \| `"document"` | `"viewport"` | 캔버스 할당 전략. |
+
+`"viewport"`는 캔버스를 윈도우 크기 + 200px 오버스캔으로 잡고 `position: fixed`로
+고정합니다. 긴 스크롤 페이지에서 60fps를 유지하는 핵심입니다.
+
+`"document"`는 캔버스를 타깃 박스 전체 크기로 잡습니다. 뷰포트 밖까지 읽어야
+하는 효과가 필요할 때만 쓰세요. 문서가 길면 성능이 급격히 나빠집니다.
+
+## duplicate 모드
+
+```ts
+interface DuplicateConfig extends BaseConfig {
+  mode: "duplicate";
+  container?: HTMLElement;
+}
+```
+
+| 옵션 | 타입 | 기본값 | 설명 |
+| :-- | :-- | :-- | :-- |
+| `mode` | `"duplicate"` | — | 이 모드를 선택하려면 필수. |
+| `container` | `HTMLElement` | 타깃의 부모 | 캔버스를 마운트할 위치. |
+
+이 모드에서는 캔버스에 `pointer-events: auto`가 적용됩니다(overlay에서는
+`none`). 사용자가 실제로 보는 대상이 사본이기 때문입니다.
+
+## 샌드위치
+
+```ts
+type SandwichConfig = { frontSelector?: string };
+```
+
+| 값 | 동작 |
+| :-- | :-- |
+| 생략 / `true` | 활성화, `[data-mirage-sandwich='front']` 선택 |
+| `false` | 비활성화 |
+| `{ frontSelector: ".hud" }` | 커스텀 셀렉터로 활성화 |
+
+```ts
+new Mirage(target, { sandwich: { frontSelector: ".floating-ui" } });
+new Mirage(target, { sandwich: false });
+```
+
+<Callout type="info">
+  샌드위치는 **기본적으로 켜져 있습니다**. Mirage가 `document.body`에 레이어
+  요소를 붙이는 게 싫다면 `sandwich: false`를 넘기세요.
+</Callout>
+
+[샌드위치 레이어링](/ko/guides/sandwich)을 참고하세요.
+
+## 전체 예제
+
+```ts
+import { Mirage } from "mirage-engine";
+
+const mirage = new Mirage(document.querySelector("#app") as HTMLElement, {
+  mode: "overlay",
+  canvasSize: "viewport",
+  quality: "high",
+  layer: "base",
+  travelerClipArea: "140%",
+  resizeDebounce: { delay: 200 },
+  sandwich: { frontSelector: "[data-hud]" },
+});
+
+await mirage.start();
+```

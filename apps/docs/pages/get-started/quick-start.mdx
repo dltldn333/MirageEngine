@@ -1,0 +1,129 @@
+---
+title: Quick Start
+description: Mirror your first DOM subtree into WebGL in about ten lines.
+---
+
+import { Callout, Steps, Tabs } from "nextra/components";
+
+# Quick Start
+
+<Steps>
+
+### Mark the subtree you want to mirror
+
+Mirage mirrors one element and everything inside it. Give it an id.
+
+```html
+<div id="target">
+  <h1>Hello, Mirage</h1>
+  <p>This paragraph becomes a textured plane in WebGL.</p>
+  <button>Still a real, clickable button</button>
+</div>
+```
+
+<Callout type="info">
+  The target must have a parent element — Mirage mounts its canvas as the
+  parent's first child. `document.body` works; a detached node does not.
+</Callout>
+
+### Create the engine and start it
+
+```ts
+import { Mirage } from "mirage-engine";
+
+const target = document.querySelector("#target") as HTMLElement;
+
+const mirage = new Mirage(target, {
+  mode: "overlay",
+  quality: "medium",
+});
+
+await mirage.start();
+```
+
+`start()` is async because it boots the WebAssembly module on first call.
+Always `await` it (or chain `.then()`) before you touch meshes.
+
+### Hide the original DOM (optional)
+
+In `overlay` mode the WebGL copy is painted *on top of* the live DOM, so by
+default you see both. Add `data-mirage-dom="hide"` to fade the original out
+while keeping it interactive and accessible.
+
+```html
+<div id="target" data-mirage-dom="hide">…</div>
+```
+
+<Callout type="warning">
+  This sets `opacity: 0`, not `display: none` — the element still occupies
+  layout, still receives clicks and is still read by screen readers. That is
+  deliberate: Mirage needs the real layout box to mirror it.
+</Callout>
+
+### Clean up
+
+```ts
+mirage.stop();    // pause the render loop, keep the scene
+mirage.destroy(); // stop, dispose the renderer and remove the canvas
+```
+
+</Steps>
+
+## Full example
+
+```ts
+import { Mirage } from "mirage-engine";
+
+const target = document.querySelector("#target") as HTMLElement;
+
+const mirage = new Mirage(target, {
+  mode: "overlay",        // "overlay" (default) | "duplicate"
+  canvasSize: "viewport", // "viewport" (default) | "document"
+  quality: "medium",      // "low" | "medium" | "high" | number
+  resizeDebounce: { delay: 150 },
+});
+
+await mirage.start();
+
+// Pause when the tab is hidden
+document.addEventListener("visibilitychange", () => {
+  document.hidden ? mirage.stop() : mirage.start();
+});
+
+// Tear down on unmount
+window.addEventListener("beforeunload", () => mirage.destroy());
+```
+
+## Duplicate mode
+
+`overlay` covers the original in place. `duplicate` renders the copy into a
+different container instead, so you can show the same subtree twice.
+
+```ts
+const target = document.querySelector("#target") as HTMLElement;
+const container = document.querySelector("#preview") as HTMLElement;
+
+const mirage = new Mirage(target, {
+  mode: "duplicate",
+  container, // only valid in duplicate mode
+});
+
+await mirage.start();
+```
+
+See [Rendering Modes](/guides/modes) for the full comparison.
+
+## Common mistakes
+
+| Symptom | Cause | Fix |
+| :-- | :-- | :-- |
+| `Cannot find a container` throws | Target has no parent, or `duplicate` mode without a mounted parent | Attach the target to the document first |
+| Nothing renders | `start()` not awaited, or target has zero width/height | `await mirage.start()`; give the target a layout box |
+| You see the content twice | `overlay` mode with the original still visible | Add `data-mirage-dom="hide"` |
+| Text looks blurry | `quality` too low for the device | Raise to `"high"`, or pass a number like `3` |
+
+## Where to go next
+
+- [Core Concepts](/get-started/concepts) — the vocabulary used across these docs
+- [Configuration](/reference/configuration) — every option, with defaults
+- [Data Attributes](/reference/data-attributes) — control Mirage from your markup

@@ -1,0 +1,230 @@
+---
+title: 패키지
+description: Mirage Engine 모노레포 패키지 지도와 각 패키지의 공개 API.
+---
+
+import { Callout, FileTree } from "nextra/components";
+
+# 패키지
+
+Mirage Engine은 pnpm 모노레포입니다. 보통 설치하는 건 `mirage-engine` 하나이고,
+나머지는 필요한 조각만 골라 쓸 수 있도록 개별 배포됩니다.
+
+| 패키지 | npm | 의존 |
+| :-- | :-- | :-- |
+| `mirage-engine` | [↗](https://www.npmjs.com/package/mirage-engine) | core, painter, sandwich |
+| `@mirage-engine/core` | [↗](https://www.npmjs.com/package/@mirage-engine/core) | painter, dom-tracker, wasm-compute |
+| `@mirage-engine/painter` | [↗](https://www.npmjs.com/package/@mirage-engine/painter) | three *(peer)* |
+| `@mirage-engine/dom-tracker` | [↗](https://www.npmjs.com/package/@mirage-engine/dom-tracker) | — |
+| `@mirage-engine/sandwich` | [↗](https://www.npmjs.com/package/@mirage-engine/sandwich) | dom-tracker |
+| `@mirage-engine/wasm-compute` | 내부용 | Rust / wasm-bindgen |
+
+<FileTree>
+  <FileTree.Folder name="packages" defaultOpen>
+    <FileTree.Folder name="mirage-engine"><FileTree.File name="core/Mirage.ts" /></FileTree.Folder>
+    <FileTree.Folder name="core">
+      <FileTree.File name="core/Engine.ts" />
+      <FileTree.File name="core/Syncer.ts" />
+      <FileTree.File name="renderer/Renderer.ts" />
+      <FileTree.File name="dom/Extractor.ts" />
+      <FileTree.File name="animation/Animator.ts" />
+      <FileTree.File name="store/MeshRegistry.ts" />
+      <FileTree.File name="store/TextureLifecycleManager.ts" />
+      <FileTree.File name="wasm/WasmSynchronizer.ts" />
+    </FileTree.Folder>
+    <FileTree.Folder name="dom-tracker">
+      <FileTree.File name="Tracker.ts" />
+      <FileTree.File name="Parser.ts" />
+    </FileTree.Folder>
+    <FileTree.Folder name="painter">
+      <FileTree.File name="Painter.ts" />
+      <FileTree.File name="Box/BoxGenerator.ts" />
+      <FileTree.File name="Text/TextGenerator.ts" />
+      <FileTree.File name="Text/FontMetricsManager.ts" />
+      <FileTree.File name="tools/parser.ts" />
+    </FileTree.Folder>
+    <FileTree.Folder name="sandwich"><FileTree.File name="index.ts" /></FileTree.Folder>
+    <FileTree.Folder name="wasm-compute"><FileTree.File name="src/lib.rs" /></FileTree.Folder>
+  </FileTree.Folder>
+</FileTree>
+
+---
+
+## `@mirage-engine/core`
+
+파사드를 뺀 전부입니다. 자체 래퍼를 만들 때 사용하세요.
+
+```ts
+import { Engine, WasmSynchronizer } from "@mirage-engine/core";
+import type { CoreConfig, SceneNode, Quality } from "@mirage-engine/core";
+```
+
+### `Engine`
+
+| 메서드 | 시그니처 | 비고 |
+| :-- | :-- | :-- |
+| `constructor` | `(target, config: CoreConfig)` | 스타일 주입, 컨테이너 결정, Renderer + Syncer 생성 |
+| `start` | `(): Promise<void>` | wasm 부팅, 트래커 시작 |
+| `stop` | `(): void` | 트래커 정지 |
+| `dispose` | `(): void` | 정지 + 렌더러 해제 |
+| `getTracker` | `(): Tracker` | 내부 DOM 트래커 |
+| `getCanvas` | `(): HTMLCanvasElement` | 마운트된 캔버스 |
+| `updateUniforms` | `(el, uniforms): void` | 유니폼 직접 쓰기 |
+
+타입도 전부 함께 export됩니다 (`SceneNode`, `NodeRect`, `Visibility`,
+`THREE_LAYERS`, `ATTR_*` 상수, `DIRTY_*` 플래그, `WASM_STRIDE`와 `OFFSET_*`
+인덱스).
+
+---
+
+## `@mirage-engine/painter`
+
+DOM 스타일을 그대로 반영하는 Three.js 머티리얼을 단독으로 제공합니다. DOM
+관찰은 하지 않으며, 스타일은 직접 넘겨야 합니다.
+
+```ts
+import { Painter, TextGenerator, createBoxMaterial } from "@mirage-engine/painter";
+```
+
+### `Painter`
+
+```ts
+Painter.create(
+  type: "BOX" | "TEXT",
+  styles: BoxStyles | TextStyles,
+  content: string,
+  width: number,
+  height: number,
+  quality?: number,
+  texture?: THREE.Texture | null,
+  shaderHooks?: ShaderHooks,
+): THREE.Material
+
+Painter.update(material, type, styles, content, width, height, quality?, texture?): void
+
+Painter.forceUpdateUniforms(material: THREE.ShaderMaterial, values: BoxUniformValues): void
+```
+
+```ts
+import * as THREE from "three";
+import { Painter } from "@mirage-engine/painter";
+
+const material = Painter.create("BOX", {
+  backgroundColor: "rgb(20, 20, 30)",
+  backgroundImage: "linear-gradient(45deg, #f00, #00f)",
+  opacity: 1,
+  zIndex: 0,
+  borderRadius: "16px",
+  borderColor: "rgba(255,255,255,0.2)",
+  borderWidth: "2px",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+}, "", 320, 180);
+
+const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+mesh.scale.set(320, 180, 1);
+```
+
+### `TextGenerator`
+
+텍스트를 `CanvasTexture`에 그리는 `THREE.MeshBasicMaterial` 서브클래스입니다.
+
+```ts
+const mat = new TextGenerator("Hello", textStyles, 200, 40, 2);
+mat.updateText("Goodbye", textStyles, 200, 40);
+mat.dispose();
+```
+
+### CSS 파서
+
+`parsePixelValue`, `parseColor`, `splitByComma`, `parseLinearGradient`,
+`parseBoxShadow`가 재사용 가능하도록 export됩니다. `getComputedStyle`이
+반환하는 문자열 형태를 그대로 받습니다.
+
+```ts
+import { parseLinearGradient } from "@mirage-engine/painter";
+
+parseLinearGradient("linear-gradient(45deg, red 0%, blue 100%)");
+// { angle: 0.785…, stops: [ { color, alpha, stop }, … ] }
+```
+
+---
+
+## `@mirage-engine/dom-tracker`
+
+렌더링에 관여하지 않는, 배치 처리 DOM 옵저버입니다. 의존성이 없습니다.
+
+```ts
+import { Tracker, extractFromStyle } from "@mirage-engine/dom-tracker";
+
+const tracker = new Tracker(document.body, { resizeDebounce: { delay: 200 } });
+
+tracker.onLayoutChange.add((mask, deletions) => { /* … */ });
+tracker.onStyleChange.add((styles) => { /* Map<HTMLElement, StyleData> */ });
+tracker.onRender.add(() => { /* 매 프레임 */ });
+
+tracker.start();
+```
+
+| 훅 | 페이로드 | 발생 시점 |
+| :-- | :-- | :-- |
+| `onBeforeRender` | — | 매 프레임, 가장 먼저 |
+| `onLayoutChange` | `(mask: number, deletions: Set<HTMLElement>)` | 트리가 더티일 때만 |
+| `onScrollChange` | `(scrollX, scrollY)` | 윈도우 스크롤이 바뀌었을 때 |
+| `onStyleChange` | `Map<HTMLElement, StyleData>` | 인라인 스타일이 변경됐을 때 |
+| `onRender` | — | 매 프레임, 가장 마지막 |
+
+각 훅은 `Set`이므로 `add` / `delete`로 구독을 관리합니다.
+
+<Callout type="info">
+  Mirage 자신은 `onLayoutChange`, `onStyleChange`, `onRender`를 구독합니다.
+  `onScrollChange`는 발생하지만 내장 구독자가 없습니다 — 여러분을 위한
+  자리입니다.
+</Callout>
+
+---
+
+## `@mirage-engine/sandwich`
+
+DOM 텔레포테이션. 페이지 레이아웃을 유지한 채 요소를 캔버스 위로 올립니다.
+
+```ts
+import { SandwichRenderer } from "@mirage-engine/sandwich";
+
+const sandwich = new SandwichRenderer({ frontSelector: "[data-hud]" });
+sandwich.init();
+```
+
+| 메서드 | 용도 |
+| :-- | :-- |
+| `init()` | 레이어 생성, front 요소 이관, 훅 연결, 트래커 시작 |
+| `useTracker(tracker)` | 새로 만들지 않고 기존 트래커를 재사용 |
+
+Mirage는 `useTracker(engine.getTracker())`를 자동으로 호출해서 둘이 하나의
+`requestAnimationFrame` 루프를 공유하게 합니다.
+
+---
+
+## `@mirage-engine/wasm-compute`
+
+`wasm-pack`으로 컴파일하는 Rust 크레이트입니다. 직접 쓰라고 만든 건 아닙니다.
+
+```rust
+pub struct MemoryManager { /* Vec<f32> */ }
+
+impl MemoryManager {
+    pub fn new(capacity: usize) -> MemoryManager;
+    pub fn get_pointer(&self) -> *const f32;
+    pub fn get_length(&self) -> usize;
+    pub fn update_physics(&mut self, node_count: usize);
+}
+```
+
+노드당 5개의 float으로 구성됩니다.
+
+```
+[ parentIndex, localX, localY, worldX, worldY ]
+```
+
+`update_physics`는 노드를 순서대로 훑으면서 부모의 월드 좌표를 자식의 로컬
+오프셋에 더합니다. 추출 단계에서 부모가 자식보다 먼저 기록되므로, 한 번의
+정방향 패스로 트리 전체가 해결됩니다.

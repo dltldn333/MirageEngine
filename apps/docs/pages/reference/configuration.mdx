@@ -1,0 +1,179 @@
+---
+title: Configuration
+description: Every MirageConfig option, with types and defaults.
+---
+
+import { Callout } from "nextra/components";
+
+# Configuration
+
+```ts
+import type { MirageConfig } from "mirage-engine";
+```
+
+`MirageConfig` is the core config plus sandwich options:
+
+```ts
+type MirageConfig = CoreConfig & {
+  sandwich?: boolean | SandwichConfig;
+};
+
+type CoreConfig = OverlayConfig | DuplicateConfig;
+```
+
+The union is discriminated by `mode`, so TypeScript only offers `container`
+after you write `mode: "duplicate"`.
+
+## Shared options
+
+Available in both modes.
+
+| Option | Type | Default | Description |
+| :-- | :-- | :-- | :-- |
+| `quality` | `"low"` \| `"medium"` \| `"high"` \| `number` | `"medium"` | Device-pixel multiplier for text canvases, SVG rasterization and render targets. |
+| `layer` | `"base"` \| `"selected"` \| `number` | `"base"` | Which Three.js layer channel the camera renders. |
+| `resizeDebounce` | `boolean` \| `ResizeConfig` | `true` | Debounce window resize. `true` means 150 ms. |
+| `travelerClipArea` | `` `${number}px` `` \| `` `${number}%` `` \| `number` | `1` | Scissor box size when capturing traveler layers. |
+| `debug` | `boolean` | — | Declared but **not yet read** by the engine. |
+| `style` | `{ zIndex?: string }` | — | Declared but **not yet read** by the engine. |
+
+### `quality`
+
+```ts
+new Mirage(target, { quality: "high" }); // factor 4
+new Mirage(target, { quality: 3 });      // factor 3
+```
+
+| Value | Factor |
+| :-- | :-- |
+| `"low"` | `1` |
+| `"medium"` | `2` |
+| `"high"` | `4` |
+| `number` | that number, clamped to a `0.1` minimum |
+
+Higher values sharpen text and render targets at a quadratic memory cost. See
+[Performance](/guides/performance).
+
+### `layer`
+
+```ts
+new Mirage(target, { layer: "selected" });
+```
+
+`"base"` renders channel `0`. `"selected"` renders channel `1`, so only elements
+marked with [`data-mirage-select`](/guides/filtering) appear. A raw `number`
+targets that channel directly.
+
+### `resizeDebounce`
+
+```ts
+type ResizeConfig = {
+  delay?: number;     // default 150 (ms)
+  onStart?: () => void;
+  onEnd?: () => void;
+};
+```
+
+```ts
+new Mirage(target, {
+  resizeDebounce: {
+    delay: 250,
+    onStart: () => document.body.classList.add("is-resizing"),
+    onEnd: () => document.body.classList.remove("is-resizing"),
+  },
+});
+```
+
+Set `false` to re-extract on every resize event — accurate but expensive.
+
+### `travelerClipArea`
+
+Controls how much of the scene is captured behind each traveler mesh.
+
+| Form | Meaning |
+| :-- | :-- |
+| `1` (number) | Ratio of the traveler's own size |
+| `"120%"` | Ratio, as a percentage |
+| `"40px"` | Fixed padding added around the traveler's box |
+
+Widen it when a refraction effect samples content outside its own bounds and you
+see clipped edges.
+
+## Overlay mode
+
+```ts
+interface OverlayConfig extends BaseConfig {
+  mode?: "overlay";
+  canvasSize?: "viewport" | "document";
+}
+```
+
+| Option | Type | Default | Description |
+| :-- | :-- | :-- | :-- |
+| `mode` | `"overlay"` | `"overlay"` | Canvas is mounted over the target in place. |
+| `canvasSize` | `"viewport"` \| `"document"` | `"viewport"` | Canvas allocation strategy. |
+
+`"viewport"` sizes the canvas to the window plus a 200 px overscan margin and
+pins it `position: fixed`. This is what keeps long scrolling pages at 60fps.
+
+`"document"` sizes the canvas to the full target box. Use it only when you need
+effects that read outside the viewport; it degrades badly on tall documents.
+
+## Duplicate mode
+
+```ts
+interface DuplicateConfig extends BaseConfig {
+  mode: "duplicate";
+  container?: HTMLElement;
+}
+```
+
+| Option | Type | Default | Description |
+| :-- | :-- | :-- | :-- |
+| `mode` | `"duplicate"` | — | Required to select this mode. |
+| `container` | `HTMLElement` | target's parent | Where the canvas is mounted. |
+
+The canvas gets `pointer-events: auto` in this mode (it is `none` in overlay),
+because the copy is the thing the user looks at.
+
+## Sandwich
+
+```ts
+type SandwichConfig = { frontSelector?: string };
+```
+
+| Value | Effect |
+| :-- | :-- |
+| omitted / `true` | Enabled, selecting `[data-mirage-sandwich='front']` |
+| `false` | Disabled |
+| `{ frontSelector: ".hud" }` | Enabled with a custom selector |
+
+```ts
+new Mirage(target, { sandwich: { frontSelector: ".floating-ui" } });
+new Mirage(target, { sandwich: false });
+```
+
+<Callout type="info">
+  Sandwich is **on by default**. Pass `sandwich: false` if you do not want
+  Mirage appending layer elements to `document.body`.
+</Callout>
+
+See [Sandwich Layering](/guides/sandwich).
+
+## Full example
+
+```ts
+import { Mirage } from "mirage-engine";
+
+const mirage = new Mirage(document.querySelector("#app") as HTMLElement, {
+  mode: "overlay",
+  canvasSize: "viewport",
+  quality: "high",
+  layer: "base",
+  travelerClipArea: "140%",
+  resizeDebounce: { delay: 200 },
+  sandwich: { frontSelector: "[data-hud]" },
+});
+
+await mirage.start();
+```

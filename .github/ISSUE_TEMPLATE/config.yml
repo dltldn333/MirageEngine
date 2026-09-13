@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Documentation
+    url: https://mirage-engine.vercel.app
+    about: Guides, API reference and troubleshooting (English / 한국어)
+  - name: 💬 Questions & ideas
+    url: https://github.com/dltldn333/MirageEngine/discussions
+    about: Ask a question or float an idea before opening an issue

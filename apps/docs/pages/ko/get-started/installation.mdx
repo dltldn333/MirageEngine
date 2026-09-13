@@ -1,0 +1,160 @@
+---
+title: 설치
+description: Mirage Engine과 Three.js 피어 의존성을 설치합니다.
+---
+
+import { Callout, Tabs, Steps } from "nextra/components";
+
+# 설치
+
+## 설치하기
+
+Mirage Engine은 타입 선언이 포함된 ES 모듈로 배포됩니다.
+`three`는 **peer dependency**이므로 버전은 여러분 앱에서 직접 정합니다.
+
+<Tabs items={["npm", "pnpm", "yarn", "bun"]}>
+  <Tabs.Tab>
+
+```bash
+npm install mirage-engine three
+```
+
+</Tabs.Tab>
+  <Tabs.Tab>
+
+```bash
+pnpm add mirage-engine three
+```
+
+</Tabs.Tab>
+  <Tabs.Tab>
+
+```bash
+yarn add mirage-engine three
+```
+
+</Tabs.Tab>
+  <Tabs.Tab>
+
+```bash
+bun add mirage-engine three
+```
+
+</Tabs.Tab>
+</Tabs>
+
+## 요구 사항
+
+| 항목 | 버전 | 비고 |
+| :-- | :-- | :-- |
+| `three` | `^0.160.0` | peer dependency, 번들에 포함되지 않음 |
+| 브라우저 | WebGL2 + `MutationObserver` + `IntersectionObserver` | 모든 최신 브라우저 |
+| 모듈 형식 | ESM | 패키지가 `"type": "module"` |
+
+<Callout type="warning">
+  Mirage는 생성자에서 `window`, `document`, `WebGLRenderingContext`를 건드립니다.
+  서버 사이드 렌더링 중에는 실행할 수 없습니다 — 아래
+  [SSR 프레임워크](#ssr-프레임워크)를 참고하세요.
+</Callout>
+
+## 설치 확인
+
+```ts
+import { Mirage } from "mirage-engine";
+
+const target = document.querySelector("#target") as HTMLElement;
+const mirage = new Mirage(target, {});
+
+await mirage.start();
+console.log(mirage.getCanvas()); // 타깃 옆에 삽입된 <canvas>
+```
+
+캔버스 요소가 로그에 찍히고 타깃이 시각적으로 복제되어 보이면 정상입니다.
+
+## SSR 프레임워크
+
+Mirage는 클라이언트에서만 import하고 생성하세요.
+
+<Tabs items={["Next.js", "Nuxt", "SvelteKit"]}>
+  <Tabs.Tab>
+```tsx
+"use client";
+import { useEffect, useRef } from "react";
+
+export function MirageLayer() {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    let mirage: import("mirage-engine").Mirage | undefined;
+
+    (async () => {
+      const { Mirage } = await import("mirage-engine");
+      mirage = new Mirage(ref.current!, { mode: "overlay" });
+      await mirage.start();
+    })();
+
+    return () => mirage?.destroy();
+  }, []);
+
+  return <div ref={ref}>{/* 평소대로 쓰는 마크업 */}</div>;
+}
+```
+  </Tabs.Tab>
+  <Tabs.Tab>
+```vue
+<script setup lang="ts">
+import { onMounted, onBeforeUnmount, ref } from "vue";
+
+const root = ref<HTMLElement | null>(null);
+let mirage: any;
+
+onMounted(async () => {
+  const { Mirage } = await import("mirage-engine");
+  mirage = new Mirage(root.value!, { mode: "overlay" });
+  await mirage.start();
+});
+
+onBeforeUnmount(() => mirage?.destroy());
+</script>
+
+<template>
+  <div ref="root"><!-- 평소대로 쓰는 마크업 --></div>
+</template>
+```
+  </Tabs.Tab>
+  <Tabs.Tab>
+```svelte
+<script lang="ts">
+  import { onMount } from "svelte";
+
+  let root: HTMLElement;
+
+  onMount(async () => {
+    const { Mirage } = await import("mirage-engine");
+    const mirage = new Mirage(root, { mode: "overlay" });
+    await mirage.start();
+    return () => mirage.destroy();
+  });
+</script>
+
+<div bind:this={root}><!-- 평소대로 쓰는 마크업 --></div>
+```
+  </Tabs.Tab>
+</Tabs>
+
+## 서브 패키지
+
+`mirage-engine` 하나면 필요한 건 다 들어 있습니다. 내부 모듈만 따로 쓰고
+싶다면 개별 패키지도 배포되어 있습니다.
+
+| 패키지 | 이럴 때 사용 |
+| :-- | :-- |
+| [`@mirage-engine/painter`](/ko/reference/packages#mirage-enginepainter) | DOM 동기화 없이 DOM 스타일 그대로의 Three.js 머티리얼만 필요할 때 |
+| [`@mirage-engine/dom-tracker`](/ko/reference/packages#mirage-enginedom-tracker) | 배치 처리되는 DOM 옵저버만 필요할 때 |
+| [`@mirage-engine/sandwich`](/ko/reference/packages#mirage-enginesandwich) | Mirage 없이 캔버스 위에 DOM을 레이어링하고 싶을 때 |
+| [`@mirage-engine/core`](/ko/reference/packages#mirage-enginecore) | `Engine` 위에 자체 파사드를 만들 때 |
+
+## 다음 단계
+
+[빠른 시작](/ko/get-started/quick-start)으로 이어집니다.

@@ -1,0 +1,128 @@
+---
+title: 샌드위치 레이어링
+description: 페이지 레이아웃을 깨지 않고 특정 DOM 요소를 Mirage 캔버스 위에 유지합니다.
+---
+
+import { Callout, Steps } from "nextra/components";
+
+# 샌드위치 레이어링
+
+`overlay` 모드에서 캔버스는 콘텐츠를 덮습니다. 보통은 그게 목적이지만, 일부
+요소는 위에 남아 있고 상호작용도 가능해야 합니다. 내비게이션, 모달, 툴팁,
+커서 팔로워, 쿠키 배너 같은 것들이죠.
+
+샌드위치는 그런 요소를 흐름에서 들어 올려 캔버스 위 고정 레이어로 옮기고,
+원래 자리에는 보이지 않는 placeholder를 남겨 레이아웃이 밀리지 않게 합니다.
+
+```
+┌─────────────────────────────┐
+│  front 레이어   z-index 9999 │  ← data-mirage-sandwich="front"
+├─────────────────────────────┤
+│  mid 레이어     z-index 9998 │  ← 선택, midLayerElement로 지정
+├─────────────────────────────┤
+│  Mirage 캔버스               │
+├─────────────────────────────┤
+│  원본 DOM                    │
+└─────────────────────────────┘
+```
+
+## 사용법
+
+샌드위치는 기본으로 켜져 있습니다. 위로 올릴 요소를 표시하세요.
+
+```html
+<nav data-mirage-sandwich="front">
+  <a href="/docs">문서</a>
+  <a href="/api">API</a>
+</nav>
+```
+
+설정은 이게 전부입니다.
+
+## 동작 방식
+
+<Steps>
+
+### 레이어 생성
+
+`document.body`에 `div` 두 개가 추가됩니다. `#sand-layer-mid`(z-index 9998)와
+`#sand-layer-front`(z-index 9999). 둘 다 `position: fixed; inset: 0;
+pointer-events: none`입니다.
+
+### front 요소 이관
+
+매칭된 각 요소에 대해 크기를 측정하고, 같은 박스와 마진을 가진
+`.sand-placeholder`를 원래 위치에 삽입한 뒤, 실제 요소를 `position: fixed`와
+`pointer-events: auto`로 front 레이어에 옮깁니다.
+
+### 매 프레임 위치 동기화
+
+`onBeforeRender`에서 모든 placeholder의 rect를 한 번에 읽고, 그다음 모든 요소
+위치를 한 번에 씁니다. 읽기와 쓰기를 분리해 레이아웃 스래싱을 피합니다.
+
+</Steps>
+
+## 커스텀 셀렉터
+
+```ts
+new Mirage(target, {
+  sandwich: { frontSelector: ".hud, [data-floating]" },
+});
+```
+
+`querySelectorAll`이 받는 셀렉터면 무엇이든 됩니다. 기본값은
+`[data-mirage-sandwich='front']`입니다.
+
+## 비활성화
+
+```ts
+new Mirage(target, { sandwich: false });
+```
+
+스택 순서를 이미 직접 관리하고 있거나, `document.body`에 요소를 추가하는 것이
+프레임워크의 포털 시스템과 충돌한다면 끄세요.
+
+## 단독 사용
+
+`@mirage-engine/sandwich`는 Mirage 없이도 동작합니다.
+
+```ts
+import { SandwichRenderer } from "@mirage-engine/sandwich";
+
+const sandwich = new SandwichRenderer({
+  frontSelector: ".floating",
+  midLayerElement: document.querySelector("#my-canvas") as HTMLElement,
+});
+
+sandwich.init();
+```
+
+`midLayerElement`는 mid 레이어로 옮겨지고 `pointer-events: auto`가 적용됩니다.
+페이지와 front 레이어 사이에 직접 만든 캔버스를 끼워 넣을 때 쓰세요.
+
+## 주의사항
+
+<Callout type="warning">
+  이관된 요소는 DOM에서 물리적으로 이동합니다. 프레임워크가 그 서브트리를
+  소유하고 있다면(React 재조정, Vue 패치) 다시 되돌리려 하거나 언마운트에서
+  크래시할 수 있습니다. 프레임워크가 안정적으로 취급하는 요소를 쓰거나,
+  직접 제어하는 포털에 렌더링하고 샌드위치는 꺼 두세요.
+</Callout>
+
+| 제약 | 내용 |
+| :-- | :-- |
+| CSS 상속이 끊김 | 원래 조상 체인 밖으로 나가므로 상속 스타일과 그에 스코프된 하위 셀렉터가 적용되지 않음 |
+| `init()` 시점에만 매칭 | 나중에 추가된 요소는 잡히지 않음. `init()`을 다시 부르거나 직접 관리해야 함 |
+| placeholder는 `visibility: hidden` | 공간은 그대로 차지 — 의도된 동작 |
+| `position: fixed` 강제 | front 레이어 안에서 sticky 동작은 불가 |
+
+## 디버깅
+
+```ts
+console.log(document.querySelector("#sand-layer-front")?.children);
+console.log(document.querySelectorAll(".sand-placeholder").length);
+```
+
+스크롤할 때 front 요소가 떠다닌다면, placeholder가 제거됐거나 `display: none`
+으로 숨겨졌을 가능성이 큽니다. 동기화는 placeholder의 rect를 읽으므로
+placeholder는 레이아웃에 남아 있어야 합니다.

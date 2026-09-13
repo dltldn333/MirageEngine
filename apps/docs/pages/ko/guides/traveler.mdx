@@ -1,0 +1,160 @@
+---
+title: Traveler와 레이어
+description: 씬을 렌더 타깃에 캡처하고 다시 샘플링해 굴절·유리 효과를 만듭니다.
+---
+
+import { Callout, Steps } from "nextra/components";
+
+# Traveler와 레이어
+
+**traveler**는 단색 대신 *자기 뒤쪽* 씬의 텍스처를 샘플링하는 요소입니다. 실제
+페이지 콘텐츠에 반응하는 굴절, 간유리, 열 아지랑이, 렌즈 효과를 만드는 기본
+단위입니다.
+
+## 캡처 동작 방식
+
+<Steps>
+
+### 추출 단계에서 레이어 배정
+
+모든 노드는 `captureLayer`를 갖습니다. 부모에게서 상속받되
+`data-mirage-travel` 토큰이 나오면 올라갑니다. 메시는 자기 `captureLayer`
+이상인 모든 레이어 `n`에 대해 Three.js 채널 `31 - n`에 활성화됩니다.
+
+### 레이어별로 traveler를 묶음
+
+렌더러는 `travelersByLayer[]` — 레이어당 `Set<THREE.Mesh>` 하나 — 와 레이어당
+`WebGLRenderTarget` 하나를 유지합니다. 렌더 타깃은 DOM에 traveler가 처음
+등장할 때 지연 생성됩니다.
+
+### 매 프레임 캡처 후 드로우
+
+레이어 `n`에 대해 카메라를 채널 `31 - n`으로 전환하고, 각 traveler 주위에
+시저 박스를 설정한 뒤 씬을 해당 레이어의 렌더 타깃에 그립니다. 각 traveler
+뒤쪽 영역만 래스터화됩니다.
+
+그런 다음 카메라를 기본 채널로 되돌려 실제 프레임을 그리고, traveler는
+`screenUv`로 자기 레이어의 타깃을 샘플링합니다.
+
+</Steps>
+
+## 기본 traveler
+
+```html
+<div class="glass" data-mirage-travel="traveler"></div>
+```
+
+```css
+.glass {
+  width: 300px;
+  height: 200px;
+  border-radius: 24px;
+  backdrop-filter: blur(0px); /* DOM 폴백용 */
+}
+```
+
+기본 레이어는 `1`입니다. 레이어 1 이상의 모든 것이 캡처되고, 이 요소가 그
+결과를 그립니다.
+
+## 캡처 왜곡하기
+
+그냥 traveler는 거울일 뿐입니다. `uvModifier`를 더해야 재미있어집니다.
+
+```html
+<div
+  class="glass"
+  data-mirage-travel="traveler"
+  data-mirage-shader='{
+    "uniforms": { "uTime": 0, "uStrength": 0.03 },
+    "uvModifier": "resultUv += vec2(sin(resultUv.y * 30.0 + uTime) * uStrength, cos(resultUv.x * 30.0 + uTime) * uStrength);"
+  }'
+></div>
+```
+
+```ts
+const glass = document.querySelector(".glass") as HTMLElement;
+
+mirage.getTracker().onRender.add(() => {
+  mirage.updateUniforms(glass, { uTime: performance.now() / 1000 });
+});
+```
+
+<Callout type="info">
+  traveler에서 `resultUv`는 로컬 UV가 아니라 `screenUv` — 정규화된 화면
+  좌표 — 로 시작합니다. 이 값을 흔들면 이웃한 *화면* 콘텐츠를 샘플링하게 되고,
+  그래서 진짜 굴절처럼 보입니다.
+</Callout>
+
+## traveler 중첩
+
+레이어가 존재하는 이유는 traveler끼리 정해진 순서로 서로를 볼 수 있게 하기
+위해서입니다. 레이어 2의 traveler는 레이어 1의 버퍼에 캡처되므로, 레이어 1의
+traveler가 그것을 보여 줄 수 있습니다.
+
+```html
+<div data-mirage-travel="traveler 1">
+  <div data-mirage-travel="traveler 2"></div>
+</div>
+```
+
+<Callout type="error">
+  자식 traveler의 레이어는 상속받은 캡처 레이어 이상이어야 합니다. 거꾸로 가면
+  예외가 납니다:
+  `Traveler layer (1) cannot be smaller than inherited capture layer (2)`.
+</Callout>
+
+최대 **10** 레이어입니다 (`ATTR_TRAVEL.MAX_LAYERS`).
+
+## 캡처 영역
+
+기본적으로 시저 박스는 traveler 자신의 크기와 같습니다. 그 밖을 샘플링하는
+왜곡은 기록되지 않은 픽셀을 읽어 딱딱한 경계선이 보입니다. `travelerClipArea`로
+캡처 범위를 넓히세요.
+
+```ts
+new Mirage(target, { travelerClipArea: "150%" }); // traveler의 1.5배
+new Mirage(target, { travelerClipArea: "60px" }); // 사방 60px 여백
+new Mirage(target, { travelerClipArea: 2 });      // traveler의 2배
+```
+
+기준: 최대 UV 변위를 픽셀로 환산한 값 이상으로 캡처 영역을 잡으세요.
+
+## 네이티브 스타일: 한 요소, 두 가지 모습
+
+`native`는 같은 요소에 대해 스타일 오버라이드가 적용된 두 번째 메시를 다른
+캡처 레이어에 만듭니다. 사용자는 실제 CSS를 보고, traveler는 오버라이드를
+봅니다.
+
+```html
+<h1 data-mirage-travel="native 2 { color: '#ff0055', opacity: 1 }">
+  유리 너머를 보세요
+</h1>
+
+<div data-mirage-travel="traveler 2" class="lens"></div>
+```
+
+제목은 페이지에서 평범하게 렌더링되지만, 렌즈 안에서는 핫핑크로 보입니다.
+
+SVG의 경우 `color`, `fill`, `stroke`를 오버라이드하면 해당 값이 인라인된
+상태로 SVG를 다시 직렬화해 별도의 텍스처로 래스터화합니다. 그래서 아이콘 색이
+traveler 안에서 실제로 바뀔 수 있습니다.
+
+```html
+<svg data-mirage-travel="native 2 { color: '#00ffcc' }" viewBox="0 0 24 24">
+  <path fill="currentColor" d="…" />
+</svg>
+```
+
+오버라이드 가능한 키: `backgroundColor`, `backgroundImage`, `opacity`,
+`zIndex`, `borderRadius`, `borderColor`, `borderWidth`, `boxShadow`,
+`transform`, 그리고 네이티브 사본만 따로 옮기거나 크기를 바꾸는 `x`, `y`,
+`width`, `height`.
+
+## 성능 참고
+
+- 레이어마다 `캔버스 × quality` 크기의 렌더 타깃이 할당됩니다. `quality:
+  "high"`로 10개 레이어는 VRAM을 크게 먹습니다 — 대부분의 효과는 한두 개면
+  충분합니다.
+- 캡처는 레이어당이 아니라 **traveler당** 씬을 한 번씩 렌더링합니다. 한
+  레이어에 traveler가 50개면 매 프레임 시저 드로우가 50번입니다.
+- 렌더 타깃은 지연 생성되므로 traveler가 없는 페이지는 비용이 0입니다.

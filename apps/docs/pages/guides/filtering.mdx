@@ -1,0 +1,154 @@
+---
+title: Filtering Elements
+description: Decide exactly which parts of the DOM get mirrored.
+---
+
+import { Callout } from "nextra/components";
+
+# Filtering Elements
+
+By default Mirage mirrors the whole target subtree. Two markup attributes let
+you carve that down: `data-mirage-filter` controls the **visible** layer,
+`data-mirage-select` controls a parallel **selection** layer.
+
+## Why filter
+
+- **Performance.** Extraction walks every element and calls
+  `getBoundingClientRect` and `getComputedStyle`. Excluding a heavy subtree is
+  the single biggest win available.
+- **Correctness.** `iframe`, `video`, `canvas` and map widgets cannot be
+  meaningfully mirrored — they have no CSS-derived appearance to copy.
+- **Art direction.** You may want only a few elements in the WebGL pass.
+
+## The five tokens
+
+| Token | Self | Descendants |
+| :-- | :-- | :-- |
+| `include-tree` | included | included |
+| `exclude-tree` | excluded | excluded |
+| `include-self` | included | unchanged |
+| `exclude-self` | excluded | unchanged |
+| `end` | traversal stops — nothing below is even visited |
+
+`*-tree` tokens set the inherited flow passed to children. `*-self` tokens only
+change this element's own flag. Because they act on different things, combining
+one of each is the normal way to express "wrapper but not contents".
+
+## Patterns
+
+### Skip an expensive subtree entirely
+
+```html
+<div data-mirage-filter="end">
+  <iframe src="https://maps.example.com"></iframe>
+</div>
+```
+
+`end` returns immediately from the recursion. Nothing inside is measured. This
+is the cheapest exclusion.
+
+### Opt-in mirroring
+
+Exclude everything at the root, then re-include the parts you want.
+
+```html
+<main id="target" data-mirage-filter="exclude-tree">
+  <p>Not mirrored.</p>
+
+  <section data-mirage-filter="include-tree">
+    <h2>Mirrored</h2>
+    <p>And so is this.</p>
+  </section>
+</main>
+```
+
+### Wrapper only
+
+```html
+<div data-mirage-filter="exclude-tree include-self">
+  <img src="huge.png" />
+</div>
+```
+
+The container's background, border and radius are mirrored; the image is not.
+
+### Contents only
+
+```html
+<div data-mirage-filter="include-tree exclude-self">
+  <span>Mirrored text</span>
+</div>
+```
+
+Useful when a wrapper only exists for layout and would otherwise draw an
+unwanted background quad.
+
+<Callout type="error">
+  `include-tree` + `exclude-tree` on the same element throws, as does
+  `include-self` + `exclude-self`, and any unrecognized token. Mirage fails loud
+  rather than silently ignoring a typo.
+</Callout>
+
+## Text nodes inherit the self flag
+
+A subtle but important rule: element children inherit the **tree** flow, while
+text-node children inherit the **self** flag.
+
+```html
+<p data-mirage-filter="exclude-self">
+  This text is still mirrored.
+  <span>And so is this span.</span>
+</p>
+```
+
+Excluding the paragraph box does not silence its text. To drop both, use
+`exclude-tree`.
+
+## The selection layer
+
+`data-mirage-select` uses the same grammar but toggles `SELECT_LAYER`, which
+maps to Three.js channel `1`. It is completely independent of visibility — an
+element can be visible and selected, either, or neither.
+
+```html
+<div data-mirage-select="include-tree">
+  <button class="cta">Buy now</button>
+</div>
+```
+
+```ts
+// Render ONLY the selected elements
+const selection = new Mirage(target, { layer: "selected" });
+await selection.start();
+```
+
+Run two Mirage instances on the same target — one at `layer: "base"` and one at
+`layer: "selected"` — to composite an outline or glow pass over the normal
+render.
+
+## What is excluded automatically
+
+Some things never make it into the scene graph regardless of attributes:
+
+| Skipped | Reason |
+| :-- | :-- |
+| `width === 0` or `height === 0` | No box to mirror |
+| `display: none` | No layout box |
+| Whitespace-only text nodes | Nothing to draw |
+| Children of `<svg>` | The SVG is serialized whole into one texture |
+
+## Debugging
+
+```ts
+import { extractSceneGraph, USER_LAYER } from "@mirage-engine/core";
+
+const graph = extractSceneGraph(target, undefined, USER_LAYER);
+
+function walk(node, depth = 0) {
+  const on = node.visibility & USER_LAYER ? "✓" : "✗";
+  console.log(`${"  ".repeat(depth)}${on} ${node.type} ${node.element.nodeName}`);
+  node.children.forEach((c) => walk(c, depth + 1));
+}
+
+walk(graph);
+```

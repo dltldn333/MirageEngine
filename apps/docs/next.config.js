@@ -4,10 +4,10 @@ const withNextra = require("nextra")({
   themeConfig: "./theme.config.tsx",
 });
 
+// Locales are directory-based (`pages/**` = English, `pages/ko/**` = Korean)
+// rather than Next.js i18n routing: Nextra 2's `page.<locale>.mdx` convention
+// rewrites its own page map but never emits matching Next routes, so every
+// path 404s. Plain directories give real routes and a real 404 for typos.
 module.exports = withNextra({
-  i18n: {
-    locales: ["en", "ko"],
-    defaultLocale: "en",
-  },
   reactStrictMode: true,
 });

@@ -1,0 +1,10 @@
+# writeme.yaml
+entry: WRITEME.md
+
+# 등록하면 ::이름 으로 사용 가능
+parts:
+  - BASE.md
+  - parts/header.md
+  - parts/mirage-engine.md
+
+output: README.md

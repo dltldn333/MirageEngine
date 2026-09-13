@@ -3,8 +3,38 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion, Variants } from "framer-motion";
+import { useRouter } from "next/router";
+import { currentLocale } from "./LocaleSwitch";
+
+const COPY = {
+  en: {
+    tagline: (
+      <>
+        An engine that
+        <br /> mirrors{" "}
+        <span style={{ color: "#4ade80" }}>HTML DOM elements</span> to a{" "}
+        <span style={{ color: "#4ade80" }}>WebGL scene</span> in real-time
+      </>
+    ),
+    docs: "Documentation",
+    docsHref: "/get-started/quick-start",
+  },
+  ko: {
+    tagline: (
+      <>
+        <span style={{ color: "#4ade80" }}>HTML DOM 요소</span>를
+        <br /> 실시간으로{" "}
+        <span style={{ color: "#4ade80" }}>WebGL 씬</span>에 미러링하는 엔진
+      </>
+    ),
+    docs: "문서 보기",
+    docsHref: "/ko/get-started/quick-start",
+  },
+} as const;
 
 export function Hero() {
+  const { pathname } = useRouter();
+  const copy = COPY[currentLocale(pathname)];
   const GRID_SIZE = 60;
 
   const tracerVariant: Variants = {
@@ -205,10 +235,7 @@ export function Hero() {
               lineHeight: 1.6,
             }}
           >
-            An engine that
-            <br /> mirrors{" "}
-            <span style={{ color: "#4ade80" }}>HTML DOM elements</span> to a{" "}
-            <span style={{ color: "#4ade80" }}>WebGL scene</span> in real-time
+            {copy.tagline}
           </p>
 
           <div style={{ display: "flex", gap: "1rem" }}>
@@ -221,7 +248,7 @@ export function Hero() {
               }}
             >
               <Link
-                href="/get-started/quick-start"
+                href={copy.docsHref}
                 className="btn"
                 style={{
                   display: "inline-block",
@@ -235,7 +262,7 @@ export function Hero() {
                   border: "1px solid #444",
                 }}
               >
-                Documentation
+                {copy.docs}
               </Link>
             </motion.div>
             <motion.a

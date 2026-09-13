@@ -1,0 +1,130 @@
+---
+title: Sandwich Layering
+description: Keep specific DOM elements above the Mirage canvas without breaking page layout.
+---
+
+import { Callout, Steps } from "nextra/components";
+
+# Sandwich Layering
+
+In `overlay` mode the canvas covers your content. Usually that is the point —
+but some elements must stay on top and stay interactive: navigation, modals,
+tooltips, a cursor-follower, a cookie banner.
+
+Sandwich lifts those elements out of the flow into a fixed layer above the
+canvas, leaving an invisible placeholder behind so the page layout does not
+shift.
+
+```
+┌─────────────────────────────┐
+│  front layer   z-index 9999 │  ← data-mirage-sandwich="front"
+├─────────────────────────────┤
+│  mid layer     z-index 9998 │  ← optional, via midLayerElement
+├─────────────────────────────┤
+│  Mirage canvas              │
+├─────────────────────────────┤
+│  original DOM               │
+└─────────────────────────────┘
+```
+
+## Usage
+
+Sandwich is enabled by default. Mark the elements you want on top:
+
+```html
+<nav data-mirage-sandwich="front">
+  <a href="/docs">Docs</a>
+  <a href="/api">API</a>
+</nav>
+```
+
+That is the whole setup.
+
+## How it works
+
+<Steps>
+
+### Layers are created
+
+Two `div`s are appended to `document.body`: `#sand-layer-mid` (z-index 9998) and
+`#sand-layer-front` (z-index 9999). Both are `position: fixed; inset: 0;
+pointer-events: none`.
+
+### Front elements are hijacked
+
+For each match, Sandwich measures the element, inserts a `.sand-placeholder`
+with the same box and margins at its original position, then moves the real
+element into the front layer with `position: fixed` and `pointer-events: auto`.
+
+### Positions sync every frame
+
+On `onBeforeRender`, all placeholder rects are read in one batch, then all
+element positions are written in a second batch — reads and writes separated to
+avoid layout thrashing.
+
+</Steps>
+
+## Custom selector
+
+```ts
+new Mirage(target, {
+  sandwich: { frontSelector: ".hud, [data-floating]" },
+});
+```
+
+Any valid `querySelectorAll` selector works. The default is
+`[data-mirage-sandwich='front']`.
+
+## Disabling
+
+```ts
+new Mirage(target, { sandwich: false });
+```
+
+Turn it off if you already manage stacking yourself, or if appending elements to
+`document.body` conflicts with your framework's portal system.
+
+## Standalone use
+
+`@mirage-engine/sandwich` works without Mirage:
+
+```ts
+import { SandwichRenderer } from "@mirage-engine/sandwich";
+
+const sandwich = new SandwichRenderer({
+  frontSelector: ".floating",
+  midLayerElement: document.querySelector("#my-canvas") as HTMLElement,
+});
+
+sandwich.init();
+```
+
+`midLayerElement` is moved into the mid layer and given `pointer-events: auto` —
+use it to place your own canvas between the page and the front layer.
+
+## Caveats
+
+<Callout type="warning">
+  Hijacked elements are physically moved in the DOM. If your framework owns that
+  subtree (React reconciliation, Vue patching), it may try to move it back or
+  crash on unmount. Prefer elements the framework treats as stable, or render
+  them into a portal you control and leave Sandwich disabled.
+</Callout>
+
+| Limitation | Detail |
+| :-- | :-- |
+| CSS inheritance breaks | The element moves out of its original ancestor chain, so inherited styles and descendant selectors scoped to it stop applying |
+| Only matched at `init()` | Elements added later are not picked up; call `init()` again or manage them yourself |
+| Placeholder is `visibility: hidden` | It still occupies space, which is the point |
+| `position: fixed` is forced | Sticky behaviour inside the front layer will not work |
+
+## Debugging
+
+```ts
+console.log(document.querySelector("#sand-layer-front")?.children);
+console.log(document.querySelectorAll(".sand-placeholder").length);
+```
+
+If a front element drifts while scrolling, its placeholder was probably removed
+or hidden with `display: none` — the sync reads the placeholder's rect, so the
+placeholder must stay in layout.

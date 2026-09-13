@@ -1,0 +1,140 @@
+---
+title: Core Concepts
+description: The vocabulary used throughout the Mirage Engine documentation.
+---
+
+import { Callout } from "nextra/components";
+
+# Core Concepts
+
+## Target
+
+The single element you hand to the constructor. Mirage walks this element and
+all of its descendants. Everything outside it is ignored.
+
+The target must be attached to the document and must have a non-zero layout box.
+Its **parent** is where the canvas gets mounted in `overlay` mode.
+
+## Scene graph and `SceneNode`
+
+Every extraction pass produces a tree of `SceneNode` objects — one per element
+and one per text node. A node carries the page-space rect, the resolved
+`BoxStyles`, per-line text boxes, and the flags that decide which Three.js
+layers the mesh belongs to.
+
+```ts
+interface SceneNode {
+  id: string;
+  type: "BOX" | "TEXT";
+  element: HTMLElement;
+  rect: NodeRect;
+  styles: BoxStyles;
+  textLines?: { text: string; rect: NodeRect }[];
+  visibility: Visibility;
+  isTraveler: boolean;
+  captureLayer: number;
+  wasmIndex?: number;
+  children: SceneNode[];
+}
+```
+
+## BOX and TEXT nodes
+
+- **BOX** — an element. Becomes one mesh with a `ShaderMaterial` that draws the
+  background color, gradient, border, radius, shadow and image.
+- **TEXT** — a text node. Becomes a transparent parent mesh (named `BG_MESH`)
+  with one child mesh per rendered *line*. Each line is painted to a 2D canvas
+  and uploaded as a `CanvasTexture`.
+
+Splitting text per line is what makes wrapped paragraphs land in the right place
+instead of being stretched across one quad.
+
+## Dirty mask
+
+The tracker does not re-extract everything on every change. It ORs a bitmask
+describing what changed and passes it down:
+
+| Flag | Value | Meaning |
+| :-- | :-- | :-- |
+| `DIRTY_RECT` | `1 << 0` | Geometry moved or resized |
+| `DIRTY_STYLE` | `1 << 1` | Visual style changed |
+| `DIRTY_ZINDEX` | `1 << 2` | Stacking order changed |
+| `DIRTY_STRUCTURE` | `1 << 3` | Children added or removed |
+| `DIRTY_CONTENT` | `1 << 4` | Text content changed |
+
+## Visibility layers
+
+Two independent bit flags decide whether a node is drawn and whether it is
+"selected":
+
+```ts
+const USER_LAYER   = 1 << 0; // drawn into the visible scene
+const SELECT_LAYER = 1 << 1; // additionally drawn into the selection layer
+```
+
+They map onto Three.js layer channels:
+
+| Channel | Constant | Purpose |
+| :-- | :-- | :-- |
+| `0` | `THREE_LAYERS.BASE` | Normal visible scene |
+| `1` | `THREE_LAYERS.SELECTED` | Opt-in selection pass |
+| `31 - n` | `THREE_LAYERS.getCaptureLayer(n)` | Traveler capture buffer `n` |
+| `31` | `THREE_LAYERS.HIDDEN` | Extracted but not drawn |
+
+Control these from markup with [`data-mirage-filter` and
+`data-mirage-select`](/guides/filtering).
+
+## Traveler
+
+A **traveler** is a mesh whose material samples a render target instead of a
+flat color — the scene behind it, captured first and fed back in. That is how
+you get refraction, frosted glass and lensing effects that react to real page
+content. See [Traveler & Layers](/guides/traveler).
+
+## Native styles
+
+`data-mirage-travel` can carry a JSON object of style overrides. When present,
+Mirage builds a **second mesh** ("native mesh") for the same element with those
+overrides applied and assigns it to a different capture layer. This lets an
+element look one way in the visible scene and a different way inside a
+traveler's capture.
+
+## Quality factor
+
+`quality` is a device-pixel multiplier applied to text canvases, SVG
+rasterization and render-target resolution.
+
+| Value | Factor |
+| :-- | :-- |
+| `"low"` | `1` |
+| `"medium"` *(default)* | `2` |
+| `"high"` | `4` |
+| `number` | that number, floored at `0.1` |
+
+## The frame loop
+
+```
+requestAnimationFrame
+  ├─ onBeforeRender    → Sandwich syncs DOM layer positions
+  ├─ onLayoutChange    → extract + reconcile (only when dirty)
+  ├─ onScrollChange    → scroll delta
+  ├─ onStyleChange     → fast-path uniform updates, no re-extract
+  └─ onRender          → wasm transform pass, then draw
+```
+
+<Callout type="info">
+  Only `onRender` runs every single frame. Extraction is gated behind the dirty
+  flag, which is what keeps Mirage viable on large pages.
+</Callout>
+
+## Shared memory (WASM)
+
+Parent/child offsets live in one `Float32Array` shared with a Rust module, five
+floats per node:
+
+```
+[ parentIndex, localX, localY, worldX, worldY ]
+```
+
+`update_physics` walks it once per frame accumulating world positions
+top-down. JavaScript reads the result with zero copying.
