@@ -35,6 +35,9 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate READMEs
+        run: pnpm readme
+
       - name: Build
         run: pnpm run build
 

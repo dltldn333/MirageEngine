@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "pnpm --filter dev dev",
     "build": "pnpm -r build",
+    "readme": "writeme build",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "test": "pnpm -r test",

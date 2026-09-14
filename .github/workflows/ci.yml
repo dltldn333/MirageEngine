@@ -26,5 +26,13 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check READMEs are up to date
+        run: |
+          pnpm readme
+          if ! git diff --exit-code -- README.md '**/README.md'; then
+            echo "::error::README.md is out of date. Run 'pnpm readme' and commit the result."
+            exit 1
+          fi
+
       - name: Build All Packages
         run: pnpm -r build
